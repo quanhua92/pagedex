@@ -40,3 +40,9 @@ jobs:
 
       - name: Run smoke checks
         run: pnpm smoke
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright-core install chromium --with-deps
+
+      - name: Run Playwright tests
+        run: pnpm test:playwright
