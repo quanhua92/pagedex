@@ -18,6 +18,7 @@
     "bin/",
     "src/server/",
     "dist/",
+    "docs/",
     "README.md"
   ],
   "scripts": {

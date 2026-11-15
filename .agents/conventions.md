@@ -25,7 +25,7 @@ Note: In sandboxed environments where binding/connecting to `127.0.0.1` is block
 
 ## npm Release Check
 
-`package.json` `"files"` controls what ships (`bin/`, `src/server/`, `dist/`, `README.md`). Confirm with:
+`package.json` `"files"` controls what ships (`bin/`, `src/server/`, `dist/`, `docs/`, `README.md`). Confirm with:
 
 ```bash
 npm pack --dry-run

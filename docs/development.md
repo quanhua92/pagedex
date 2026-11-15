@@ -24,8 +24,8 @@ pnpm smoke   # Run REST + multi-era MCP smoke checks against :4321
 
 `package.json` restricts the published tarball via `"files"` and runs `prepublishOnly: "vite build"`:
 
-- **Included:** `package.json`, `README.md`, `bin/pagedex.js`, `src/server/**`, and compiled `dist/**`.
-- **Excluded:** `src/client/**`, `docs/`, `.agents/`, `test/`, `vite.config.js`, `.github/`.
+- **Included:** `package.json`, `README.md`, `docs/**`, `bin/pagedex.js`, `src/server/**`, and compiled `dist/**`.
+- **Excluded:** `src/client/**`, `.agents/`, `AGENTS.md`, `test/`, `vite.config.js`, `.github/`.
 
 Verify exact tarball contents before publishing with:
 
