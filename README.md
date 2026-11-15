@@ -1,5 +1,7 @@
 # pagedex
 
+> A fast, browsable catalog (**-dex**, like Rolodex/Pokédex) for any local folder of notes and files—served as a web **page** with full-text search, backlinks, Git sync, and MCP.
+
 Local-first Markdown knowledge viewer, WYSIWYG/raw editor, Git bridge, and multi-era MCP server for any folder.
 
 ## Requirements
