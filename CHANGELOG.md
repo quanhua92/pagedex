@@ -2,6 +2,28 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.8] - 2026-11-15
+
+### Features
+
+- **mcp:** support comma-separated key rotation in --mcp-token-file (7507a10)
+- **auth:** add --auth-token-file for Web/REST auth with key rotation, tests, and README screenshot (e287584)
+- **pwa:** add manifest, service worker, P icon set, and README logo header (483a9de)
+
+### Bug Fixes
+
+- **ui:** align FileContextMenu and NoteViewer action menu with small-screen scrolling (86f9374)
+
+### Documentation
+
+- add Codex to README and move Screenshots above Quick Start (a87663a)
+- tighten README tagline and Obsidian/Git audience rows (ab5c4cf)
+- refresh screenshots with PageDex P branding and capitalize PageDex in README (6e64487)
+
+### Other Changes
+
+- **ui:** rename sidebar brand label and icon filenames to PageDex (58d01c3)
+
 ## [0.1.7] - 2026-11-15
 
 ### Features
