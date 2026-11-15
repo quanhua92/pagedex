@@ -78,6 +78,17 @@ export default function TopbarAndTabs({
         </button>
         {moreMenuOpen && (
           <div className="more-menu" onMouseLeave={() => setMoreMenuOpen(false)}>
+            {activePath && (
+              <a
+                className="more-item"
+                href={`/api/v1/file?path=${encodeURIComponent(activePath)}&download=1`}
+                download={activePath.split('/').pop()}
+                style={{ textDecoration: 'none', borderBottom: '1px solid var(--border)', marginBottom: 3, paddingBottom: 9 }}
+                onClick={() => setMoreMenuOpen(false)}
+              >
+                <span>Download</span>
+              </a>
+            )}
             <button
               className={`more-item${viewMode === 'preview' ? ' active' : ''}`}
               onClick={() => {
