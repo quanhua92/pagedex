@@ -2,6 +2,17 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.7] - 2026-11-15
+
+### Features
+
+- **ui:** add UX quick wins, read-only UI, updated API/MCP settings, and 10 Playwright E2E specs (4765904)
+
+### Documentation
+
+- **readme:** improve layout, hero screenshot, MCP snippet, and docs index (267bb49)
+- **readme:** add overview description and target audience table (f052961)
+
 ## [0.1.6] - 2026-11-15
 
 ### Features
