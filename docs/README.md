@@ -1,7 +1,9 @@
 # pagedex Documentation
 
-Human-oriented guides for using, securing, and developing **pagedex**.
+User, integration, and developer guides for **pagedex**.
 
-- [Supported File Types](./supported-files.md) — Markdown/MDX, sandboxed HTML + sibling assets, PDF, audio/video, CSV/TSV, images/SVG, and raw code.
-- [Security Model](./security.md) — Sandboxed HTML iframes, CSP/CORS behavior, `Origin: null` protection, and path guards.
-- [Development & Release](./development.md) — Dev server (`PAGEDEX_ROOT`, `HOST`), testing, and npm package contents.
+- [Getting Started](./getting-started.md) — CLI flags, environment variables, UI features, wikilinks, Git sync, and mobile gestures.
+- [Supported File Types](./supported-files.md) — Markdown/MDX, sandboxed HTML + sibling assets, PDF, audio/video, CSV/TSV, SVG, code, and binaries.
+- [MCP & REST API](./mcp-and-api.md) — Connecting AI clients to `/mcp`, the 5 vault tools, REST endpoints, `/raw/*`, and SSE live reload.
+- [Security Model](./security.md) — Sandboxed HTML iframes, CSP/CORS behavior, `Origin: null` guard, and path protection.
+- [Development & Release](./development.md) — Running `pnpm dev`, unit & smoke tests, and npm packaging.
