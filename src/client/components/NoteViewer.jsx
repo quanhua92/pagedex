@@ -33,7 +33,8 @@ export default function NoteViewer({
   saveActiveNote,
   highlightedRawHtml,
   handleDocClick,
-  renderedHtml
+  renderedHtml,
+  readOnly = false
 }) {
   const csvRows = useMemo(() => {
     if (!isCsv || viewMode !== 'preview' || !content) return [];
@@ -54,10 +55,12 @@ export default function NoteViewer({
     <div ref={scrollRef} className="content-scroll">
       {!activePath ? (
         <div className="new-tab-view">
-          <button className="new-tab-btn" onClick={() => openNewNoteDialog('')}>
-            <Plus size={16} strokeWidth={1.9} />
-            <span>Create new note</span>
-          </button>
+          {!readOnly && (
+            <button className="new-tab-btn" onClick={() => openNewNoteDialog('')}>
+              <Plus size={16} strokeWidth={1.9} />
+              <span>Create new note</span>
+            </button>
+          )}
           <button className="new-tab-btn" onClick={() => openFile('README.md')}>
             <Home size={16} strokeWidth={1.9} />
             <span>Go to README</span>

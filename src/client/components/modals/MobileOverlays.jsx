@@ -33,6 +33,7 @@ export default function MobileOverlays({
   loadDiff,
   activePath,
   createNewTab,
+  readOnly = false,
   tabsOpen,
   setTabsOpen,
   tabs,
@@ -175,16 +176,18 @@ export default function MobileOverlays({
                 <Home size={18} strokeWidth={1.9} />
                 <span>Go to Home (README)</span>
               </button>
-              <button
-                className="sheet-item"
-                onClick={() => {
-                  setFabOpen(false);
-                  setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
-                }}
-              >
-                <Pencil size={18} strokeWidth={1.9} />
-                <span>{viewMode === 'edit' ? 'Switch to Preview mode' : 'Switch to Edit mode'}</span>
-              </button>
+              {!readOnly && (
+                <button
+                  className="sheet-item"
+                  onClick={() => {
+                    setFabOpen(false);
+                    setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
+                  }}
+                >
+                  <Pencil size={18} strokeWidth={1.9} />
+                  <span>{viewMode === 'edit' ? 'Switch to Preview mode' : 'Switch to Edit mode'}</span>
+                </button>
+              )}
               <button
                 className="sheet-item"
                 onClick={() => {

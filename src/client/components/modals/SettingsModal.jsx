@@ -189,18 +189,24 @@ export default function SettingsModal({
           {settingsTab === 'endpoints' && (
             <>
               <div className="field">
-                <label>REST API (v1)</label>
-                <div className="endpoint-box">GET /api/v1/health</div>
-                <div className="endpoint-box">GET /api/v1/tree</div>
-                <div className="endpoint-box">GET /api/v1/file?path=README.md</div>
-                <div className="endpoint-box">PUT / POST / PATCH /api/v1/file — {"{ path, content, append? } or { path, target, replacement, replaceAll? }"}</div>
-                <div className="endpoint-box">DELETE /api/v1/file?path=...</div>
+                <label>REST API (v1) & Raw</label>
+                <div className="endpoint-box">GET /api/v1/health — server root &amp; readOnly status</div>
+                <div className="endpoint-box">GET /api/v1/tree · GET /api/v1/files?sort=mtime&amp;limit=50</div>
                 <div className="endpoint-box">GET /api/v1/search?q=python</div>
-                <div className="endpoint-box">GET /api/v1/events (SSE)</div>
+                <div className="endpoint-box">GET /api/v1/file?path=README.md (supports ?download=1 &amp; Range)</div>
+                <div className="endpoint-box">PUT / POST / PATCH /api/v1/file — {"{ path, content, append? } or { path, target, replacement, replaceAll? }"}</div>
+                <div className="endpoint-box">POST /api/v1/file/rename · POST /api/v1/dir/rename · POST /api/v1/file/upload</div>
+                <div className="endpoint-box">DELETE /api/v1/file?path=...</div>
+                <div className="endpoint-box">GET /api/v1/changes · GET /api/v1/git/diff · POST /api/v1/git/discard · POST /api/v1/git/commit</div>
+                <div className="endpoint-box">GET /api/v1/events (SSE) · GET /raw/&lt;path&gt;</div>
               </div>
               <div className="field">
-                <label>MCP Endpoint (Streamable HTTP)</label>
-                <div className="endpoint-box">POST /mcp — tools: list_vault, read_note, search_vault, write_note, delete_note</div>
+                <label>MCP Endpoint (/mcp — 2026-07-28, 2025-11-25, 2024-11-05)</label>
+                <div className="endpoint-box">Read: list_vault, read_note, search_vault, get_vault_info, get_note_links, git_status, git_diff</div>
+                <div className="endpoint-box">Write (--mcp write|full): write_note, move_path</div>
+                <div className="endpoint-box">Full (--mcp full, default): delete_note</div>
+                <div className="endpoint-box">Git (--mcp-git): git_commit, git_discard</div>
+                <div className="endpoint-box">Flags: --mcp &lt;read|write|full|off&gt; · --mcp-token-file &lt;path&gt; · --read-only</div>
               </div>
             </>
           )}

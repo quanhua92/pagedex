@@ -94,6 +94,26 @@ export default function App() {
   const [contentHits, setContentHits] = useState([]);
   const [pagedFiles, setPagedFiles] = useState({ items: [], hasMore: false });
   const [reloadTick, setReloadTick] = useState(0);
+  const [readOnly, setReadOnly] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem('pagedex-sidebar-width'));
+      return Number.isFinite(v) && v >= 200 && v <= 480 ? v : 270;
+    } catch {
+      return 270;
+    }
+  });
+  const [outlineWidth, setOutlineWidth] = useState(() => {
+    try {
+      const v = Number(localStorage.getItem('pagedex-outline-width'));
+      return Number.isFinite(v) && v >= 200 && v <= 440 ? v : 240;
+    } catch {
+      return 240;
+    }
+  });
   const [pinned, setPinned] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('pagedex-pinned') || '[]');
@@ -126,17 +146,78 @@ export default function App() {
     }
   }, [pinned]);
 
+  function showToast(msg) {
+    setToast(msg);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToast(null), 1800);
+  }
+
   function isPinned(itemPath) {
     return pinned.some((item) => item.path === itemPath);
   }
 
   function togglePin(itemPath, type) {
+    const already = pinned.some((item) => item.path === itemPath);
+    const label = itemPath.split('/').pop() || itemPath;
     setPinned((prev) => {
       if (prev.some((item) => item.path === itemPath)) {
         return prev.filter((item) => item.path !== itemPath);
       }
       return [...prev, { path: itemPath, type }];
     });
+    showToast(already ? `Unpinned ${label}` : `Pinned ${label}`);
+  }
+
+  function reorderPinned(fromPath, toPath) {
+    setPinned((prev) => {
+      const fromIdx = prev.findIndex((item) => item.path === fromPath);
+      const toIdx = prev.findIndex((item) => item.path === toPath);
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
+    });
+  }
+
+  function startResizeSidebar(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = sidebarWidth;
+    let latestW = startW;
+    const onMove = (ev) => {
+      latestW = Math.min(480, Math.max(200, Math.round(startW + (ev.clientX - startX))));
+      setSidebarWidth(latestW);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try {
+        localStorage.setItem('pagedex-sidebar-width', String(latestW));
+      } catch {}
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }
+
+  function startResizeOutline(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = outlineWidth;
+    let latestW = startW;
+    const onMove = (ev) => {
+      latestW = Math.min(440, Math.max(200, Math.round(startW - (ev.clientX - startX))));
+      setOutlineWidth(latestW);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      try {
+        localStorage.setItem('pagedex-outline-width', String(latestW));
+      } catch {}
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   }
 
   useEffect(() => {
@@ -146,7 +227,25 @@ export default function App() {
         openSwitcher();
         return;
       }
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setSidebarCollapsed((v) => !v);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        if (!readOnly && activePathRef.current && isMarkdownPath(activePathRef.current)) {
+          e.preventDefault();
+          setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
+        }
+        return;
+      }
+      const el = document.activeElement;
+      const inEditable =
+        el?.tagName === 'INPUT' ||
+        el?.tagName === 'TEXTAREA' ||
+        el?.tagName === 'SELECT' ||
+        el?.isContentEditable;
+      if (e.key === '/' && !inEditable) {
         e.preventDefault();
         openSwitcher();
       }
@@ -156,7 +255,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [switcherOpen]);
+  }, [switcherOpen, readOnly]);
 
   function openSwitcher() {
     setSwitcherQuery('');
@@ -722,6 +821,12 @@ export default function App() {
   }
 
   useEffect(() => {
+    fetch('/api/v1/health')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.readOnly === 'boolean') setReadOnly(d.readOnly);
+      })
+      .catch(() => {});
     fetchTree();
     openFile(activePath);
   }, []);
@@ -768,6 +873,7 @@ export default function App() {
         setContent(markdown);
         setDraftContent(markdown);
         setDirty(false);
+        showToast('Saved');
       }
     } finally {
       setSaving(false);
@@ -924,7 +1030,10 @@ export default function App() {
           setOutlineDrawerOpen(false);
         }}
       />
-      <div className="app">
+      <div
+        className={`app${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+        style={{ '--sidebar-w': `${sidebarWidth}px`, '--outline-w': `${outlineWidth}px` }}
+      >
         <Sidebar
           drawerOpen={drawerOpen}
           live={live}
@@ -950,6 +1059,10 @@ export default function App() {
           openCommitDialog={openCommitDialog}
           sortedChanges={sortedChanges}
           loadDiff={loadDiff}
+          readOnly={readOnly}
+          openNewNoteDialog={openNewNoteDialog}
+          onReorderPinned={reorderPinned}
+          onStartResizeSidebar={startResizeSidebar}
         />
 
         <main className="main">
@@ -977,6 +1090,7 @@ export default function App() {
                 outlineDrawerOpen={outlineDrawerOpen}
                 onToggleOutline={handleToggleOutline}
                 onOpenOutline={handleOpenOutline}
+                readOnly={readOnly}
               />
 
               <NoteViewer
@@ -1010,6 +1124,7 @@ export default function App() {
                 highlightedRawHtml={highlightedRawHtml}
                 handleDocClick={handleDocClick}
                 renderedHtml={renderedHtml}
+                readOnly={readOnly}
               />
             </div>
 
@@ -1024,6 +1139,7 @@ export default function App() {
               onChangePosition={setOutlinePosition}
               mobileOpen={outlineDrawerOpen}
               onCloseMobile={() => setOutlineDrawerOpen(false)}
+              onStartResizeOutline={startResizeOutline}
             />
           </div>
         </main>
@@ -1046,6 +1162,7 @@ export default function App() {
         loadDiff={loadDiff}
         activePath={activePath}
         createNewTab={createNewTab}
+        readOnly={readOnly}
         tabsOpen={tabsOpen}
         setTabsOpen={setTabsOpen}
         tabs={tabs}
@@ -1103,6 +1220,8 @@ export default function App() {
         setDeleteTarget={setDeleteTarget}
         isPinned={isPinned}
         togglePin={togglePin}
+        readOnly={readOnly}
+        showToast={showToast}
       />
 
       <NewNoteModal
@@ -1170,6 +1289,12 @@ export default function App() {
         setSettings={setSettings}
         setCollapsed={setCollapsed}
       />
+
+      {toast && (
+        <div className="toast" role="status" aria-live="polite">
+          {toast}
+        </div>
+      )}
     </>
   );
 }

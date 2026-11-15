@@ -32,7 +32,7 @@ async function waitForHealth(baseUrl) {
   throw new Error(`Pagedex test server did not become healthy at ${baseUrl}`);
 }
 
-export async function createPlaywrightVault(seedFiles = {}) {
+export async function createPlaywrightVault(seedFiles = {}, extraEnv = {}) {
   const vaultDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pagedex-pw-'));
   const indexPath = `${vaultDir}.db`;
 
@@ -50,7 +50,8 @@ export async function createPlaywrightVault(seedFiles = {}) {
       PORT: String(port),
       HOST: '127.0.0.1',
       PAGEDEX_ROOT: vaultDir,
-      PAGEDEX_INDEX_PATH: indexPath
+      PAGEDEX_INDEX_PATH: indexPath,
+      ...extraEnv
     },
     stdio: 'pipe'
   });

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Moon, Pin, Sun } from 'lucide-react';
+import { Moon, Pin, Plus, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -56,8 +56,7 @@ function useLongPress(onLongPress) {
     onTouchCancel: () => clear(),
     onContextMenu: (e) => {
       e.preventDefault();
-      const rowEl = e.currentTarget.closest('.tree-file-row') || e.currentTarget;
-      onLongPress(rowEl.getBoundingClientRect());
+      onLongPress({ right: e.clientX + 12, bottom: e.clientY });
     },
     consumeClick: (e) => {
       if (!firedRef.current) return false;
@@ -188,10 +187,16 @@ export default function Sidebar({
   setChangesSort,
   openCommitDialog,
   sortedChanges,
-  loadDiff
+  loadDiff,
+  readOnly = false,
+  openNewNoteDialog,
+  onReorderPinned,
+  onStartResizeSidebar
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true);
   const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
+  const [dragFromPath, setDragFromPath] = useState(null);
+  const [dragOverPath, setDragOverPath] = useState(null);
   const togglePinnedDir = (dirPath) => {
     setPinnedCollapsed((prev) => {
       const next = new Set(prev);
@@ -245,6 +250,17 @@ export default function Sidebar({
           value={filter}
           onChange={(e) => setFilter(e.target.value.trim().toLowerCase())}
         />
+        {sidebarTab === 'files' && !readOnly && openNewNoteDialog && (
+          <button
+            type="button"
+            className="sidebar-new-btn"
+            aria-label="New note"
+            title="New note"
+            onClick={() => openNewNoteDialog()}
+          >
+            <Plus size={15} strokeWidth={2} />
+          </button>
+        )}
       </div>
       <div className="tree">
         {sidebarTab === 'files' ? (
@@ -266,20 +282,48 @@ export default function Sidebar({
                   {pinnedOpen && (
                     <div className="pinned-list">
                       {pinnedNodes.map((node) => (
-                        <TreeNode
+                        <div
                           key={`pinned:${node.path}`}
-                          node={node}
-                          activePath={activePath}
-                          filter={filter}
-                          collapsed={pinnedCollapsed}
-                          hiddenSet={hiddenSet}
-                          onToggleDir={togglePinnedDir}
-                          onSelectFile={(p) => {
-                            setViewMode('preview');
-                            openFile(p);
+                          className={`pinned-item-wrap${dragOverPath === node.path && dragFromPath !== node.path ? ' drag-over' : ''}`}
+                          draggable={Boolean(onReorderPinned)}
+                          onDragStart={(e) => {
+                            setDragFromPath(node.path);
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', node.path);
                           }}
-                          onOpenMenu={openRowMenu}
-                        />
+                          onDragOver={(e) => {
+                            if (!dragFromPath) return;
+                            e.preventDefault();
+                            if (dragOverPath !== node.path) setDragOverPath(node.path);
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const from = dragFromPath || e.dataTransfer.getData('text/plain');
+                            setDragFromPath(null);
+                            setDragOverPath(null);
+                            if (from && from !== node.path) {
+                              onReorderPinned?.(from, node.path);
+                            }
+                          }}
+                          onDragEnd={() => {
+                            setDragFromPath(null);
+                            setDragOverPath(null);
+                          }}
+                        >
+                          <TreeNode
+                            node={node}
+                            activePath={activePath}
+                            filter={filter}
+                            collapsed={pinnedCollapsed}
+                            hiddenSet={hiddenSet}
+                            onToggleDir={togglePinnedDir}
+                            onSelectFile={(p) => {
+                              setViewMode('preview');
+                              openFile(p);
+                            }}
+                            onOpenMenu={openRowMenu}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}
@@ -319,7 +363,7 @@ export default function Sidebar({
                 <option value="recent">Sort: Recent</option>
                 <option value="status">Sort: Status</option>
               </select>
-              {gitChanges.length > 0 && (
+              {gitChanges.length > 0 && !readOnly && (
                 <button className="btn primary" onClick={openCommitDialog}>
                   Commit
                 </button>
@@ -361,6 +405,13 @@ export default function Sidebar({
           </>
         )}
       </div>
+      {onStartResizeSidebar && (
+        <div
+          className="resize-handle resize-handle-right"
+          onPointerDown={onStartResizeSidebar}
+          aria-hidden="true"
+        />
+      )}
     </aside>
   );
 }

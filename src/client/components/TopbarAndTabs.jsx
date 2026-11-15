@@ -42,7 +42,8 @@ export default function TopbarAndTabs({
   outlinePosition,
   outlineDrawerOpen,
   onToggleOutline,
-  onOpenOutline
+  onOpenOutline,
+  readOnly = false
 }) {
   const isOutlineActive = outlineDrawerOpen || outlinePosition !== 'hidden';
   return (
@@ -93,16 +94,18 @@ export default function TopbarAndTabs({
               <span>Preview</span>
               {viewMode === 'preview' && <span>✓</span>}
             </button>
-            <button
-              className={`more-item${viewMode === 'edit' ? ' active' : ''}`}
-              onClick={() => {
-                setViewMode('edit');
-                setMoreMenuOpen(false);
-              }}
-            >
-              <span>Edit</span>
-              {viewMode === 'edit' && <span>✓</span>}
-            </button>
+            {!readOnly && (
+              <button
+                className={`more-item${viewMode === 'edit' ? ' active' : ''}`}
+                onClick={() => {
+                  setViewMode('edit');
+                  setMoreMenuOpen(false);
+                }}
+              >
+                <span>Edit</span>
+                {viewMode === 'edit' && <span>✓</span>}
+              </button>
+            )}
             <button
               className={`more-item${viewMode === 'diff' ? ' active' : ''}`}
               onClick={() => {
@@ -134,7 +137,7 @@ export default function TopbarAndTabs({
             >
               <span>Outline</span>
             </button>
-            {activePath && (
+            {activePath && !readOnly && (
               <button
                 className="more-item"
                 style={{ color: '#f87171', borderTop: '1px solid var(--border)', marginTop: 3, paddingTop: 9 }}

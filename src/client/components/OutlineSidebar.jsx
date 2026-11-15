@@ -11,7 +11,8 @@ export default function OutlineSidebar({
   position = 'right',
   onChangePosition,
   mobileOpen = false,
-  onCloseMobile
+  onCloseMobile,
+  onStartResizeOutline
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -127,6 +128,13 @@ export default function OutlineSidebar({
           )}
         </div>
       </div>
+      {position !== 'bottom' && onStartResizeOutline && (
+        <div
+          className="resize-handle resize-handle-left"
+          onPointerDown={onStartResizeOutline}
+          aria-hidden="true"
+        />
+      )}
     </aside>
   );
 }

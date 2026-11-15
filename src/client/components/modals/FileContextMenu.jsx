@@ -36,7 +36,9 @@ export default function FileContextMenu({
   setDeleteError,
   setDeleteTarget,
   isPinned,
-  togglePin
+  togglePin,
+  readOnly = false,
+  showToast
 }) {
   if (!fileMenu) return null;
 
@@ -52,58 +54,62 @@ export default function FileContextMenu({
       >
         {fileMenu.type === 'dir' ? (
           <>
-            <button
-              className="more-item"
-              onClick={() => {
-                const target = fileMenu.path;
-                setFileMenu(null);
-                openNewNoteDialog(target);
-              }}
-            >
-              <MenuIcon icon={Plus} />
-              <span>New note here</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => {
-                uploadDirRef.current = fileMenu.path;
-                setFileMenu(null);
-                uploadInputRef.current?.click();
-              }}
-            >
-              <MenuIcon icon={Upload} />
-              <span>Upload file...</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => {
-                const target = fileMenu.path;
-                const parts = target.split('/');
-                const newName = parts.pop() || '';
-                const parentDir = parts.join('/');
-                setFileMenu(null);
-                setRenameError('');
-                setRenameTarget({ type: 'dir', oldPath: target, parentDir, newName });
-              }}
-            >
-              <MenuIcon icon={Pencil} />
-              <span>Rename</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => {
-                const target = fileMenu.path;
-                const parts = target.split('/');
-                const name = parts.pop() || '';
-                const destFolder = parts.join('/');
-                setFileMenu(null);
-                setMoveError('');
-                setMoveTarget({ type: 'dir', oldPath: target, name, destFolder });
-              }}
-            >
-              <MenuIcon icon={FolderInput} />
-              <span>Move</span>
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    setFileMenu(null);
+                    openNewNoteDialog(target);
+                  }}
+                >
+                  <MenuIcon icon={Plus} />
+                  <span>New note here</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    uploadDirRef.current = fileMenu.path;
+                    setFileMenu(null);
+                    uploadInputRef.current?.click();
+                  }}
+                >
+                  <MenuIcon icon={Upload} />
+                  <span>Upload file...</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parts = target.split('/');
+                    const newName = parts.pop() || '';
+                    const parentDir = parts.join('/');
+                    setFileMenu(null);
+                    setRenameError('');
+                    setRenameTarget({ type: 'dir', oldPath: target, parentDir, newName });
+                  }}
+                >
+                  <MenuIcon icon={Pencil} />
+                  <span>Rename</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parts = target.split('/');
+                    const name = parts.pop() || '';
+                    const destFolder = parts.join('/');
+                    setFileMenu(null);
+                    setMoveError('');
+                    setMoveTarget({ type: 'dir', oldPath: target, name, destFolder });
+                  }}
+                >
+                  <MenuIcon icon={FolderInput} />
+                  <span>Move</span>
+                </button>
+              </>
+            )}
             <button
               className="more-item"
               onClick={() => {
@@ -121,6 +127,7 @@ export default function FileContextMenu({
               onClick={() => {
                 navigator.clipboard?.writeText(fileMenu.path);
                 setFileMenu(null);
+                showToast?.('Copied path');
               }}
             >
               <MenuIcon icon={Copy} />
@@ -152,41 +159,46 @@ export default function FileContextMenu({
               <MenuIcon icon={isPinned(fileMenu.path) ? PinOff : Pin} />
               <span>{isPinned(fileMenu.path) ? 'Unpin' : 'Pin'}</span>
             </button>
-            <button
-              className="more-item"
-              onClick={() => {
-                const target = fileMenu.path;
-                const parts = target.split('/');
-                const newName = parts.pop() || '';
-                const parentDir = parts.join('/');
-                setFileMenu(null);
-                setRenameError('');
-                setRenameTarget({ type: 'file', oldPath: target, parentDir, newName });
-              }}
-            >
-              <MenuIcon icon={Pencil} />
-              <span>Rename</span>
-            </button>
-            <button
-              className="more-item"
-              onClick={() => {
-                const target = fileMenu.path;
-                const parts = target.split('/');
-                const name = parts.pop() || '';
-                const destFolder = parts.join('/');
-                setFileMenu(null);
-                setMoveError('');
-                setMoveTarget({ type: 'file', oldPath: target, name, destFolder });
-              }}
-            >
-              <MenuIcon icon={FolderInput} />
-              <span>Move</span>
-            </button>
+            {!readOnly && (
+              <>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parts = target.split('/');
+                    const newName = parts.pop() || '';
+                    const parentDir = parts.join('/');
+                    setFileMenu(null);
+                    setRenameError('');
+                    setRenameTarget({ type: 'file', oldPath: target, parentDir, newName });
+                  }}
+                >
+                  <MenuIcon icon={Pencil} />
+                  <span>Rename</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parts = target.split('/');
+                    const name = parts.pop() || '';
+                    const destFolder = parts.join('/');
+                    setFileMenu(null);
+                    setMoveError('');
+                    setMoveTarget({ type: 'file', oldPath: target, name, destFolder });
+                  }}
+                >
+                  <MenuIcon icon={FolderInput} />
+                  <span>Move</span>
+                </button>
+              </>
+            )}
             <button
               className="more-item"
               onClick={() => {
                 navigator.clipboard?.writeText(fileMenu.path);
                 setFileMenu(null);
+                showToast?.('Copied path');
               }}
             >
               <MenuIcon icon={Copy} />
@@ -198,6 +210,7 @@ export default function FileContextMenu({
                 onClick={() => {
                   navigator.clipboard?.writeText(`[[${fileMenu.path.replace(/\.md$/i, '')}]]`);
                   setFileMenu(null);
+                  showToast?.('Copied wikilink');
                 }}
               >
                 <MenuIcon icon={Link2} />
@@ -219,33 +232,37 @@ export default function FileContextMenu({
                   <MenuIcon icon={GitCompare} />
                   <span>View Diff</span>
                 </button>
-                <button
-                  className="more-item"
-                  style={{ color: 'var(--amber)' }}
-                  onClick={() => {
-                    const target = fileMenu.path;
-                    setFileMenu(null);
-                    requestDiscard({ path: target });
-                  }}
-                >
-                  <MenuIcon icon={RotateCcw} />
-                  <span>Discard changes</span>
-                </button>
+                {!readOnly && (
+                  <button
+                    className="more-item"
+                    style={{ color: 'var(--amber)' }}
+                    onClick={() => {
+                      const target = fileMenu.path;
+                      setFileMenu(null);
+                      requestDiscard({ path: target });
+                    }}
+                  >
+                    <MenuIcon icon={RotateCcw} />
+                    <span>Discard changes</span>
+                  </button>
+                )}
               </>
             )}
-            <button
-              className="more-item"
-              style={{ color: '#f87171', borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 8 }}
-              onClick={() => {
-                const target = fileMenu.path;
-                setFileMenu(null);
-                setDeleteError('');
-                setDeleteTarget(target);
-              }}
-            >
-              <MenuIcon icon={Trash2} />
-              <span>Delete</span>
-            </button>
+            {!readOnly && (
+              <button
+                className="more-item"
+                style={{ color: '#f87171', borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 8 }}
+                onClick={() => {
+                  const target = fileMenu.path;
+                  setFileMenu(null);
+                  setDeleteError('');
+                  setDeleteTarget(target);
+                }}
+              >
+                <MenuIcon icon={Trash2} />
+                <span>Delete</span>
+              </button>
+            )}
           </>
         )}
       </div>

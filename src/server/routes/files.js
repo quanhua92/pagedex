@@ -23,7 +23,13 @@ import {
 } from '../search-index.js';
 
 export function registerFileRoutes(app) {
-  app.get('/api/v1/health', (c) => c.json({ ok: true, root: VAULT_ROOT }));
+  app.get('/api/v1/health', (c) =>
+    c.json({
+      ok: true,
+      root: VAULT_ROOT,
+      readOnly: process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true'
+    })
+  );
 
   app.get('/api/v1/tree', (c) => {
     const rawLimit = Number(c.req.query('limit') || 10000);
