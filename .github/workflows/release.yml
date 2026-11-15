@@ -53,12 +53,16 @@ jobs:
       - name: Run smoke checks
         run: pnpm smoke
 
-      - name: Bump version, commit & tag
+      - name: Bump version, update CHANGELOG.md, commit & tag
         id: version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          TAG=$(npm version "${{ inputs.bump }}" -m "chore(release): %s")
+          TAG=$(npm version "${{ inputs.bump }}" --no-git-tag-version)
+          node scripts/update-changelog.js
+          git add package.json CHANGELOG.md
+          git commit -m "chore(release): ${TAG}"
+          git tag "${TAG}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           git push origin main --follow-tags
 
