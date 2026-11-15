@@ -322,22 +322,25 @@ export default function App() {
 
   function closeTab(id, e) {
     e?.stopPropagation();
-    setTabs((prev) => {
-      const next = prev.filter((t) => t.id !== id);
-      if (next.length === 0) {
-        const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
-        setActiveTabId(fresh.id);
+    const next = tabs.filter((t) => t.id !== id);
+    if (next.length === 0) {
+      const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
+      setTabs([fresh]);
+      setActiveTabId(fresh.id);
+      setContent('');
+      location.hash = '';
+      return;
+    }
+    setTabs(next);
+    if (id === (activeTab?.id || activeTabId)) {
+      const target = next[next.length - 1];
+      setActiveTabId(target.id);
+      if (target.path) openFile(target.path, false, target.id);
+      else {
         setContent('');
-        return [fresh];
+        location.hash = '';
       }
-      if (id === activeTabId) {
-        const target = next[next.length - 1];
-        setActiveTabId(target.id);
-        if (target.path) openFile(target.path, false, target.id);
-        else setContent('');
-      }
-      return next;
-    });
+    }
   }
 
   function switchTab(tab) {
@@ -351,7 +354,7 @@ export default function App() {
     }
   }
 
-  async function openFile(relPath, preserveScroll = false, targetTabId = activeTabId) {
+  async function openFile(relPath, preserveScroll = false, targetTabId = activeTab?.id || activeTabId) {
     if (!relPath) {
       setContent('');
       return;
@@ -385,6 +388,12 @@ export default function App() {
       const res = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`);
       if (!res.ok) {
         if (relPath !== 'README.md') return openFile('README.md', false, targetTabId);
+        setContent('');
+        setDraftContent('');
+        setDirty(false);
+        setTabs((prev) =>
+          prev.map((t) => (t.id === targetTabId ? { ...t, path: null, title: 'New tab', preview: '' } : t))
+        );
         return;
       }
       const text = await res.text();
@@ -591,15 +600,15 @@ export default function App() {
     }
     setNewNoteOpen(false);
     await fetchTree();
-    let targetTabId = activeTabId;
+    let targetTabId = activeTab?.id || activeTabId;
     if (activePath) {
       const id = `tab-${Date.now()}`;
       setTabs((prev) => [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }]);
       setActiveTabId(id);
       targetTabId = id;
     }
-    setViewMode(isMarkdownPath(relPath) ? 'edit' : 'raw');
     await openFile(relPath, false, targetTabId);
+    setViewMode(isMarkdownPath(relPath) ? 'edit' : 'raw');
   }
 
   useEffect(() => {
