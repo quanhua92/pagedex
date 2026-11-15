@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  IMAGE_MIME,
-   VAULT_ROOT,
+  MIME_TYPES,
+  VAULT_ROOT,
   deleteNote,
   editNote,
   getCachedVault,
+  isProtectedPath,
   renameDir,
   renameNote,
   resolveSafe,
@@ -58,6 +59,63 @@ export function registerFileRoutes(app) {
     return c.json({ query: q, results: searchFts(q, limit) });
   });
 
+function buildRequestOrigin(c) {
+  const url = new URL(c.req.url);
+  const proto = c.req.header('x-forwarded-proto') || url.protocol.replace(':', '');
+  const host = c.req.header('x-forwarded-host') || c.req.header('host') || url.host;
+  return `${proto}://${host}`;
+}
+
+function serveFileResponse(c, full, contentType, { isDownload = false, extraHeaders = {} } = {}) {
+  const stat = fs.statSync(full);
+  const size = stat.size;
+  const headers = {
+    'Content-Type': contentType,
+    'Accept-Ranges': 'bytes',
+    ...extraHeaders
+  };
+  if (isDownload) {
+    const fileName = path.basename(full).replace(/"/g, '');
+    headers['Content-Disposition'] = `attachment; filename="${fileName}"`;
+  }
+
+  const rangeHeader = !isDownload ? c.req.header('range') : null;
+  if (rangeHeader && rangeHeader.startsWith('bytes=')) {
+    const [rawStart, rawEnd] = rangeHeader.slice(6).split('-');
+    let start = rawStart === '' ? 0 : Number(rawStart);
+    let end = rawEnd === '' ? size - 1 : Number(rawEnd);
+    if (rawStart === '' && rawEnd !== '') {
+      start = Math.max(0, size - Number(rawEnd));
+      end = size - 1;
+    }
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end >= size || start > end) {
+      return new Response(null, {
+        status: 416,
+        headers: { 'Content-Range': `bytes */${size}` }
+      });
+    }
+    const chunkLen = end - start + 1;
+    const fd = fs.openSync(full, 'r');
+    const slice = Buffer.alloc(chunkLen);
+    try {
+      fs.readSync(fd, slice, 0, chunkLen, start);
+    } finally {
+      fs.closeSync(fd);
+    }
+    return new Response(slice, {
+      status: 206,
+      headers: {
+        ...headers,
+        'Content-Range': `bytes ${start}-${end}/${size}`,
+        'Content-Length': String(chunkLen)
+      }
+    });
+  }
+
+  const buf = fs.readFileSync(full);
+  return new Response(buf, { status: 200, headers });
+}
+
   app.get('/api/v1/file', (c) => {
     const rel = c.req.query('path') || '';
     const full = resolveSafe(rel);
@@ -66,14 +124,35 @@ export function registerFileRoutes(app) {
     }
     const ext = path.extname(full).toLowerCase();
     const isDownload = c.req.query('download') === '1';
-    const contentType = IMAGE_MIME[ext] || (isDownload ? 'application/octet-stream' : 'text/plain; charset=utf-8');
-    const buf = fs.readFileSync(full);
-    const headers = { 'Content-Type': contentType };
-    if (isDownload) {
-      const fileName = path.basename(full).replace(/"/g, '');
-      headers['Content-Disposition'] = `attachment; filename="${fileName}"`;
+    const contentType = MIME_TYPES[ext] || (isDownload ? 'application/octet-stream' : 'text/plain; charset=utf-8');
+    return serveFileResponse(c, full, contentType, { isDownload });
+  });
+
+  app.get('/raw/*', (c) => {
+    let rel = '';
+    try {
+      rel = decodeURIComponent(c.req.path.replace(/^\/raw\/?/, ''));
+    } catch {
+      return c.text('Bad path', 400);
     }
-    return new Response(buf, { status: 200, headers });
+    if (!rel || isProtectedPath(rel) || path.basename(rel).startsWith('.env')) {
+      return c.text('Not found', 404);
+    }
+    const full = resolveSafe(rel);
+    if (!full || !fs.existsSync(full) || !fs.statSync(full).isFile()) {
+      return c.text('Not found', 404);
+    }
+    const ext = path.extname(full).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const extraHeaders = {
+      'Access-Control-Allow-Origin': '*'
+    };
+    if (ext === '.html' || ext === '.htm') {
+      const origin = buildRequestOrigin(c);
+      extraHeaders['Content-Security-Policy'] =
+        `default-src ${origin} 'unsafe-inline' 'unsafe-eval' data: blob:`;
+    }
+    return serveFileResponse(c, full, contentType, { extraHeaders });
   });
 
   async function handleWriteOrEdit(c) {

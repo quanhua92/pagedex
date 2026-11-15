@@ -3,12 +3,40 @@ export function baseTitle(p) {
   return p.split('/').pop().replace(/\.md$/i, '');
 }
 
+export function isMarkdownPath(p) {
+  return /\.(md|markdown|mdx)$/i.test(p);
+}
+
 export function isImagePath(p) {
   return /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(p);
 }
 
+export function isSvgPath(p) {
+  return /\.svg$/i.test(p);
+}
+
+export function isPdfPath(p) {
+  return /\.pdf$/i.test(p);
+}
+
+export function isAudioPath(p) {
+  return /\.(mp3|wav|m4a|ogg)$/i.test(p);
+}
+
+export function isVideoPath(p) {
+  return /\.(mp4|webm|mov)$/i.test(p);
+}
+
+export function isHtmlPath(p) {
+  return /\.html?$/i.test(p);
+}
+
+export function isCsvPath(p) {
+  return /\.(csv|tsv)$/i.test(p);
+}
+
 export function isDownloadOnlyPath(p) {
-  return /\.(epub|pdf|zip|tar|gz|tgz|7z|rar|docx?|xlsx?|pptx?|odt|ods|odp|mp3|wav|m4a|mp4|mov|webm|mkv|avi|dmg|exe|bin|whl|sqlite|db)$/i.test(p);
+  return /\.(epub|zip|tar|gz|tgz|7z|rar|docx?|xlsx?|pptx?|odt|ods|odp|mkv|avi|dmg|exe|bin|whl|sqlite|db)$/i.test(p);
 }
 
 export function resolveRelative(basePath, href) {

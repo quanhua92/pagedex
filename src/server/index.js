@@ -24,6 +24,16 @@ startVaultWatcher();
 
 const app = new Hono();
 
+app.use('/api/v1/*', async (c, next) => {
+  const method = c.req.method.toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    if (c.req.header('origin') === 'null') {
+      return c.json({ error: 'Forbidden origin' }, 403);
+    }
+  }
+  await next();
+});
+
 registerFileRoutes(app);
 registerGitRoutes(app);
 registerEventRoutes(app);

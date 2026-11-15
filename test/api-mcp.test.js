@@ -291,3 +291,44 @@ test('Git diff and single-line / file discard', async () => {
     fs.rmSync(gitVault, { recursive: true, force: true });
   }
 });
+
+test('Raw route, CSP/CORS, Origin: null guard, and Range requests', async () => {
+  const htmlDir = path.join(tmpVault, 'viz');
+  fs.mkdirSync(htmlDir, { recursive: true });
+  fs.writeFileSync(path.join(htmlDir, 'index.html'), '<script>fetch("data.json")</script>');
+  fs.writeFileSync(path.join(htmlDir, 'data.json'), '{"ok":true}');
+  fs.writeFileSync(path.join(tmpVault, '.env'), 'SECRET=123');
+  fs.writeFileSync(path.join(tmpVault, 'sample.mp3'), '0123456789');
+
+  const htmlRes = await fetch(`${BASE}/raw/viz/index.html`);
+  assert.equal(htmlRes.status, 200);
+  assert.match(htmlRes.headers.get('content-type') || '', /text\/html/);
+  assert.equal(htmlRes.headers.get('access-control-allow-origin'), '*');
+  assert.match(htmlRes.headers.get('content-security-policy') || '', /default-src http:\/\/127\.0\.0\.1:4591/);
+
+  const dataRes = await fetch(`${BASE}/raw/viz/data.json`);
+  assert.equal(dataRes.status, 200);
+  assert.match(dataRes.headers.get('content-type') || '', /application\/json/);
+  assert.equal(dataRes.headers.get('access-control-allow-origin'), '*');
+  assert.equal(await dataRes.text(), '{"ok":true}');
+
+  const envRes = await fetch(`${BASE}/raw/.env`);
+  assert.equal(envRes.status, 404);
+  const gitRes = await fetch(`${BASE}/raw/.git/config`);
+  assert.equal(gitRes.status, 404);
+
+  const nullOriginPost = await fetch(`${BASE}/api/v1/file`, {
+    method: 'POST',
+    headers: { Origin: 'null', 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ path: 'inbox/pwn.md', content: 'bad' })
+  });
+  assert.equal(nullOriginPost.status, 403);
+
+  const rangeRes = await fetch(`${BASE}/api/v1/file?path=sample.mp3`, {
+    headers: { Range: 'bytes=2-5' }
+  });
+  assert.equal(rangeRes.status, 206);
+  assert.match(rangeRes.headers.get('content-type') || '', /audio\/mpeg/);
+  assert.equal(rangeRes.headers.get('content-range'), 'bytes 2-5/10');
+  assert.equal(await rangeRes.text(), '2345');
+});

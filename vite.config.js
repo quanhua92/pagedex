@@ -10,6 +10,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api/v1': 'http://127.0.0.1:4321',
+      '/raw': 'http://127.0.0.1:4321',
       '/mcp': 'http://127.0.0.1:4321'
     }
   },

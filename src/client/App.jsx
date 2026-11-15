@@ -2,8 +2,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { loadSettings, resolveStartupPath } from './lib/settings.js';
 import {
   baseTitle,
-  isImagePath,
+  isAudioPath,
+  isCsvPath,
   isDownloadOnlyPath,
+  isHtmlPath,
+  isImagePath,
+  isMarkdownPath,
+  isPdfPath,
+  isSvgPath,
+  isVideoPath,
   resolveRelative,
   buildNewNotePath
 } from './lib/paths.js';
@@ -359,7 +366,13 @@ export default function App() {
     const prevScroll = scrollRef.current?.scrollTop ?? 0;
 
     let nextPreview = '';
-    if (isImagePath(relPath) || isDownloadOnlyPath(relPath)) {
+    const isBinaryMedia =
+      (isImagePath(relPath) && !isSvgPath(relPath)) ||
+      isPdfPath(relPath) ||
+      isAudioPath(relPath) ||
+      isVideoPath(relPath) ||
+      isDownloadOnlyPath(relPath);
+    if (isBinaryMedia) {
       const checkRes = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`, {
         method: 'HEAD'
       });
@@ -370,7 +383,11 @@ export default function App() {
       setContent('');
       setDraftContent('');
       setDirty(false);
-      nextPreview = isImagePath(relPath) ? '[Image preview]' : '[Binary file — download]';
+      if (isImagePath(relPath)) nextPreview = '[Image preview]';
+      else if (isPdfPath(relPath)) nextPreview = '[PDF document]';
+      else if (isAudioPath(relPath)) nextPreview = '[Audio]';
+      else if (isVideoPath(relPath)) nextPreview = '[Video]';
+      else nextPreview = '[Binary file — download]';
     } else {
       const res = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`);
       if (!res.ok) {
@@ -634,7 +651,7 @@ export default function App() {
   }
 
   const { renderedHtml, headings } = useMemo(() => {
-    if (!activePath.endsWith('.md') || viewMode !== 'preview' || isImagePath(activePath) || isDownloadOnlyPath(activePath)) {
+    if (!isMarkdownPath(activePath) || viewMode !== 'preview' || isImagePath(activePath) || isDownloadOnlyPath(activePath)) {
       return { renderedHtml: '', headings: [] };
     }
     return renderMarkdownWithLinks(content, activePath, flatFiles);
@@ -642,7 +659,7 @@ export default function App() {
 
   const highlightedRawHtml = useMemo(() => {
     if (!content) return '';
-    if (viewMode !== 'raw' && activePath.endsWith('.md')) return '';
+    if (viewMode !== 'raw' && isMarkdownPath(activePath)) return '';
     return highlightRawFile(content, activePath);
   }, [content, activePath, viewMode]);
 
@@ -720,6 +737,13 @@ export default function App() {
 
   const currentBacklinks = backlinks[activePath] || [];
   const isImg = isImagePath(activePath);
+  const isSvg = isSvgPath(activePath);
+  const isMarkdown = isMarkdownPath(activePath);
+  const isPdf = isPdfPath(activePath);
+  const isAudio = isAudioPath(activePath);
+  const isVideo = isVideoPath(activePath);
+  const isHtml = isHtmlPath(activePath);
+  const isCsv = isCsvPath(activePath);
   const isBinaryDownload = isDownloadOnlyPath(activePath);
 
   const outlinePosition = settings.outlinePosition || 'right';
@@ -838,6 +862,13 @@ export default function App() {
                 setDrawerOpen={setDrawerOpen}
                 setSettingsOpen={setSettingsOpen}
                 isImg={isImg}
+                isSvg={isSvg}
+                isMarkdown={isMarkdown}
+                isPdf={isPdf}
+                isAudio={isAudio}
+                isVideo={isVideo}
+                isHtml={isHtml}
+                isCsv={isCsv}
                 reloadTick={reloadTick}
                 isBinaryDownload={isBinaryDownload}
                 viewMode={viewMode}

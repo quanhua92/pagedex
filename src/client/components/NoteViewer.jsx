@@ -1,4 +1,5 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
+import { parseDelimitedText } from '../lib/csv.js';
 
 const TiptapEditor = lazy(() => import('../TiptapEditor.jsx'));
 
@@ -11,6 +12,13 @@ export default function NoteViewer({
   setDrawerOpen,
   setSettingsOpen,
   isImg,
+  isSvg,
+  isMarkdown,
+  isPdf,
+  isAudio,
+  isVideo,
+  isHtml,
+  isCsv,
   reloadTick,
   isBinaryDownload,
   viewMode,
@@ -27,6 +35,21 @@ export default function NoteViewer({
   handleDocClick,
   renderedHtml
 }) {
+  const csvRows = useMemo(() => {
+    if (!isCsv || viewMode !== 'preview' || !content) return [];
+    const delimiter = activePath.toLowerCase().endsWith('.tsv') ? '\t' : ',';
+    return parseDelimitedText(content, delimiter);
+  }, [isCsv, viewMode, content, activePath]);
+
+  const fileUrl = activePath
+    ? `/api/v1/file?path=${encodeURIComponent(activePath)}&t=${reloadTick}`
+    : '';
+  const downloadUrl = activePath
+    ? `/api/v1/file?path=${encodeURIComponent(activePath)}&download=1`
+    : '';
+  const rawHtmlUrl = activePath
+    ? `/raw/${activePath.split('/').map(encodeURIComponent).join('/')}?t=${reloadTick}`
+    : '';
   return (
     <div ref={scrollRef} className="content-scroll">
       {!activePath ? (
@@ -52,12 +75,43 @@ export default function NoteViewer({
             <span>Settings</span>
           </button>
         </div>
-      ) : isImg ? (
+      ) : isImg && !(isSvg && viewMode === 'raw') ? (
         <div className="doc img-wrap">
-          <img
-            src={`/api/v1/file?path=${encodeURIComponent(activePath)}&t=${reloadTick}`}
-            alt={activePath}
-          />
+          <img src={fileUrl} alt={activePath} />
+        </div>
+      ) : isPdf ? (
+        <div className="media-viewer pdf-viewer">
+          <div className="media-bar">
+            <span>{activePath.split('/').pop()}</span>
+            <a className="btn" href={downloadUrl} download={activePath.split('/').pop()}>
+              Download PDF
+            </a>
+          </div>
+          <iframe className="pdf-frame" src={fileUrl} title={activePath} />
+        </div>
+      ) : isAudio ? (
+        <div className="doc binary-card audio-viewer">
+          <div className="binary-card-name">{activePath.split('/').pop()}</div>
+          <div className="binary-card-path">{activePath}</div>
+          <audio controls src={fileUrl} style={{ width: '100%', maxWidth: 460 }} />
+          <a
+            className="btn"
+            href={downloadUrl}
+            download={activePath.split('/').pop()}
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12 }}
+          >
+            Download audio
+          </a>
+        </div>
+      ) : isVideo ? (
+        <div className="media-viewer video-viewer">
+          <div className="media-bar">
+            <span>{activePath.split('/').pop()}</span>
+            <a className="btn" href={downloadUrl} download={activePath.split('/').pop()}>
+              Download video
+            </a>
+          </div>
+          <video controls src={fileUrl} className="video-player" />
         </div>
       ) : isBinaryDownload ? (
         <div className="doc binary-card">
@@ -127,7 +181,7 @@ export default function NoteViewer({
             ))
           )}
         </div>
-      ) : viewMode === 'edit' && activePath.endsWith('.md') ? (
+      ) : viewMode === 'edit' && isMarkdown ? (
         <Suspense fallback={<div className="empty-note" style={{ padding: '24px' }}>Loading editor...</div>}>
           <TiptapEditor
             fileKey={activePath}
@@ -144,7 +198,49 @@ export default function NoteViewer({
             onSave={saveActiveNote}
           />
         </Suspense>
-      ) : viewMode === 'raw' || !activePath.endsWith('.md') ? (
+      ) : isHtml && viewMode === 'preview' ? (
+        <div className="media-viewer html-viewer">
+          <iframe
+            className="html-frame"
+            src={rawHtmlUrl}
+            sandbox="allow-scripts"
+            title={activePath}
+          />
+        </div>
+      ) : isCsv && viewMode === 'preview' ? (
+        <div
+          className="doc csv-wrap"
+          style={{
+            fontSize: `${Math.max(12, settings.fontSize - 1)}px`,
+            maxWidth: `${settings.maxWidth + 160}px`
+          }}
+        >
+          {csvRows.length === 0 ? (
+            <div className="empty-note">Empty table.</div>
+          ) : (
+            <div className="csv-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    {csvRows[0].map((cell, idx) => (
+                      <th key={idx}>{cell}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvRows.slice(1).map((row, rIdx) => (
+                    <tr key={rIdx}>
+                      {csvRows[0].map((_, cIdx) => (
+                        <td key={cIdx}>{row[cIdx] ?? ''}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      ) : viewMode === 'raw' || !isMarkdown ? (
         <pre
           className="raw-view"
           style={{
