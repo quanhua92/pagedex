@@ -1,0 +1,60 @@
+# pagedex
+
+Local-first Markdown knowledge viewer, WYSIWYG/raw editor, Git bridge, and multi-era MCP server for any folder.
+
+## Requirements
+
+- **Node.js `>= 22.5.0`** (uses built-in `node:sqlite` for FTS5 trigram search)
+
+## Quick Start
+
+```bash
+npx pagedex [dir]
+```
+
+By default, `pagedex` serves the current directory on `http://127.0.0.1:4321`:
+
+- `/` — React + Tiptap web UI (desktop & mobile with edge-swipe drawers + long-press tree actions)
+- `/api/v1/*` — REST API for reading, editing, searching, and Git diff/commit
+- `/mcp` — MCP endpoint supporting `2026-07-28` (`server/discover`), `2025-11-25` Streamable HTTP, and `2024-11-05` HTTP+SSE
+
+### CLI Options
+
+```text
+Usage:
+  pagedex [dir] [options]
+
+Arguments:
+  dir                 Directory to serve (defaults to current working directory)
+
+Options:
+  -p, --port <port>   Port to listen on (default: 4321, or PORT env)
+  -H, --host <host>   Host to bind (default: 127.0.0.1, or HOST env; use 0.0.0.0 for LAN)
+  -o, --open          Open browser after starting
+  -v, --version       Show version
+  -h, --help          Show this help
+```
+
+### Examples
+
+```bash
+# Serve current folder on default port 4321
+npx pagedex
+
+# Serve a specific notes folder on LAN/Tailscale
+npx pagedex ~/vault --host 0.0.0.0 --port 4321
+```
+
+## Search Index Cache
+
+The SQLite FTS5 trigram index is stored outside your target folder at `~/.cache/pagedex/<hash>.db` (override with `PAGEDEX_INDEX_DIR` or `PAGEDEX_INDEX_PATH`) so running `pagedex` never dirties `git status`.
+
+## Development
+
+```bash
+pnpm install
+pnpm dev      # Hono API/MCP on :4321 + Vite HMR on :5173
+pnpm build    # Build production UI into dist/
+pnpm test     # Run unit tests
+pnpm smoke    # Run REST + multi-era MCP smoke checks
+```
