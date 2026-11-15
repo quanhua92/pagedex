@@ -2,6 +2,16 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.6] - 2026-11-15
+
+### Features
+
+- **mcp:** add --mcp modes, --mcp-token-file, --mcp-git, --read-only, 7 new tools, and docs (d5dc725)
+
+### Bug Fixes
+
+- **smoke:** update MCP tool count assertion and add UI screenshots to docs (0accaea)
+
 ## [0.1.5] - 2026-11-15
 
 ### Features
