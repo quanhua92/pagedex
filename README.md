@@ -1,10 +1,16 @@
-# pagedex
-
-> A fast, browsable catalog (**-dex**, like Rolodex/Pokédex) for any local folder of notes and files—served as a web **page** with full-text search, backlinks, Git sync, and MCP.
+<div align="center">
+  <img src="./src/client/public/icon-192.png" alt="pagedex logo" width="88" />
+  <h1>pagedex</h1>
+  <p>A fast, browsable catalog (<strong>-dex</strong>, like Rolodex/Pokédex) for any local folder of notes and files—served as a web <strong>page</strong> with full-text search, backlinks, Git sync, and MCP.</p>
+  <p>
+    <a href="#quick-start">Quick Start</a> ·
+    <a href="#screenshots">Screenshots</a> ·
+    <a href="#mcp-for-ai-agents">MCP Setup</a> ·
+    <a href="./docs/README.md">Full Docs</a>
+  </p>
+</div>
 
 **pagedex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index lives outside at `~/.cache/pagedex/`).
-
-[Quick Start](#quick-start) · [Screenshots](#screenshots) · [MCP Setup](#mcp-for-ai-agents) · [Full Docs](./docs/README.md)
 
 ![pagedex Desktop Preview](./docs/images/desktop-preview.png)
 

@@ -1,15 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- App squircle -->
-  <rect x="2" y="2" width="60" height="60" rx="15" fill="#181a20" stroke="#8b5cf6" stroke-opacity="0.45" stroke-width="2" />
-
-  <!-- Subtle inner vault ring -->
-  <circle cx="32" cy="32" r="21" stroke="#8b5cf6" stroke-opacity="0.18" stroke-width="1.5" />
-
-  <!-- Geometric Vault 'V' facets -->
-  <path d="M16 19H25.5L32 36.5L26.5 47L16 19Z" fill="#a78bfa" />
-  <path d="M48 19H38.5L32 36.5V47H37.5L48 19Z" fill="#7c3aed" />
-  <path d="M26.5 47L32 36.5L37.5 47H26.5Z" fill="#ddd6fe" />
-
-  <!-- Keyhole / lock pin -->
-  <circle cx="32" cy="23.5" r="3" fill="#eceef2" />
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="#181a20" stroke="#8b5cf6" stroke-opacity="0.5" stroke-width="2.5" />
+  <path d="M19 16H28V48H22L19 45V16Z" fill="#a78bfa" />
+  <path d="M19 16H28L25 22.5H19V16Z" fill="#ddd6fe" />
+  <path d="M28 16H38C44.5 16 48 19.8 48 25.5C48 31.2 44.5 35 38 35H28V28.5H37.5C40.5 28.5 41.8 27.3 41.8 25.5C41.8 23.7 40.5 22.5 37.5 22.5H28V16Z" fill="#7c3aed" />
+  <path d="M28 28.5L34.5 35H28V28.5Z" fill="#ede9fe" />
 </svg>
