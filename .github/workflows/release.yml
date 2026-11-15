@@ -64,9 +64,9 @@ jobs:
           node scripts/update-changelog.js
           git add package.json CHANGELOG.md
           git commit -m "chore(release): ${TAG}"
-          git tag "${TAG}"
+          git tag -a "${TAG}" -m "Release ${TAG}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          git push origin main --follow-tags
+          git push origin main "${TAG}"
 
       - name: Stage publish to npm (OIDC)
         run: npm stage publish
