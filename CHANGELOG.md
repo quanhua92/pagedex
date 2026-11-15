@@ -2,6 +2,34 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.5] - 2026-11-15
+
+### Features
+
+- **sidebar:** add collapsible Pinned section, scrollable row menu, and lucide-react icons (f91dd56)
+- **ui:** split Rename and Move dialogs with reusable FolderPicker (47a6948)
+- **ui:** open newly created note in a new tab when another file is open (af49968)
+
+### Bug Fixes
+
+- **ui:** compact expandable FolderPicker, static TiptapEditor import, and preview on new note (7900771)
+- **ui:** default to new tab, fix SSE reload race, and add Playwright suite (d8b2049)
+- **tabs:** avoid stale activeTabId in StrictMode and missing README blank state (b120cdc)
+- **search:** only exclude hiddenFolders from Quick Switcher, not autoCollapsed (337757b)
+
+### Tests
+
+- **playwright:** add edit-save, tabs-wikilinks, and delete-switcher E2E specs (fa82a8c)
+
+### CI
+
+- run Playwright tests in CI workflow (4de3a22)
+
+### Other Changes
+
+- **sidebar:** visually separate Pinned group and All files divider (29b8b11)
+- **tabs:** share openInNewTab between FileContextMenu and confirmNewNote (11357c7)
+
 ## [0.1.4] - 2026-11-15
 
 ### Documentation
