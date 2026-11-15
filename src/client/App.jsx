@@ -591,8 +591,15 @@ export default function App() {
     }
     setNewNoteOpen(false);
     await fetchTree();
-    setViewMode('edit');
-    openFile(relPath);
+    let targetTabId = activeTabId;
+    if (activePath) {
+      const id = `tab-${Date.now()}`;
+      setTabs((prev) => [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }]);
+      setActiveTabId(id);
+      targetTabId = id;
+    }
+    setViewMode(isMarkdownPath(relPath) ? 'edit' : 'raw');
+    await openFile(relPath, false, targetTabId);
   }
 
   useEffect(() => {
