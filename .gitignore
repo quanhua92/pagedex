@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.vault-index.db*
+.pagedex-index.db*
+.DS_Store
+*.log
