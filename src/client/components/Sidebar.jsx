@@ -211,8 +211,8 @@ export default function Sidebar({
     <aside className={`sidebar${drawerOpen ? ' open' : ''}`}>
       <div className="brand">
         <div className="brand-title">
-          <img src="/vault-logo.svg" alt="" width="20" height="20" className="brand-logo" />
-          <span>Vault</span>
+          <img src="/pagedex-logo.svg" alt="" width="20" height="20" className="brand-logo" />
+          <span>PageDex</span>
           <span className={`pill${live ? '' : ' off'}`}>{live ? 'Live' : 'Reconnecting'}</span>
         </div>
         <button
