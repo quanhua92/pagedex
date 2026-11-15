@@ -199,6 +199,7 @@ export default function SettingsModal({
                 <div className="endpoint-box">DELETE /api/v1/file?path=...</div>
                 <div className="endpoint-box">GET /api/v1/changes · GET /api/v1/git/diff · POST /api/v1/git/discard · POST /api/v1/git/commit</div>
                 <div className="endpoint-box">GET /api/v1/events (SSE) · GET /raw/&lt;path&gt;</div>
+                <div className="endpoint-box">POST /api/v1/auth/login · POST /api/v1/auth/logout · GET /api/v1/auth/status</div>
               </div>
               <div className="field">
                 <label>MCP Endpoint (/mcp — 2026-07-28, 2025-11-25, 2024-11-05)</label>
@@ -206,7 +207,7 @@ export default function SettingsModal({
                 <div className="endpoint-box">Write (--mcp write|full): write_note, move_path</div>
                 <div className="endpoint-box">Full (--mcp full, default): delete_note</div>
                 <div className="endpoint-box">Git (--mcp-git): git_commit, git_discard</div>
-                <div className="endpoint-box">Flags: --mcp &lt;read|write|full|off&gt; · --mcp-token-file &lt;path&gt; · --read-only</div>
+                <div className="endpoint-box">Flags: --auth-token-file &lt;path&gt; · --mcp &lt;read|write|full|off&gt; · --mcp-token-file &lt;path&gt; · --read-only</div>
               </div>
             </>
           )}

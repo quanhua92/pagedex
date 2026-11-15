@@ -20,6 +20,15 @@ When previewing `.html` / `.htm` files:
    - All file access passes through `resolveSafe()` (prevents `..` traversal outside `VAULT_ROOT`).
    - `/raw/*` blocks protected segments (`.git`, `node_modules`, `dist`) and `.env*` files.
 
+## Web & REST Authentication (`--auth-token-file`)
+
+Pass `--auth-token-file <path>` (or `PAGEDEX_AUTH_TOKEN_FILE`) to lock the Web UI and all `/api/v1/*` endpoints behind token authentication:
+
+- **Comma/newline-separated tokens:** Store one or more tokens in the file (e.g. `token1,token2`) for zero-downtime key rotation.
+- **Session cookie (`POST /api/v1/auth/login`):** Validates `{ token }` (or `Authorization: Bearer <token>`) and sets an `HttpOnly; SameSite=Lax` HMAC-signed cookie (`pagedex_auth`). Removing a key from the file immediately revokes sessions signed by that key.
+- **REST & CLI access:** Requests to `/api/v1/*` accept either the `pagedex_auth` cookie or `Authorization: Bearer <token>`, returning `401 Unauthorized` otherwise. (`/api/v1/auth/status`, `/api/v1/auth/login`, and `/api/v1/auth/logout` remain public; an empty token file fails closed.)
+- **Separate from MCP:** `/mcp` continues to be governed independently by `--mcp-token-file`.
+
 ## Notes on LAN / Tailscale Hosting
 
-`pagedex` has no built-in user authentication. Bind to `127.0.0.1` (default) for local-only use, or use `--host 0.0.0.0` only on trusted private networks / Tailscale.
+Without `--auth-token-file`, `pagedex` has no user authentication. Bind to `127.0.0.1` (default) for local-only use, or pass `--auth-token-file` / `--read-only` when exposing via `--host 0.0.0.0` or Tailscale.

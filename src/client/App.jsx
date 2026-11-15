@@ -32,6 +32,7 @@ import {
 } from './components/modals/FileDialogs.jsx';
 import GitCommitModal from './components/modals/GitCommitModal.jsx';
 import SettingsModal from './components/modals/SettingsModal.jsx';
+import LoginScreen from './components/modals/LoginScreen.jsx';
 
 export default function App() {
   const [tree, setTree] = useState([]);
@@ -88,6 +89,7 @@ export default function App() {
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [authState, setAuthState] = useState({ checked: false, required: false, authenticated: false });
   const [switcherTab, setSwitcherTab] = useState('recent'); // 'recent' | 'alpha'
   const [switcherQuery, setSwitcherQuery] = useState('');
   const [switcherIdx, setSwitcherIdx] = useState(0);
@@ -821,15 +823,44 @@ export default function App() {
   }
 
   useEffect(() => {
+    fetch('/api/v1/auth/status')
+      .then((r) => (r.ok ? r.json() : { required: false, authenticated: true }))
+      .then((d) => {
+        setAuthState({
+          checked: true,
+          required: Boolean(d?.required),
+          authenticated: Boolean(d?.authenticated)
+        });
+      })
+      .catch(() => {
+        setAuthState({ checked: true, required: false, authenticated: true });
+      });
+  }, []);
+
+  const canAccessVault = authState.checked && (!authState.required || authState.authenticated);
+
+  useEffect(() => {
+    if (!canAccessVault) return;
     fetch('/api/v1/health')
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) {
+          setAuthState({ checked: true, required: true, authenticated: false });
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then((d) => {
         if (d && typeof d.readOnly === 'boolean') setReadOnly(d.readOnly);
       })
       .catch(() => {});
     fetchTree();
     openFile(activePath);
-  }, []);
+  }, [canAccessVault]);
+
+  async function handleLogout() {
+    await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    setAuthState({ checked: true, required: true, authenticated: false });
+  }
 
   useEffect(() => {
     const onHash = () => {
@@ -843,6 +874,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!canAccessVault) return;
     const es = new EventSource('/api/v1/events');
     es.onopen = () => setLive(true);
     es.onmessage = async (ev) => {
@@ -858,7 +890,7 @@ export default function App() {
     };
     es.onerror = () => setLive(false);
     return () => es.close();
-  }, []);
+  }, [canAccessVault]);
 
   async function saveActiveNote(markdown) {
     if (!activePath) return;
@@ -1021,6 +1053,18 @@ export default function App() {
     )
   });
 
+  if (!authState.checked) {
+    return <div className="login-screen" />;
+  }
+
+  if (authState.required && !authState.authenticated) {
+    return (
+      <LoginScreen
+        onAuthenticated={() => setAuthState({ checked: true, required: true, authenticated: true })}
+      />
+    );
+  }
+
   return (
     <>
       <div
@@ -1063,6 +1107,8 @@ export default function App() {
           openNewNoteDialog={openNewNoteDialog}
           onReorderPinned={reorderPinned}
           onStartResizeSidebar={startResizeSidebar}
+          authRequired={authState.required}
+          onLogout={handleLogout}
         />
 
         <main className="main">

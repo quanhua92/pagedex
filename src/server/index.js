@@ -9,6 +9,7 @@ import { handleMcpRequest } from './mcp.js';
 import { registerFileRoutes } from './routes/files.js';
 import { registerGitRoutes } from './routes/git.js';
 import { registerEventRoutes, startVaultWatcher } from './routes/events.js';
+import { authMiddleware, registerAuthRoutes } from './auth.js';
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 4321);
@@ -25,6 +26,8 @@ startVaultWatcher();
 
 const app = new Hono();
 
+app.use('/api/v1/*', authMiddleware);
+
 app.use('/api/v1/*', async (c, next) => {
   const method = c.req.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
@@ -38,6 +41,7 @@ app.use('/api/v1/*', async (c, next) => {
   await next();
 });
 
+registerAuthRoutes(app);
 registerFileRoutes(app);
 registerGitRoutes(app);
 registerEventRoutes(app);

@@ -22,6 +22,7 @@ Options:
   --mcp <mode>               MCP mode: read, write, full (default), or off (or PAGEDEX_MCP_MODE)
   --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
   --mcp-token-file <path>    File containing Bearer token for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
+  --auth-token-file <path>   File containing comma-separated tokens for Web & REST auth (or PAGEDEX_AUTH_TOKEN_FILE)
   --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
   -v, --version              Show version
   -h, --help                 Show this help
@@ -47,6 +48,7 @@ let shouldOpen = false;
 let mcpMode = process.env.PAGEDEX_MCP_MODE || 'full';
 let mcpGit = process.env.PAGEDEX_MCP_GIT === '1' || process.env.PAGEDEX_MCP_GIT === 'true';
 let mcpTokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE || '';
+let authTokenFile = process.env.PAGEDEX_AUTH_TOKEN_FILE || '';
 let readOnly = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
 
 const VALID_MCP_MODES = new Set(['read', 'write', 'full', 'off']);
@@ -105,6 +107,22 @@ for (let i = 0; i < args.length; i++) {
     }
     continue;
   }
+  if (arg === '--auth-token-file') {
+    authTokenFile = args[++i];
+    if (!authTokenFile) {
+      console.error('Missing value for --auth-token-file');
+      process.exit(1);
+    }
+    continue;
+  }
+  if (arg.startsWith('--auth-token-file=')) {
+    authTokenFile = arg.slice('--auth-token-file='.length);
+    if (!authTokenFile) {
+      console.error('Missing value for --auth-token-file');
+      process.exit(1);
+    }
+    continue;
+  }
   if (arg === '-p' || arg === '--port') {
     port = args[++i];
     if (!port) {
@@ -159,6 +177,15 @@ if (mcpTokenFile) {
   mcpTokenFile = resolvedTokenFile;
 }
 
+if (authTokenFile) {
+  const resolvedAuthFile = path.resolve(authTokenFile);
+  if (!fs.existsSync(resolvedAuthFile) || !fs.statSync(resolvedAuthFile).isFile()) {
+    console.error(`Auth token file not found: ${resolvedAuthFile}`);
+    process.exit(1);
+  }
+  authTokenFile = resolvedAuthFile;
+}
+
 process.env.PAGEDEX_ROOT = resolvedRoot;
 process.env.VAULT_ROOT = resolvedRoot;
 process.env.PORT = String(port);
@@ -166,6 +193,7 @@ process.env.HOST = String(host);
 process.env.PAGEDEX_MCP_MODE = mcpMode.toLowerCase();
 if (mcpGit) process.env.PAGEDEX_MCP_GIT = '1';
 if (mcpTokenFile) process.env.PAGEDEX_MCP_TOKEN_FILE = mcpTokenFile;
+if (authTokenFile) process.env.PAGEDEX_AUTH_TOKEN_FILE = authTokenFile;
 if (readOnly) process.env.PAGEDEX_READ_ONLY = '1';
 
 await import('../src/server/index.js');

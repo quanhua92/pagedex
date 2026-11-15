@@ -23,7 +23,7 @@ async function waitForHealth(baseUrl) {
   for (let i = 0; i < 40; i += 1) {
     try {
       const res = await fetch(`${baseUrl}/api/v1/health`);
-      if (res.ok) return;
+      if (res.ok || res.status === 401) return;
     } catch {
       // retry until server binds
     }

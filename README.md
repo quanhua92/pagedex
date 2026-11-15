@@ -47,8 +47,8 @@ One server exposes everything on the same port:
 # Read-only web + MCP mode (safe for browsing/sharing)
 npx pagedex ~/vault --read-only
 
-# LAN access with write-scoped MCP (no delete_note) + Bearer token from a 0600 file
-npx pagedex ~/vault --host 0.0.0.0 --mcp write --mcp-token-file ~/.config/pagedex/mcp-token
+# LAN access with Web/REST auth lock + write-scoped MCP (comma-separated tokens supported for rotation)
+npx pagedex ~/vault --host 0.0.0.0 --auth-token-file ~/.config/pagedex/auth-tokens --mcp write --mcp-token-file ~/.config/pagedex/mcp-token
 
 # Allow MCP create/edit/move + local git_commit / git_discard (never auto-pushes)
 npx pagedex ~/vault --mcp write --mcp-git
@@ -70,6 +70,7 @@ Options:
   --mcp <mode>               MCP mode: read, write, full (default), or off (or PAGEDEX_MCP_MODE)
   --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
   --mcp-token-file <path>    File containing Bearer token for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
+  --auth-token-file <path>   File containing comma-separated tokens for Web & REST auth (or PAGEDEX_AUTH_TOKEN_FILE)
   --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
   -v, --version              Show version
   -h, --help                 Show this help
@@ -98,9 +99,13 @@ See **[docs/MCP.md](./docs/MCP.md)** for token auth headers and full tool schema
 
 ## Screenshots
 
-| WYSIWYG Editor (Tiptap) | Quick Switcher (`Cmd/Ctrl+K`) | Mobile View & Bottom Bar |
-|---|---|---|
-| ![Desktop Editor](./docs/images/desktop-edit.png) | ![Quick Switcher](./docs/images/desktop-switcher.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
+| WYSIWYG Editor (Tiptap) | Quick Switcher (`Cmd/Ctrl+K`) |
+|---|---|
+| ![Desktop Editor](./docs/images/desktop-edit.png) | ![Quick Switcher](./docs/images/desktop-switcher.png) |
+
+| Token Lock Screen (`--auth-token-file`) | Mobile View & Bottom Bar |
+|---|---|
+| ![Auth Lock Screen](./docs/images/desktop-auth.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
 
 ## Search Index Cache
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Moon, Pin, Plus, Sun } from 'lucide-react';
+import { LogOut, Moon, Pin, Plus, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -191,7 +191,9 @@ export default function Sidebar({
   readOnly = false,
   openNewNoteDialog,
   onReorderPinned,
-  onStartResizeSidebar
+  onStartResizeSidebar,
+  authRequired = false,
+  onLogout
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true);
   const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
@@ -215,16 +217,28 @@ export default function Sidebar({
           <span>PageDex</span>
           <span className={`pill${live ? '' : ' off'}`}>{live ? 'Live' : 'Reconnecting'}</span>
         </div>
-        <button
-          className="icon-btn"
-          aria-label={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          title={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-          onClick={() =>
-            setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
-          }
-        >
-          {settings.theme === 'dark' ? <Sun size={15} strokeWidth={1.9} /> : <Moon size={15} strokeWidth={1.9} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {authRequired && onLogout && (
+            <button
+              className="icon-btn"
+              aria-label="Sign out"
+              title="Sign out"
+              onClick={onLogout}
+            >
+              <LogOut size={15} strokeWidth={1.9} />
+            </button>
+          )}
+          <button
+            className="icon-btn"
+            aria-label={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            onClick={() =>
+              setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
+            }
+          >
+            {settings.theme === 'dark' ? <Sun size={15} strokeWidth={1.9} /> : <Moon size={15} strokeWidth={1.9} />}
+          </button>
+        </div>
       </div>
       <div className="sidebar-tabs">
         <button
