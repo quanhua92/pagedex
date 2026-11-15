@@ -2,7 +2,17 @@
 
 > A fast, browsable catalog (**-dex**, like Rolodex/Pokédex) for any local folder of notes and files—served as a web **page** with full-text search, backlinks, Git sync, and MCP.
 
-Local-first Markdown knowledge viewer, WYSIWYG/raw editor, Git bridge, and multi-era MCP server for any folder.
+**pagedex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index is stored outside at `~/.cache/pagedex/`).
+
+### Who is it for?
+
+| Who | Why `pagedex` |
+|---|---|
+| **Obsidian users** | Browse, search, and edit your existing Obsidian vault from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]` and backlinks—no cloud fees or extra vault clutter |
+| **Obsidian Sync / Git vaults** | Works cleanly alongside Obsidian Sync (with SSE live reload on external edits) and lets you review diffs, commit, and push directly from the web UI |
+| **Developers & tech writers** | Explore repo `docs/`, preview sandboxed HTML, CSV, PDF, and media files, and review/commit changes with the built-in Git diff UI |
+| **AI & agent builders** | Connect Claude Code, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
+| **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
 
 ## Requirements
 
