@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="./src/client/public/icon-192.png" alt="pagedex logo" width="88" />
-  <h1>pagedex</h1>
+  <img src="./src/client/public/icon-192.png" alt="PageDex logo" width="88" />
+  <h1>PageDex</h1>
   <p>A fast, browsable catalog (<strong>-dex</strong>, like Rolodex/Pokédex) for any local folder of notes and files—served as a web <strong>page</strong> with full-text search, backlinks, Git sync, and MCP.</p>
   <p>
     <a href="#quick-start">Quick Start</a> ·
@@ -10,13 +10,13 @@
   </p>
 </div>
 
-**pagedex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index lives outside at `~/.cache/pagedex/`).
+**PageDex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index lives outside at `~/.cache/pagedex/`).
 
-![pagedex Desktop Preview](./docs/images/desktop-preview.png)
+![PageDex Desktop Preview](./docs/images/desktop-preview.png)
 
 ## Who is it for?
 
-| Who | Why `pagedex` |
+| Who | Why PageDex |
 |---|---|
 | **Obsidian users** | Browse, search, and edit your existing Obsidian vault from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]` and backlinks—no cloud fees or extra vault clutter |
 | **Obsidian Sync / Git vaults** | Works cleanly alongside Obsidian Sync (with SSE live reload on external edits) and lets you review diffs, commit, and push directly from the web UI |
