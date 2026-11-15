@@ -29,6 +29,7 @@
     "start": "node --no-warnings src/server/index.js",
     "prepublishOnly": "vite build",
     "test": "node --no-warnings --test test/*.test.js",
+    "test:playwright": "node --no-warnings --test test/playwright/*.spec.js",
     "smoke": "node --no-warnings test/smoke.js all",
     "smoke:api": "node --no-warnings test/smoke.js api",
     "smoke:mcp": "node --no-warnings test/smoke.js mcp"
@@ -50,6 +51,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.4.0",
+    "playwright-core": "^1.64.1",
     "vite": "^6.3.0"
   }
 }

@@ -4,7 +4,7 @@ export const DEFAULT_SETTINGS = {
   lineHeight: 1.65,
   maxWidth: 780,
   outlinePosition: 'right', // 'right' | 'bottom' | 'hidden'
-  startupMode: 'readme', // 'readme' | 'newtab' | 'last' | 'custom'
+  startupMode: 'newtab', // 'newtab' | 'readme' | 'last' | 'custom'
   startupPath: 'README.md',
   autoCollapsed: ['apps'],
   hiddenFolders: []
@@ -34,8 +34,8 @@ export function loadSettings() {
 export function resolveStartupPath(s) {
   const hash = decodeURIComponent(location.hash.slice(1) || '');
   if (hash) return hash;
-  if (s.startupMode === 'newtab') return null;
-  if (s.startupMode === 'last') return localStorage.getItem('vault-last-path') || 'README.md';
-  if (s.startupMode === 'custom') return s.startupPath.trim() || 'README.md';
-  return 'README.md';
+  if (s.startupMode === 'readme') return 'README.md';
+  if (s.startupMode === 'last') return localStorage.getItem('vault-last-path') || null;
+  if (s.startupMode === 'custom') return s.startupPath.trim() || null;
+  return null;
 }

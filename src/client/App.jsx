@@ -98,6 +98,10 @@ export default function App() {
   const searchRef = useRef(null);
   const switcherInputRef = useRef(null);
   const scrollRef = useRef(null);
+  const activePathRef = useRef(activePath);
+  const activeTabIdRef = useRef(activeTab?.id || activeTabId);
+  activePathRef.current = activePath;
+  activeTabIdRef.current = activeTab?.id || activeTabId;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
@@ -315,6 +319,8 @@ export default function App() {
 
   function openInNewTab(relPath, mode = 'preview') {
     const id = `tab-${Date.now()}`;
+    activePathRef.current = relPath;
+    activeTabIdRef.current = id;
     setTabs((prev) => {
       if (prev.length === 1 && !prev[0].path) {
         return [{ id, path: relPath, title: baseTitle(relPath), preview: '' }];
@@ -389,7 +395,12 @@ export default function App() {
         method: 'HEAD'
       });
       if (!checkRes.ok) {
-        if (relPath !== 'README.md') return openFile('README.md', false, targetTabId);
+        setContent('');
+        setDraftContent('');
+        setDirty(false);
+        setTabs((prev) =>
+          prev.map((t) => (t.id === targetTabId ? { ...t, path: null, title: 'New tab', preview: '' } : t))
+        );
         return;
       }
       setContent('');
@@ -403,7 +414,6 @@ export default function App() {
     } else {
       const res = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`);
       if (!res.ok) {
-        if (relPath !== 'README.md') return openFile('README.md', false, targetTabId);
         setContent('');
         setDraftContent('');
         setDirty(false);
@@ -667,11 +677,13 @@ export default function App() {
   useEffect(() => {
     const onHash = () => {
       const target = decodeURIComponent(location.hash.slice(1) || '');
-      if (target && target !== activePath) openFile(target);
+      if (target && target !== activePathRef.current) {
+        openFile(target, false, activeTabIdRef.current);
+      }
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
-  }, [activePath]);
+  }, []);
 
   useEffect(() => {
     const es = new EventSource('/api/v1/events');
@@ -681,12 +693,15 @@ export default function App() {
       if (msg.type === 'reload') {
         await fetchTree();
         setReloadTick((t) => t + 1);
-        await openFile(activePath, true);
+        const currentPath = activePathRef.current;
+        if (currentPath) {
+          await openFile(currentPath, true, activeTabIdRef.current);
+        }
       }
     };
     es.onerror = () => setLive(false);
     return () => es.close();
-  }, [activePath]);
+  }, []);
 
   async function saveActiveNote(markdown) {
     if (!activePath) return;
