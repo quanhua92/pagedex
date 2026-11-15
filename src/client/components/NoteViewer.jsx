@@ -1,7 +1,6 @@
-import React, { Suspense, lazy, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { parseDelimitedText } from '../lib/csv.js';
-
-const TiptapEditor = lazy(() => import('../TiptapEditor.jsx'));
+import TiptapEditor from '../TiptapEditor.jsx';
 
 export default function NoteViewer({
   scrollRef,
@@ -182,22 +181,20 @@ export default function NoteViewer({
           )}
         </div>
       ) : viewMode === 'edit' && isMarkdown ? (
-        <Suspense fallback={<div className="empty-note" style={{ padding: '24px' }}>Loading editor...</div>}>
-          <TiptapEditor
-            fileKey={activePath}
-            content={content}
-            fontSize={settings.fontSize}
-            lineHeight={settings.lineHeight}
-            maxWidth={settings.maxWidth}
-            saving={saving}
-            dirty={dirty}
-            onChange={(md) => {
-              setDraftContent(md);
-              setDirty(md !== content);
-            }}
-            onSave={saveActiveNote}
-          />
-        </Suspense>
+        <TiptapEditor
+          fileKey={activePath}
+          content={content}
+          fontSize={settings.fontSize}
+          lineHeight={settings.lineHeight}
+          maxWidth={settings.maxWidth}
+          saving={saving}
+          dirty={dirty}
+          onChange={(md) => {
+            setDraftContent(md);
+            setDirty(md !== content);
+          }}
+          onSave={saveActiveNote}
+        />
       ) : isHtml && viewMode === 'preview' ? (
         <div className="media-viewer html-viewer">
           <iframe

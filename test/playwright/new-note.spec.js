@@ -17,21 +17,28 @@ test('New note dialog opens in editor from empty state and from blank New tab', 
     await page.getByPlaceholder('My note title').fill('first-note');
     await page.getByRole('button', { name: 'Create note', exact: true }).click();
 
-    await page.locator('.ProseMirror').waitFor({ state: 'visible' });
+    await page.locator('.doc h1').waitFor({ state: 'visible' });
     assert.equal(await page.evaluate(() => location.hash), '#first-note.md');
-    assert.match(await page.locator('.ProseMirror').textContent(), /first-note/);
+    assert.match(await page.locator('.doc').textContent(), /first-note/);
     assert.ok(fs.existsSync(path.join(env.vaultDir, 'first-note.md')));
 
     // 2. Open a blank New tab (+), then create another note in a folder
     await page.locator('button[title="New tab"]').first().click();
     await page.getByRole('button', { name: 'Create new note' }).click();
     await page.getByPlaceholder('My note title').fill('second-note');
+    await page.locator('.folder-picker-toggle').click();
     await page.getByRole('button', { name: 'notes', exact: true }).click();
     await page.getByRole('button', { name: 'Create note', exact: true }).click();
 
     await page.waitForFunction(() => location.hash === '#notes%2Fsecond-note.md');
-    assert.match(await page.locator('.ProseMirror').textContent(), /second-note/);
+    assert.match(await page.locator('.doc').textContent(), /second-note/);
     assert.ok(fs.existsSync(path.join(env.vaultDir, 'notes/second-note.md')));
+
+    // 3. Switch to Edit mode from top-right menu and verify Tiptap renders
+    await page.getByRole('button', { name: 'Note options' }).click();
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.locator('.ProseMirror').waitFor({ state: 'visible' });
+    assert.match(await page.locator('.ProseMirror').textContent(), /second-note/);
     assert.equal(pageErrors.length, 0);
 
     await context.close();

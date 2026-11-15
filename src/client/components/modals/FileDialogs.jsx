@@ -42,9 +42,9 @@ export function NewNoteModal({
               value={newNoteFolder}
               onChange={setNewNoteFolder}
               allFolders={allFolders}
-              allowCustom
+              allowCreate
+              defaultExpanded={false}
               onEnter={confirmNewNote}
-              placeholder="(vault root) or type/select folder"
             />
           </div>
           {buildNewNotePath(newNoteTitle, newNoteFolder) && (
@@ -153,6 +153,7 @@ export function MoveModal({
               onChange={(destFolder) => setMoveTarget((m) => ({ ...m, destFolder }))}
               allFolders={allFolders}
               excludePrefix={moveTarget.type === 'dir' ? moveTarget.oldPath : ''}
+              defaultExpanded
               onEnter={confirmMoveItem}
             />
           </div>

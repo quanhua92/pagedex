@@ -317,7 +317,7 @@ export default function App() {
     }
   }
 
-  function openInNewTab(relPath, mode = 'preview') {
+  async function openInNewTab(relPath, mode = 'preview') {
     const id = `tab-${Date.now()}`;
     activePathRef.current = relPath;
     activeTabIdRef.current = id;
@@ -328,8 +328,8 @@ export default function App() {
       return [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }];
     });
     setActiveTabId(id);
+    await openFile(relPath, false, id);
     setViewMode(mode);
-    openFile(relPath, false, id);
   }
 
   function createNewTab() {
@@ -635,9 +635,11 @@ export default function App() {
     setFileMenu({ type, path: targetPath, x: Math.max(8, x), y: Math.max(8, y) });
   }
 
-  function openNewNoteDialog(defaultFolder = '') {
+  function openNewNoteDialog(defaultFolder = null) {
+    const fallbackFolder = activePath.includes('/') ? activePath.split('/').slice(0, -1).join('/') : '';
+    const resolved = typeof defaultFolder === 'string' ? defaultFolder : fallbackFolder;
     setNewNoteTitle('');
-    setNewNoteFolder(defaultFolder.replace(/^\/+|\/+$/g, ''));
+    setNewNoteFolder(resolved.replace(/^\/+|\/+$/g, ''));
     setNewNoteError('');
     setNewNoteOpen(true);
   }
@@ -666,7 +668,7 @@ export default function App() {
     }
     setNewNoteOpen(false);
     await fetchTree();
-    openInNewTab(relPath, isMarkdownPath(relPath) ? 'edit' : 'raw');
+    await openInNewTab(relPath, 'preview');
   }
 
   useEffect(() => {
