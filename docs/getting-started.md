@@ -44,6 +44,8 @@ Override the cache location with:
 
 ## Web UI Highlights
 
+![Desktop Preview](./images/desktop-preview.png)
+
 - **View Modes (top-right `⋮` menu):**
   - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
   - **Preview** — rendered Markdown, sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images

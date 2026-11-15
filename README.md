@@ -20,6 +20,16 @@ By default, `pagedex` serves the current directory on `http://127.0.0.1:4321`:
 - `/api/v1/*` — REST API for reading, editing, searching, and Git diff/commit
 - `/mcp` — MCP endpoint supporting `2026-07-28` (`server/discover`), `2025-11-25` Streamable HTTP, and `2024-11-05` HTTP+SSE (see [MCP Server Guide](./docs/MCP.md))
 
+## Screenshots
+
+| Desktop Preview & Pinned Sidebar | WYSIWYG Editor (Tiptap) |
+|---|---|
+| ![Desktop Preview](./docs/images/desktop-preview.png) | ![Desktop Editor](./docs/images/desktop-edit.png) |
+
+| Quick Switcher (`Cmd/Ctrl+K`) | Mobile View & Bottom Bar |
+|---|---|
+| ![Quick Switcher](./docs/images/desktop-switcher.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
+
 ### CLI Options
 
 ```text

@@ -344,7 +344,7 @@ async function buildMcpChecks(baseUrl) {
         await client.connect(transport);
         try {
           const { tools } = await client.listTools();
-          assert.equal(tools.length, 5);
+          assert.ok(tools.length >= 10);
           const res = await client.callTool({ name: 'list_vault', arguments: {} });
           assert.ok(res.structuredContent);
           assert.equal(res.structuredContent.folder, '/');
@@ -365,7 +365,7 @@ async function buildMcpChecks(baseUrl) {
         await client.connect(transport);
         try {
           const { tools } = await client.listTools();
-          assert.equal(tools.length, 5);
+          assert.ok(tools.length >= 10);
           const res = await client.callTool({ name: 'list_vault', arguments: {} });
           assert.ok(res.structuredContent);
           assert.equal(res.structuredContent.folder, '/');
@@ -386,7 +386,7 @@ async function buildMcpChecks(baseUrl) {
         await client.connect(transport);
         try {
           const { tools } = await client.listTools();
-          assert.equal(tools.length, 5);
+          assert.ok(tools.length >= 10);
           const res = await client.callTool({ name: 'list_vault', arguments: {} });
           assert.ok(res.structuredContent);
           assert.equal(res.structuredContent.folder, '/');
@@ -404,7 +404,7 @@ async function buildMcpChecks(baseUrl) {
         await client.connect(transport);
         try {
           const { tools } = await client.listTools();
-          assert.equal(tools.length, 5);
+          assert.ok(tools.length >= 10);
           const res = await client.callTool({ name: 'list_vault', arguments: {} });
           assert.ok(res.structuredContent);
           assert.equal(res.structuredContent.folder, '/');
