@@ -2,6 +2,16 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.4] - 2026-11-15
+
+### Documentation
+
+- expand user documentation with getting started and MCP/REST guides (2a716bc)
+
+### Other Changes
+
+- include docs/ in npm package files (6af7a3a)
+
 ## [0.1.3] - 2026-11-15
 
 ### Features
