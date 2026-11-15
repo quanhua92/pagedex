@@ -204,12 +204,7 @@ export default function App() {
     const q = switcherQuery.trim().toLowerCase();
     const isExcluded = (p) => {
       const lower = p.toLowerCase();
-      if (settings.hiddenFolders.some((dir) => lower.startsWith(dir.toLowerCase() + '/'))) return true;
-      if (!settings.hideCollapsedInSearch) return false;
-      return settings.autoCollapsed.some((dir) => {
-        const prefix = dir.toLowerCase() + '/';
-        return lower.startsWith(prefix) && !q.includes(dir.toLowerCase());
-      });
+      return settings.hiddenFolders.some((dir) => lower.startsWith(dir.toLowerCase() + '/'));
     };
 
     const baseList = isLargeVault
@@ -293,9 +288,7 @@ export default function App() {
     fileStats,
     flatFiles,
     contentHits,
-    settings.autoCollapsed,
-    settings.hiddenFolders,
-    settings.hideCollapsedInSearch
+    settings.hiddenFolders
   ]);
 
   const switcherItems = switcherData.items;

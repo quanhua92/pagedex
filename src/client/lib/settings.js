@@ -7,8 +7,7 @@ export const DEFAULT_SETTINGS = {
   startupMode: 'readme', // 'readme' | 'newtab' | 'last' | 'custom'
   startupPath: 'README.md',
   autoCollapsed: ['apps'],
-  hiddenFolders: [],
-  hideCollapsedInSearch: true
+  hiddenFolders: []
 };
 
 export function loadSettings() {

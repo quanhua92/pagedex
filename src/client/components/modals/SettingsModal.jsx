@@ -183,16 +183,6 @@ export default function SettingsModal({
                   onBlur={() => setHiddenFoldersText(settings.hiddenFolders.join(', '))}
                 />
               </div>
-              <label className="toggle-row">
-                <span>Hide auto-collapsed folders from Quick Switcher</span>
-                <input
-                  type="checkbox"
-                  checked={settings.hideCollapsedInSearch}
-                  onChange={(e) =>
-                    setSettings((s) => ({ ...s, hideCollapsedInSearch: e.target.checked }))
-                  }
-                />
-              </label>
             </>
           )}
 
