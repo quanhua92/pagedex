@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./src/client/public/icon-192.png" alt="PageDex logo" width="88" />
   <h1>PageDex</h1>
-  <p>A fast, browsable catalog (<strong>-dex</strong>, like Rolodex/Pokédex) for any local folder of notes and files—served as a web <strong>page</strong> with full-text search, backlinks, Git sync, and MCP.</p>
+  <p>A fast, browsable catalog (<strong>-dex</strong>, like Rolodex/Pokédex) for any local folder of notes and files, with full-text search, backlinks, Git, and MCP.</p>
   <p>
     <a href="#quick-start">Quick Start</a> ·
     <a href="#screenshots">Screenshots</a> ·
@@ -18,8 +18,8 @@
 
 | Who | Why PageDex |
 |---|---|
-| **Obsidian users** | Browse, search, and edit your existing Obsidian vault from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]` and backlinks—no cloud fees or extra vault clutter |
-| **Obsidian Sync / Git vaults** | Works cleanly alongside Obsidian Sync (with SSE live reload on external edits) and lets you review diffs, commit, and push directly from the web UI |
+| **Obsidian users** | Browse, search, and edit your Obsidian notes from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]`, backlinks, and SSE live reload alongside Obsidian Sync—no extra clutter |
+| **Git-backed notes & repos** | Live-reloads on external edits via SSE and lets you inspect diffs, discard changes, commit, and push directly from the UI |
 | **Developers & tech writers** | Explore repo `docs/`, preview sandboxed HTML, CSV, PDF, and media files, and review/commit changes with the built-in Git diff UI |
 | **AI & agent builders** | Connect Claude Code, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
 | **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
