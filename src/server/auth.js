@@ -4,6 +4,42 @@ import fs from 'node:fs';
 const COOKIE_NAME = 'pagedex_auth';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
+const rateState = { failures: [], lockedUntil: 0 };
+
+function readPositiveInt(envVal, fallback) {
+  const n = Number(envVal);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
+
+function getRateLimitConfig() {
+  return {
+    maxAttempts: readPositiveInt(process.env.PAGEDEX_AUTH_MAX_ATTEMPTS, 5),
+    windowMs: readPositiveInt(process.env.PAGEDEX_AUTH_WINDOW_MS, 60_000),
+    lockoutMs: readPositiveInt(process.env.PAGEDEX_AUTH_LOCKOUT_MS, 60_000)
+  };
+}
+
+export function resetAuthRateLimit() {
+  rateState.failures = [];
+  rateState.lockedUntil = 0;
+}
+
+function getLockRemainingSeconds(now = Date.now()) {
+  if (now >= rateState.lockedUntil) return 0;
+  return Math.max(1, Math.ceil((rateState.lockedUntil - now) / 1000));
+}
+
+function recordLoginFailure(now = Date.now()) {
+  const { maxAttempts, windowMs, lockoutMs } = getRateLimitConfig();
+  const cutoff = now - windowMs;
+  rateState.failures = rateState.failures.filter((ts) => ts > cutoff);
+  rateState.failures.push(now);
+  if (rateState.failures.length >= maxAttempts) {
+    rateState.lockedUntil = now + lockoutMs;
+    rateState.failures = [];
+  }
+}
+
 export function isAuthEnabled() {
   return Boolean(process.env.PAGEDEX_AUTH_TOKEN_FILE);
 }
@@ -132,6 +168,11 @@ export function registerAuthRoutes(app) {
     if (!isAuthEnabled()) {
       return c.json({ ok: true, required: false });
     }
+    const retryAfter = getLockRemainingSeconds();
+    if (retryAfter > 0) {
+      c.header('Retry-After', String(retryAfter));
+      return c.json({ error: `Too many failed attempts. Try again in ${retryAfter}s.`, retryAfter }, 429);
+    }
     let token = '';
     const auth = c.req.header('authorization') || '';
     const match = auth.match(/^Bearer\s+(.+)$/i);
@@ -147,8 +188,10 @@ export function registerAuthRoutes(app) {
     }
     const matched = matchAuthToken(token);
     if (!matched) {
+      recordLoginFailure();
       return c.json({ error: 'Invalid token' }, 401);
     }
+    resetAuthRateLimit();
     const sessionVal = signSessionValue(matched);
     c.header('Set-Cookie', buildCookieHeader(sessionVal, COOKIE_MAX_AGE, isHttpsRequest(c)));
     return c.json({ ok: true });

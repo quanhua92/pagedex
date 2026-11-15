@@ -26,6 +26,7 @@ Pass `--auth-token-file <path>` (or `PAGEDEX_AUTH_TOKEN_FILE`) to lock the Web U
 
 - **Comma/newline-separated tokens:** Store one or more tokens in the file (e.g. `token1,token2`) for zero-downtime key rotation.
 - **Session cookie (`POST /api/v1/auth/login`):** Validates `{ token }` (or `Authorization: Bearer <token>`) and sets an `HttpOnly; SameSite=Lax` HMAC-signed cookie (`pagedex_auth`). Removing a key from the file immediately revokes sessions signed by that key.
+- **Global login rate limit:** `POST /api/v1/auth/login` tracks failed attempts globally (default: 5 failures within 60s → 60s `429 Too Many Requests` cooldown with `Retry-After`; override via `PAGEDEX_AUTH_MAX_ATTEMPTS`, `PAGEDEX_AUTH_WINDOW_MS`, `PAGEDEX_AUTH_LOCKOUT_MS`). A successful login resets the counter.
 - **REST & CLI access:** Requests to `/api/v1/*` accept either the `pagedex_auth` cookie or `Authorization: Bearer <token>`, returning `401 Unauthorized` otherwise. (`/api/v1/auth/status`, `/api/v1/auth/login`, and `/api/v1/auth/logout` remain public; an empty token file fails closed.)
 - **Separate from MCP:** `/mcp` continues to be governed independently by `--mcp-token-file` (which also supports comma/newline-separated tokens for key rotation and fails closed if empty).
 

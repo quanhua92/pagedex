@@ -181,4 +181,39 @@ test('auth-token-file locks REST endpoints, supports cookie login, key rotation,
     body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'tools/list' })
   });
   assert.equal(mcpEmpty.status, 401);
+
+  // 11. Global login rate limit: 4 failures then success resets counter; 5 failures triggers 429
+  fs.writeFileSync(authTokenFile, 'alpha-key\n', 'utf8');
+  for (let i = 0; i < 4; i++) {
+    const r = await fetch(`${BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'bad' })
+    });
+    assert.equal(r.status, 401);
+  }
+  const resetRes = await fetch(`${BASE}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: 'alpha-key' })
+  });
+  assert.equal(resetRes.status, 200);
+
+  for (let i = 0; i < 5; i++) {
+    const r = await fetch(`${BASE}/api/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'bad' })
+    });
+    assert.equal(r.status, 401);
+  }
+  const lockedRes = await fetch(`${BASE}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: 'alpha-key' })
+  });
+  assert.equal(lockedRes.status, 429);
+  assert.ok(Number(lockedRes.headers.get('retry-after')) >= 1);
+  const lockedJson = await lockedRes.json();
+  assert.match(lockedJson.error, /Too many failed attempts/);
 });
