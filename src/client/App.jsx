@@ -313,6 +313,19 @@ export default function App() {
     }
   }
 
+  function openInNewTab(relPath, mode = 'preview') {
+    const id = `tab-${Date.now()}`;
+    setTabs((prev) => {
+      if (prev.length === 1 && !prev[0].path) {
+        return [{ id, path: relPath, title: baseTitle(relPath), preview: '' }];
+      }
+      return [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }];
+    });
+    setActiveTabId(id);
+    setViewMode(mode);
+    openFile(relPath, false, id);
+  }
+
   function createNewTab() {
     const id = `tab-${Date.now()}`;
     setTabs((prev) => [...prev, { id, path: null, title: 'New tab', preview: '' }]);
@@ -643,15 +656,7 @@ export default function App() {
     }
     setNewNoteOpen(false);
     await fetchTree();
-    let targetTabId = activeTab?.id || activeTabId;
-    if (activePath) {
-      const id = `tab-${Date.now()}`;
-      setTabs((prev) => [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }]);
-      setActiveTabId(id);
-      targetTabId = id;
-    }
-    await openFile(relPath, false, targetTabId);
-    setViewMode(isMarkdownPath(relPath) ? 'edit' : 'raw');
+    openInNewTab(relPath, isMarkdownPath(relPath) ? 'edit' : 'raw');
   }
 
   useEffect(() => {
@@ -1022,10 +1027,7 @@ export default function App() {
         setRenameTarget={setRenameTarget}
         setMoveError={setMoveError}
         setMoveTarget={setMoveTarget}
-        setTabs={setTabs}
-        setActiveTabId={setActiveTabId}
-        setViewMode={setViewMode}
-        openFile={openFile}
+        openInNewTab={openInNewTab}
         gitChanges={gitChanges}
         loadDiff={loadDiff}
         requestDiscard={requestDiscard}

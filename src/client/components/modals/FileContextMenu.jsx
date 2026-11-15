@@ -11,10 +11,7 @@ export default function FileContextMenu({
   setRenameTarget,
   setMoveError,
   setMoveTarget,
-  setTabs,
-  setActiveTabId,
-  setViewMode,
-  openFile,
+  openInNewTab,
   gitChanges,
   loadDiff,
   requestDiscard,
@@ -99,12 +96,8 @@ export default function FileContextMenu({
               className="more-item"
               onClick={() => {
                 const target = fileMenu.path;
-                const id = `tab-${Date.now()}`;
                 setFileMenu(null);
-                setTabs((prev) => [...prev, { id, path: target, title: baseTitle(target), preview: '' }]);
-                setActiveTabId(id);
-                setViewMode('preview');
-                openFile(target, false, id);
+                openInNewTab(target, 'preview');
               }}
             >
               <span>Open in new tab</span>
