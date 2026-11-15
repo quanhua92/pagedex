@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Copy,
+  Download,
   ExternalLink,
   FolderInput,
   GitCompare,
@@ -13,10 +14,10 @@ import {
   Trash2,
   Upload
 } from 'lucide-react';
-import { baseTitle } from '../../lib/paths.js';
+import { buildMoveTarget, buildRenameTarget } from '../../lib/paths.js';
 
 function MenuIcon({ icon: Icon }) {
-  return <Icon className="file-ctx-menu-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
+  return <Icon className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
 }
 
 export default function FileContextMenu({
@@ -30,6 +31,8 @@ export default function FileContextMenu({
   setMoveError,
   setMoveTarget,
   openInNewTab,
+  openFile,
+  setViewMode,
   gitChanges,
   loadDiff,
   requestDiscard,
@@ -82,12 +85,9 @@ export default function FileContextMenu({
                   className="more-item"
                   onClick={() => {
                     const target = fileMenu.path;
-                    const parts = target.split('/');
-                    const newName = parts.pop() || '';
-                    const parentDir = parts.join('/');
                     setFileMenu(null);
                     setRenameError('');
-                    setRenameTarget({ type: 'dir', oldPath: target, parentDir, newName });
+                    setRenameTarget(buildRenameTarget(target, 'dir'));
                   }}
                 >
                   <MenuIcon icon={Pencil} />
@@ -97,12 +97,9 @@ export default function FileContextMenu({
                   className="more-item"
                   onClick={() => {
                     const target = fileMenu.path;
-                    const parts = target.split('/');
-                    const name = parts.pop() || '';
-                    const destFolder = parts.join('/');
                     setFileMenu(null);
                     setMoveError('');
-                    setMoveTarget({ type: 'dir', oldPath: target, name, destFolder });
+                    setMoveTarget(buildMoveTarget(target, 'dir'));
                   }}
                 >
                   <MenuIcon icon={FolderInput} />
@@ -165,12 +162,9 @@ export default function FileContextMenu({
                   className="more-item"
                   onClick={() => {
                     const target = fileMenu.path;
-                    const parts = target.split('/');
-                    const newName = parts.pop() || '';
-                    const parentDir = parts.join('/');
                     setFileMenu(null);
                     setRenameError('');
-                    setRenameTarget({ type: 'file', oldPath: target, parentDir, newName });
+                    setRenameTarget(buildRenameTarget(target, 'file'));
                   }}
                 >
                   <MenuIcon icon={Pencil} />
@@ -180,12 +174,9 @@ export default function FileContextMenu({
                   className="more-item"
                   onClick={() => {
                     const target = fileMenu.path;
-                    const parts = target.split('/');
-                    const name = parts.pop() || '';
-                    const destFolder = parts.join('/');
                     setFileMenu(null);
                     setMoveError('');
-                    setMoveTarget({ type: 'file', oldPath: target, name, destFolder });
+                    setMoveTarget(buildMoveTarget(target, 'file'));
                   }}
                 >
                   <MenuIcon icon={FolderInput} />
@@ -217,6 +208,15 @@ export default function FileContextMenu({
                 <span>Copy [[wikilink]]</span>
               </button>
             )}
+            <a
+              className="more-item"
+              href={`/api/v1/file?path=${encodeURIComponent(fileMenu.path)}&download=1`}
+              download={fileMenu.path.split('/').pop()}
+              onClick={() => setFileMenu(null)}
+            >
+              <MenuIcon icon={Download} />
+              <span>Download</span>
+            </a>
             {gitChanges.some((c) => c.path === fileMenu.path) && (
               <>
                 <button

@@ -1,5 +1,28 @@
-import React from 'react';
-import { MoreVertical, PanelLeft, PanelRight } from 'lucide-react';
+import React, { useEffect } from 'react';
+import {
+  Copy,
+  Download,
+  ExternalLink,
+  Eye,
+  FileCode2,
+  FolderInput,
+  GitCompare,
+  Link2,
+  ListTree,
+  MoreVertical,
+  PanelLeft,
+  PanelRight,
+  Pencil,
+  Pin,
+  PinOff,
+  RotateCcw,
+  Trash2
+} from 'lucide-react';
+import { buildMoveTarget, buildRenameTarget } from '../lib/paths.js';
+
+function MenuIcon({ icon: Icon }) {
+  return <Icon className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
+}
 
 export function DesktopTabs({
   tabs,
@@ -39,6 +62,16 @@ export default function TopbarAndTabs({
   loadDiff,
   setDeleteError,
   setDeleteTarget,
+  setRenameError,
+  setRenameTarget,
+  setMoveError,
+  setMoveTarget,
+  openInNewTab,
+  isPinned,
+  togglePin,
+  gitChanges = [],
+  requestDiscard,
+  showToast,
   outlinePosition,
   outlineDrawerOpen,
   onToggleOutline,
@@ -46,6 +79,17 @@ export default function TopbarAndTabs({
   readOnly = false
 }) {
   const isOutlineActive = outlineDrawerOpen || outlinePosition !== 'hidden';
+  const hasGitChanges = Boolean(activePath && gitChanges.some((c) => c.path === activePath));
+
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setMoreMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [moreMenuOpen, setMoreMenuOpen]);
+
   return (
     <div className="topbar">
       <div className="topbar-left">
@@ -72,85 +116,185 @@ export default function TopbarAndTabs({
           <MoreVertical size={16} strokeWidth={1.9} />
         </button>
         {moreMenuOpen && (
-          <div className="more-menu" onMouseLeave={() => setMoreMenuOpen(false)}>
-            {activePath && (
-              <a
-                className="more-item"
-                href={`/api/v1/file?path=${encodeURIComponent(activePath)}&download=1`}
-                download={activePath.split('/').pop()}
-                style={{ textDecoration: 'none', borderBottom: '1px solid var(--border)', marginBottom: 3, paddingBottom: 9 }}
-                onClick={() => setMoreMenuOpen(false)}
-              >
-                <span>Download</span>
-              </a>
-            )}
-            <button
-              className={`more-item${viewMode === 'preview' ? ' active' : ''}`}
-              onClick={() => {
-                setViewMode('preview');
-                setMoreMenuOpen(false);
-              }}
-            >
-              <span>Preview</span>
-              {viewMode === 'preview' && <span>✓</span>}
-            </button>
-            {!readOnly && (
+          <>
+            <div
+              style={{ position: 'fixed', inset: 0, zIndex: 34 }}
+              onClick={() => setMoreMenuOpen(false)}
+            />
+            <div className="more-menu" onClick={(e) => e.stopPropagation()}>
               <button
-                className={`more-item${viewMode === 'edit' ? ' active' : ''}`}
+                className={`more-item${viewMode === 'preview' ? ' active' : ''}`}
                 onClick={() => {
-                  setViewMode('edit');
+                  setViewMode('preview');
                   setMoreMenuOpen(false);
                 }}
               >
-                <span>Edit</span>
-                {viewMode === 'edit' && <span>✓</span>}
+                <MenuIcon icon={Eye} />
+                <span>Preview</span>
+                {viewMode === 'preview' && <span className="more-item-check">✓</span>}
               </button>
-            )}
-            <button
-              className={`more-item${viewMode === 'diff' ? ' active' : ''}`}
-              onClick={() => {
-                setViewMode('diff');
-                setMoreMenuOpen(false);
-                loadDiff(activePath);
-              }}
-            >
-              <span>Diff</span>
-              {viewMode === 'diff' && <span>✓</span>}
-            </button>
-            <button
-              className={`more-item${viewMode === 'raw' ? ' active' : ''}`}
-              onClick={() => {
-                setViewMode('raw');
-                setMoreMenuOpen(false);
-              }}
-            >
-              <span>Raw</span>
-              {viewMode === 'raw' && <span>✓</span>}
-            </button>
-            <button
-              className={`more-item outline-menu-trigger${outlinePosition === 'hidden' ? ' show-desktop' : ''}`}
-              style={{ borderTop: '1px solid var(--border)', marginTop: 3, paddingTop: 9 }}
-              onClick={() => {
-                setMoreMenuOpen(false);
-                onOpenOutline();
-              }}
-            >
-              <span>Outline</span>
-            </button>
-            {activePath && !readOnly && (
+              {!readOnly && (
+                <button
+                  className={`more-item${viewMode === 'edit' ? ' active' : ''}`}
+                  onClick={() => {
+                    setViewMode('edit');
+                    setMoreMenuOpen(false);
+                  }}
+                >
+                  <MenuIcon icon={Pencil} />
+                  <span>Edit</span>
+                  {viewMode === 'edit' && <span className="more-item-check">✓</span>}
+                </button>
+              )}
               <button
-                className="more-item"
-                style={{ color: '#f87171', borderTop: '1px solid var(--border)', marginTop: 3, paddingTop: 9 }}
+                className={`more-item${viewMode === 'diff' ? ' active' : ''}`}
                 onClick={() => {
+                  setViewMode('diff');
                   setMoreMenuOpen(false);
-                  setDeleteError('');
-                  setDeleteTarget(activePath);
+                  loadDiff(activePath);
                 }}
               >
-                <span>Delete</span>
+                <MenuIcon icon={GitCompare} />
+                <span>Diff</span>
+                {viewMode === 'diff' && <span className="more-item-check">✓</span>}
               </button>
-            )}
-          </div>
+              <button
+                className={`more-item${viewMode === 'raw' ? ' active' : ''}`}
+                onClick={() => {
+                  setViewMode('raw');
+                  setMoreMenuOpen(false);
+                }}
+              >
+                <MenuIcon icon={FileCode2} />
+                <span>Raw</span>
+                {viewMode === 'raw' && <span className="more-item-check">✓</span>}
+              </button>
+              <button
+                className={`more-item more-item-divider outline-menu-trigger${outlinePosition === 'hidden' ? ' show-desktop' : ''}`}
+                onClick={() => {
+                  setMoreMenuOpen(false);
+                  onOpenOutline();
+                }}
+              >
+                <MenuIcon icon={ListTree} />
+                <span>Outline</span>
+              </button>
+              {activePath && (
+                <>
+                  {openInNewTab && (
+                    <button
+                      className="more-item more-item-divider"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        openInNewTab(activePath, 'preview');
+                      }}
+                    >
+                      <MenuIcon icon={ExternalLink} />
+                      <span>Open in new tab</span>
+                    </button>
+                  )}
+                  {isPinned && togglePin && (
+                    <button
+                      className={`more-item${!openInNewTab ? ' more-item-divider' : ''}`}
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        togglePin(activePath, 'file');
+                      }}
+                    >
+                      <MenuIcon icon={isPinned(activePath) ? PinOff : Pin} />
+                      <span>{isPinned(activePath) ? 'Unpin' : 'Pin'}</span>
+                    </button>
+                  )}
+                  {!readOnly && setRenameTarget && (
+                    <button
+                      className="more-item"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        setRenameError?.('');
+                        setRenameTarget(buildRenameTarget(activePath, 'file'));
+                      }}
+                    >
+                      <MenuIcon icon={Pencil} />
+                      <span>Rename</span>
+                    </button>
+                  )}
+                  {!readOnly && setMoveTarget && (
+                    <button
+                      className="more-item"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        setMoveError?.('');
+                        setMoveTarget(buildMoveTarget(activePath, 'file'));
+                      }}
+                    >
+                      <MenuIcon icon={FolderInput} />
+                      <span>Move</span>
+                    </button>
+                  )}
+                  <button
+                    className="more-item"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(activePath);
+                      setMoreMenuOpen(false);
+                      showToast?.('Copied path');
+                    }}
+                  >
+                    <MenuIcon icon={Copy} />
+                    <span>Copy path</span>
+                  </button>
+                  {activePath.endsWith('.md') && (
+                    <button
+                      className="more-item"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(`[[${activePath.replace(/\.md$/i, '')}]]`);
+                        setMoreMenuOpen(false);
+                        showToast?.('Copied wikilink');
+                      }}
+                    >
+                      <MenuIcon icon={Link2} />
+                      <span>Copy [[wikilink]]</span>
+                    </button>
+                  )}
+                  <a
+                    className="more-item"
+                    href={`/api/v1/file?path=${encodeURIComponent(activePath)}&download=1`}
+                    download={activePath.split('/').pop()}
+                    onClick={() => setMoreMenuOpen(false)}
+                  >
+                    <MenuIcon icon={Download} />
+                    <span>Download</span>
+                  </a>
+                  {!readOnly && hasGitChanges && requestDiscard && (
+                    <button
+                      className="more-item"
+                      style={{ color: 'var(--amber)' }}
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        requestDiscard({ path: activePath });
+                      }}
+                    >
+                      <MenuIcon icon={RotateCcw} />
+                      <span>Discard changes</span>
+                    </button>
+                  )}
+                  {!readOnly && (
+                    <button
+                      className="more-item more-item-divider"
+                      style={{ color: '#f87171' }}
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        setDeleteError('');
+                        setDeleteTarget(activePath);
+                      }}
+                    >
+                      <MenuIcon icon={Trash2} />
+                      <span>Delete</span>
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

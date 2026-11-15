@@ -55,7 +55,7 @@ export default function OutlineSidebar({
                 }}
               >
                 <span>Position: Right</span>
-                {position === 'right' && <span>✓</span>}
+                {position === 'right' && <span className="more-item-check">✓</span>}
               </button>
               <button
                 className={`more-item${position === 'bottom' ? ' active' : ''}`}
@@ -66,7 +66,7 @@ export default function OutlineSidebar({
                 }}
               >
                 <span>Position: Bottom</span>
-                {position === 'bottom' && <span>✓</span>}
+                {position === 'bottom' && <span className="more-item-check">✓</span>}
               </button>
               <button
                 className="more-item"

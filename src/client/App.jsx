@@ -1086,6 +1086,16 @@ export default function App() {
                 loadDiff={loadDiff}
                 setDeleteError={setDeleteError}
                 setDeleteTarget={setDeleteTarget}
+                setRenameError={setRenameError}
+                setRenameTarget={setRenameTarget}
+                setMoveError={setMoveError}
+                setMoveTarget={setMoveTarget}
+                openInNewTab={openInNewTab}
+                isPinned={isPinned}
+                togglePin={togglePin}
+                gitChanges={gitChanges}
+                requestDiscard={requestDiscard}
+                showToast={showToast}
                 outlinePosition={outlinePosition}
                 outlineDrawerOpen={outlineDrawerOpen}
                 onToggleOutline={handleToggleOutline}
@@ -1213,6 +1223,8 @@ export default function App() {
         setMoveError={setMoveError}
         setMoveTarget={setMoveTarget}
         openInNewTab={openInNewTab}
+        openFile={openFile}
+        setViewMode={setViewMode}
         gitChanges={gitChanges}
         loadDiff={loadDiff}
         requestDiscard={requestDiscard}

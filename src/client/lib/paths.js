@@ -69,3 +69,15 @@ export function buildNewNotePath(title, folder) {
   const cleanFolder = (folder || '').trim().replace(/^\/+|\/+$/g, '');
   return cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 }
+
+export function buildRenameTarget(targetPath, type = 'file') {
+  const parts = targetPath.split('/');
+  const newName = parts.pop() || '';
+  return { type, oldPath: targetPath, parentDir: parts.join('/'), newName };
+}
+
+export function buildMoveTarget(targetPath, type = 'file') {
+  const parts = targetPath.split('/');
+  const name = parts.pop() || '';
+  return { type, oldPath: targetPath, name, destFolder: parts.join('/') };
+}
