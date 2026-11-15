@@ -9,9 +9,9 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     proxy: {
-      '/api/v1': 'http://127.0.0.1:4321',
-      '/raw': 'http://127.0.0.1:4321',
-      '/mcp': 'http://127.0.0.1:4321'
+      '/api/v1': { target: 'http://127.0.0.1:4321', xfwd: true },
+      '/raw': { target: 'http://127.0.0.1:4321', xfwd: true },
+      '/mcp': { target: 'http://127.0.0.1:4321', xfwd: true }
     }
   },
   build: {

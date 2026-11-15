@@ -59,11 +59,20 @@ export function registerFileRoutes(app) {
     return c.json({ query: q, results: searchFts(q, limit) });
   });
 
-function buildRequestOrigin(c) {
+function buildRequestOrigins(c) {
   const url = new URL(c.req.url);
-  const proto = c.req.header('x-forwarded-proto') || url.protocol.replace(':', '');
-  const host = c.req.header('x-forwarded-host') || c.req.header('host') || url.host;
-  return `${proto}://${host}`;
+  const proto = (c.req.header('x-forwarded-proto') || url.protocol.replace(':', '')).split(',')[0].trim();
+  const host = (c.req.header('x-forwarded-host') || c.req.header('host') || url.host).split(',')[0].trim();
+  const origins = new Set([`${proto}://${host}`]);
+  const referer = c.req.header('referer');
+  if (referer) {
+    try {
+      origins.add(new URL(referer).origin);
+    } catch {
+      // ignore invalid referer
+    }
+  }
+  return Array.from(origins).join(' ');
 }
 
 function serveFileResponse(c, full, contentType, { isDownload = false, extraHeaders = {} } = {}) {
@@ -148,9 +157,9 @@ function serveFileResponse(c, full, contentType, { isDownload = false, extraHead
       'Access-Control-Allow-Origin': '*'
     };
     if (ext === '.html' || ext === '.htm') {
-      const origin = buildRequestOrigin(c);
+      const origins = buildRequestOrigins(c);
       extraHeaders['Content-Security-Policy'] =
-        `default-src ${origin} 'unsafe-inline' 'unsafe-eval' data: blob:`;
+        `default-src ${origins} 'unsafe-inline' 'unsafe-eval' data: blob:`;
     }
     return serveFileResponse(c, full, contentType, { extraHeaders });
   });
