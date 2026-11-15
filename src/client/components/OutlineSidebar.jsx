@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MoreVertical } from 'lucide-react';
 
 export default function OutlineSidebar({
   headings,
@@ -41,11 +42,7 @@ export default function OutlineSidebar({
             title="Outline panel options"
             onClick={() => setMenuOpen((o) => !o)}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="5" r="1.8" />
-              <circle cx="12" cy="12" r="1.8" />
-              <circle cx="12" cy="19" r="1.8" />
-            </svg>
+            <MoreVertical size={16} strokeWidth={1.9} />
           </button>
           {menuOpen && (
             <div className="more-menu" onMouseLeave={() => setMenuOpen(false)}>

@@ -1,4 +1,16 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import { Moon, Sun } from 'lucide-react';
+
+function findTreeNode(nodes, targetPath) {
+  for (const node of nodes || []) {
+    if (node.path === targetPath) return node;
+    if (node.type === 'dir' && node.children?.length) {
+      const found = findTreeNode(node.children, targetPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 const LONG_PRESS_MS = 450;
 const MOVE_CANCEL_PX = 8;
@@ -164,6 +176,7 @@ export default function Sidebar({
   filter,
   setFilter,
   tree,
+  pinned = [],
   activePath,
   collapsed,
   hiddenSet,
@@ -177,6 +190,18 @@ export default function Sidebar({
   sortedChanges,
   loadDiff
 }) {
+  const [pinnedOpen, setPinnedOpen] = useState(true);
+  const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
+  const togglePinnedDir = (dirPath) => {
+    setPinnedCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(dirPath)) next.delete(dirPath);
+      else next.add(dirPath);
+      return next;
+    });
+  };
+  const pinnedNodes = pinned.map((item) => findTreeNode(tree, item.path)).filter(Boolean);
+
   return (
     <aside className={`sidebar${drawerOpen ? ' open' : ''}`}>
       <div className="brand">
@@ -193,16 +218,7 @@ export default function Sidebar({
             setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
           }
         >
-          {settings.theme === 'dark' ? (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-            </svg>
-          ) : (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-            </svg>
-          )}
+          {settings.theme === 'dark' ? <Sun size={15} strokeWidth={1.9} /> : <Moon size={15} strokeWidth={1.9} />}
         </button>
       </div>
       <div className="sidebar-tabs">
@@ -232,22 +248,58 @@ export default function Sidebar({
       </div>
       <div className="tree">
         {sidebarTab === 'files' ? (
-          tree.map((node) => (
-            <TreeNode
-              key={node.path}
-              node={node}
-              activePath={activePath}
-              filter={filter}
-              collapsed={collapsed}
-              hiddenSet={hiddenSet}
-              onToggleDir={toggleDir}
-              onSelectFile={(p) => {
-                setViewMode('preview');
-                openFile(p);
-              }}
-              onOpenMenu={openRowMenu}
-            />
-          ))
+          <>
+            {pinnedNodes.length > 0 && (
+              <div className="pinned-section">
+                <button
+                  type="button"
+                  className="pinned-toggle"
+                  aria-expanded={pinnedOpen}
+                  onClick={() => setPinnedOpen((v) => !v)}
+                >
+                  <span className="chev">{pinnedOpen ? '▾' : '▸'}</span>
+                  <span>Pinned</span>
+                  <span className="pinned-count">{pinnedNodes.length}</span>
+                </button>
+                {pinnedOpen && (
+                  <div className="pinned-list">
+                    {pinnedNodes.map((node) => (
+                      <TreeNode
+                        key={`pinned:${node.path}`}
+                        node={node}
+                        activePath={activePath}
+                        filter={filter}
+                        collapsed={pinnedCollapsed}
+                        hiddenSet={hiddenSet}
+                        onToggleDir={togglePinnedDir}
+                        onSelectFile={(p) => {
+                          setViewMode('preview');
+                          openFile(p);
+                        }}
+                        onOpenMenu={openRowMenu}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {tree.map((node) => (
+              <TreeNode
+                key={node.path}
+                node={node}
+                activePath={activePath}
+                filter={filter}
+                collapsed={collapsed}
+                hiddenSet={hiddenSet}
+                onToggleDir={toggleDir}
+                onSelectFile={(p) => {
+                  setViewMode('preview');
+                  openFile(p);
+                }}
+                onOpenMenu={openRowMenu}
+              />
+            ))}
+          </>
         ) : (
           <>
             <div className="changes-bar">

@@ -1,4 +1,21 @@
 import React from 'react';
+import {
+  ArrowUp,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  GitCompare,
+  Home,
+  Menu,
+  Moon,
+  PanelLeft,
+  PanelRight,
+  Pencil,
+  Plus,
+  Search,
+  Settings,
+  Sun
+} from 'lucide-react';
 
 export default function MobileOverlays({
   fabOpen,
@@ -125,7 +142,7 @@ export default function MobileOverlays({
                   openSwitcher();
                 }}
               >
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+                <Search size={18} strokeWidth={1.9} />
                 <span>Open quick switcher</span>
               </button>
               <button
@@ -135,7 +152,7 @@ export default function MobileOverlays({
                   setDrawerOpen((o) => !o);
                 }}
               >
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 3v18" /></svg>
+                <PanelLeft size={18} strokeWidth={1.9} />
                 <span>Toggle files sidebar</span>
               </button>
               <button
@@ -145,7 +162,7 @@ export default function MobileOverlays({
                   onToggleOutline?.();
                 }}
               >
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M15 3v18" /></svg>
+                <PanelRight size={18} strokeWidth={1.9} />
                 <span>Toggle outline sidebar</span>
               </button>
               <button
@@ -155,7 +172,7 @@ export default function MobileOverlays({
                   openFile('README.md');
                 }}
               >
-                <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" /></svg>
+                <Home size={18} strokeWidth={1.9} />
                 <span>Go to Home (README)</span>
               </button>
               <button
@@ -165,7 +182,7 @@ export default function MobileOverlays({
                   setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
                 }}
               >
-                <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                <Pencil size={18} strokeWidth={1.9} />
                 <span>{viewMode === 'edit' ? 'Switch to Preview mode' : 'Switch to Edit mode'}</span>
               </button>
               <button
@@ -176,7 +193,7 @@ export default function MobileOverlays({
                   loadDiff(activePath);
                 }}
               >
-                <svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18" /></svg>
+                <GitCompare size={18} strokeWidth={1.9} />
                 <span>View Git Diff</span>
               </button>
               <button
@@ -186,7 +203,7 @@ export default function MobileOverlays({
                   setViewMode((m) => (m === 'raw' ? 'preview' : 'raw'));
                 }}
               >
-                <svg viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" /></svg>
+                <BookOpen size={18} strokeWidth={1.9} />
                 <span>{viewMode === 'raw' ? 'Switch to Preview mode' : 'Switch to Raw view'}</span>
               </button>
               <button
@@ -196,7 +213,7 @@ export default function MobileOverlays({
                   scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
               >
-                <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                <ArrowUp size={18} strokeWidth={1.9} />
                 <span>Scroll to top</span>
               </button>
               <button
@@ -206,7 +223,7 @@ export default function MobileOverlays({
                   setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }));
                 }}
               >
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+                {settings.theme === 'dark' ? <Sun size={18} strokeWidth={1.9} /> : <Moon size={18} strokeWidth={1.9} />}
                 <span>{settings.theme === 'dark' ? 'Switch to Light theme' : 'Switch to Dark theme'}</span>
               </button>
               <button
@@ -216,7 +233,7 @@ export default function MobileOverlays({
                   setSettingsOpen(true);
                 }}
               >
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                <Settings size={18} strokeWidth={1.9} />
                 <span>Settings</span>
               </button>
             </div>
@@ -233,13 +250,13 @@ export default function MobileOverlays({
             setDrawerOpen((o) => !o);
           }}
         >
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 3v18" /></svg>
+          <PanelLeft size={19} strokeWidth={1.9} />
         </button>
         <button className="mobile-bar-btn" aria-label="Back" onClick={() => window.history.back()}>
-          <svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+          <ChevronLeft size={19} strokeWidth={1.9} />
         </button>
         <button className="mobile-bar-btn" aria-label="Forward" onClick={() => window.history.forward()}>
-          <svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
+          <ChevronRight size={19} strokeWidth={1.9} />
         </button>
         <button
           className="mobile-bar-btn"
@@ -249,14 +266,14 @@ export default function MobileOverlays({
             openSwitcher();
           }}
         >
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <Search size={19} strokeWidth={1.9} />
         </button>
         <button
           className="mobile-bar-btn"
           aria-label="New tab"
           onClick={createNewTab}
         >
-          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+          <Plus size={19} strokeWidth={1.9} />
         </button>
         <button
           className={`mobile-bar-btn${tabsOpen ? ' active' : ''}`}
@@ -273,7 +290,7 @@ export default function MobileOverlays({
           aria-label="Menu"
           onClick={() => setFabOpen((o) => !o)}
         >
-          <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+          <Menu size={19} strokeWidth={1.9} />
         </button>
       </nav>
 

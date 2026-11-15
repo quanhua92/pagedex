@@ -1,5 +1,23 @@
 import React from 'react';
+import {
+  Copy,
+  ExternalLink,
+  FolderInput,
+  GitCompare,
+  Link2,
+  Pencil,
+  Pin,
+  PinOff,
+  Plus,
+  RotateCcw,
+  Trash2,
+  Upload
+} from 'lucide-react';
 import { baseTitle } from '../../lib/paths.js';
+
+function MenuIcon({ icon: Icon }) {
+  return <Icon className="file-ctx-menu-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
+}
 
 export default function FileContextMenu({
   fileMenu,
@@ -16,7 +34,9 @@ export default function FileContextMenu({
   loadDiff,
   requestDiscard,
   setDeleteError,
-  setDeleteTarget
+  setDeleteTarget,
+  isPinned,
+  togglePin
 }) {
   if (!fileMenu) return null;
 
@@ -27,7 +47,7 @@ export default function FileContextMenu({
     >
       <div
         className="file-ctx-menu"
-        style={{ left: fileMenu.x, top: fileMenu.y }}
+        style={{ left: fileMenu.x, top: fileMenu.y, maxHeight: `calc(100dvh - ${fileMenu.y + 8}px)` }}
         onClick={(e) => e.stopPropagation()}
       >
         {fileMenu.type === 'dir' ? (
@@ -40,6 +60,7 @@ export default function FileContextMenu({
                 openNewNoteDialog(target);
               }}
             >
+              <MenuIcon icon={Plus} />
               <span>New note here</span>
             </button>
             <button
@@ -50,6 +71,7 @@ export default function FileContextMenu({
                 uploadInputRef.current?.click();
               }}
             >
+              <MenuIcon icon={Upload} />
               <span>Upload file...</span>
             </button>
             <button
@@ -64,6 +86,7 @@ export default function FileContextMenu({
                 setRenameTarget({ type: 'dir', oldPath: target, parentDir, newName });
               }}
             >
+              <MenuIcon icon={Pencil} />
               <span>Rename</span>
             </button>
             <button
@@ -78,7 +101,20 @@ export default function FileContextMenu({
                 setMoveTarget({ type: 'dir', oldPath: target, name, destFolder });
               }}
             >
+              <MenuIcon icon={FolderInput} />
               <span>Move</span>
+            </button>
+            <button
+              className="more-item"
+              onClick={() => {
+                const target = fileMenu.path;
+                const type = fileMenu.type;
+                setFileMenu(null);
+                togglePin(target, type);
+              }}
+            >
+              <MenuIcon icon={isPinned(fileMenu.path) ? PinOff : Pin} />
+              <span>{isPinned(fileMenu.path) ? 'Unpin' : 'Pin'}</span>
             </button>
             <button
               className="more-item"
@@ -87,6 +123,7 @@ export default function FileContextMenu({
                 setFileMenu(null);
               }}
             >
+              <MenuIcon icon={Copy} />
               <span>Copy path</span>
             </button>
           </>
@@ -100,7 +137,20 @@ export default function FileContextMenu({
                 openInNewTab(target, 'preview');
               }}
             >
+              <MenuIcon icon={ExternalLink} />
               <span>Open in new tab</span>
+            </button>
+            <button
+              className="more-item"
+              onClick={() => {
+                const target = fileMenu.path;
+                const type = fileMenu.type;
+                setFileMenu(null);
+                togglePin(target, type);
+              }}
+            >
+              <MenuIcon icon={isPinned(fileMenu.path) ? PinOff : Pin} />
+              <span>{isPinned(fileMenu.path) ? 'Unpin' : 'Pin'}</span>
             </button>
             <button
               className="more-item"
@@ -114,6 +164,7 @@ export default function FileContextMenu({
                 setRenameTarget({ type: 'file', oldPath: target, parentDir, newName });
               }}
             >
+              <MenuIcon icon={Pencil} />
               <span>Rename</span>
             </button>
             <button
@@ -128,6 +179,7 @@ export default function FileContextMenu({
                 setMoveTarget({ type: 'file', oldPath: target, name, destFolder });
               }}
             >
+              <MenuIcon icon={FolderInput} />
               <span>Move</span>
             </button>
             <button
@@ -137,6 +189,7 @@ export default function FileContextMenu({
                 setFileMenu(null);
               }}
             >
+              <MenuIcon icon={Copy} />
               <span>Copy path</span>
             </button>
             {fileMenu.path.endsWith('.md') && (
@@ -147,6 +200,7 @@ export default function FileContextMenu({
                   setFileMenu(null);
                 }}
               >
+                <MenuIcon icon={Link2} />
                 <span>Copy [[wikilink]]</span>
               </button>
             )}
@@ -162,6 +216,7 @@ export default function FileContextMenu({
                     loadDiff(target);
                   }}
                 >
+                  <MenuIcon icon={GitCompare} />
                   <span>View Diff</span>
                 </button>
                 <button
@@ -173,6 +228,7 @@ export default function FileContextMenu({
                     requestDiscard({ path: target });
                   }}
                 >
+                  <MenuIcon icon={RotateCcw} />
                   <span>Discard changes</span>
                 </button>
               </>
@@ -187,6 +243,7 @@ export default function FileContextMenu({
                 setDeleteTarget(target);
               }}
             >
+              <MenuIcon icon={Trash2} />
               <span>Delete</span>
             </button>
           </>

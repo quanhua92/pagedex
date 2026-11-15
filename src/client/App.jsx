@@ -94,6 +94,16 @@ export default function App() {
   const [contentHits, setContentHits] = useState([]);
   const [pagedFiles, setPagedFiles] = useState({ items: [], hasMore: false });
   const [reloadTick, setReloadTick] = useState(0);
+  const [pinned, setPinned] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('pagedex-pinned') || '[]');
+      return Array.isArray(saved)
+        ? saved.filter((item) => item && typeof item.path === 'string' && (item.type === 'file' || item.type === 'dir'))
+        : [];
+    } catch {
+      return [];
+    }
+  });
 
   const searchRef = useRef(null);
   const switcherInputRef = useRef(null);
@@ -107,6 +117,27 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', settings.theme);
     localStorage.setItem('vault-settings', JSON.stringify(settings));
   }, [settings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pagedex-pinned', JSON.stringify(pinned));
+    } catch {
+      // Ignore storage quota / restricted context errors
+    }
+  }, [pinned]);
+
+  function isPinned(itemPath) {
+    return pinned.some((item) => item.path === itemPath);
+  }
+
+  function togglePin(itemPath, type) {
+    setPinned((prev) => {
+      if (prev.some((item) => item.path === itemPath)) {
+        return prev.filter((item) => item.path !== itemPath);
+      }
+      return [...prev, { path: itemPath, type }];
+    });
+  }
 
   useEffect(() => {
     const onKey = (e) => {
@@ -510,6 +541,7 @@ export default function App() {
       setFlatFiles((prev) => prev.filter((f) => f !== deleted));
       setFileStats((prev) => prev.filter((f) => f.path !== deleted));
       setGitChanges((prev) => prev.filter((c) => c.path !== deleted));
+      setPinned((prev) => prev.filter((p) => p.path !== deleted && !p.path.startsWith(`${deleted}/`)));
 
       if (deleted === activePath) {
         setViewMode('preview');
@@ -525,7 +557,12 @@ export default function App() {
             location.hash = '';
           }
         } else {
-          await openFile('README.md', false, activeTabId);
+          const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
+          setTabs([fresh]);
+          setActiveTabId(fresh.id);
+          setContent('');
+          setDirty(false);
+          location.hash = '';
         }
       } else {
         setTabs((prev) => prev.filter((t) => t.path !== deleted));
@@ -583,6 +620,19 @@ export default function App() {
         return t;
       })
     );
+    setPinned((prev) =>
+      prev.map((item) => {
+        if (isDir) {
+          if (item.path === oldPath) return { ...item, path: cleanNew };
+          if (item.path.startsWith(`${oldPath}/`)) {
+            return { ...item, path: `${cleanNew}${item.path.slice(oldPath.length)}` };
+          }
+        } else if (item.path === oldPath) {
+          return { ...item, path: cleanNew };
+        }
+        return item;
+      })
+    );
     if (isDir) {
       if (activePath.startsWith(`${oldPath}/`)) {
         openFile(`${cleanNew}${activePath.slice(oldPath.length)}`);
@@ -629,7 +679,7 @@ export default function App() {
 
   function openRowMenu(targetPath, rect, type = 'file') {
     const menuW = window.innerWidth <= 768 ? 215 : 175;
-    const menuH = window.innerWidth <= 768 ? 310 : 250;
+    const menuH = window.innerWidth <= 768 ? 360 : 300;
     const x = Math.min(rect.right - menuW, window.innerWidth - (menuW + 12));
     const y = Math.min(rect.bottom + 4, window.innerHeight - menuH);
     setFileMenu({ type, path: targetPath, x: Math.max(8, x), y: Math.max(8, y) });
@@ -887,6 +937,7 @@ export default function App() {
           filter={filter}
           setFilter={setFilter}
           tree={tree}
+          pinned={pinned}
           activePath={activePath}
           collapsed={collapsed}
           hiddenSet={hiddenSet}
@@ -1050,6 +1101,8 @@ export default function App() {
         requestDiscard={requestDiscard}
         setDeleteError={setDeleteError}
         setDeleteTarget={setDeleteTarget}
+        isPinned={isPinned}
+        togglePin={togglePin}
       />
 
       <NewNoteModal

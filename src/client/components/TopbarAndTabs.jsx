@@ -1,4 +1,5 @@
 import React from 'react';
+import { MoreVertical, PanelLeft, PanelRight } from 'lucide-react';
 
 export function DesktopTabs({
   tabs,
@@ -48,7 +49,7 @@ export default function TopbarAndTabs({
     <div className="topbar">
       <div className="topbar-left">
         <button className="icon-btn menu-btn" aria-label="Toggle files" onClick={() => setDrawerOpen((o) => !o)}>
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M9 3v18" /></svg>
+          <PanelLeft size={17} strokeWidth={1.8} />
         </button>
         <div className="crumbs">{activePath || 'New tab'}</div>
       </div>
@@ -59,10 +60,7 @@ export default function TopbarAndTabs({
           title="Toggle outline & backlinks"
           onClick={onToggleOutline}
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="3" />
-            <path d="M15 3v18" />
-          </svg>
+          <PanelRight size={17} strokeWidth={1.8} />
         </button>
         <button
           className="icon-btn"
@@ -70,11 +68,7 @@ export default function TopbarAndTabs({
           title="Note options"
           onClick={() => setMoreMenuOpen((o) => !o)}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="5" r="1.8" />
-            <circle cx="12" cy="12" r="1.8" />
-            <circle cx="12" cy="19" r="1.8" />
-          </svg>
+          <MoreVertical size={16} strokeWidth={1.9} />
         </button>
         {moreMenuOpen && (
           <div className="more-menu" onMouseLeave={() => setMoreMenuOpen(false)}>
