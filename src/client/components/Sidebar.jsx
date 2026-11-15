@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Pin, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -250,38 +250,44 @@ export default function Sidebar({
         {sidebarTab === 'files' ? (
           <>
             {pinnedNodes.length > 0 && (
-              <div className="pinned-section">
-                <button
-                  type="button"
-                  className="pinned-toggle"
-                  aria-expanded={pinnedOpen}
-                  onClick={() => setPinnedOpen((v) => !v)}
-                >
-                  <span className="chev">{pinnedOpen ? '▾' : '▸'}</span>
-                  <span>Pinned</span>
-                  <span className="pinned-count">{pinnedNodes.length}</span>
-                </button>
-                {pinnedOpen && (
-                  <div className="pinned-list">
-                    {pinnedNodes.map((node) => (
-                      <TreeNode
-                        key={`pinned:${node.path}`}
-                        node={node}
-                        activePath={activePath}
-                        filter={filter}
-                        collapsed={pinnedCollapsed}
-                        hiddenSet={hiddenSet}
-                        onToggleDir={togglePinnedDir}
-                        onSelectFile={(p) => {
-                          setViewMode('preview');
-                          openFile(p);
-                        }}
-                        onOpenMenu={openRowMenu}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <>
+                <div className="pinned-section">
+                  <button
+                    type="button"
+                    className="pinned-toggle"
+                    aria-expanded={pinnedOpen}
+                    onClick={() => setPinnedOpen((v) => !v)}
+                  >
+                    <span className="chev">{pinnedOpen ? '▾' : '▸'}</span>
+                    <Pin size={12} strokeWidth={2} className="pinned-icon" aria-hidden="true" />
+                    <span>Pinned</span>
+                    <span className="pinned-count">{pinnedNodes.length}</span>
+                  </button>
+                  {pinnedOpen && (
+                    <div className="pinned-list">
+                      {pinnedNodes.map((node) => (
+                        <TreeNode
+                          key={`pinned:${node.path}`}
+                          node={node}
+                          activePath={activePath}
+                          filter={filter}
+                          collapsed={pinnedCollapsed}
+                          hiddenSet={hiddenSet}
+                          onToggleDir={togglePinnedDir}
+                          onSelectFile={(p) => {
+                            setViewMode('preview');
+                            openFile(p);
+                          }}
+                          onOpenMenu={openRowMenu}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="tree-section-divider">
+                  <span>All files</span>
+                </div>
+              </>
             )}
             {tree.map((node) => (
               <TreeNode

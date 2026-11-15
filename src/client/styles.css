@@ -739,9 +739,11 @@ html, body, #root {
 }
 
 .pinned-section {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elev);
 }
 
 .pinned-toggle {
@@ -749,32 +751,61 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 8px;
+  padding: 4px 6px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   cursor: pointer;
   text-align: left;
 }
 
 .pinned-toggle:hover {
-  background: var(--bg-elev);
+  background: var(--bg-hover);
   color: var(--text);
+}
+
+.pinned-icon {
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .pinned-count {
   margin-left: auto;
-  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 10px;
   font-weight: 600;
   color: var(--muted);
 }
 
 .pinned-list {
-  margin-top: 2px;
+  margin-top: 4px;
+}
+
+.tree-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 4px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tree-section-divider::before,
+.tree-section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
