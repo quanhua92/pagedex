@@ -11,7 +11,7 @@
 |---|---|---|---|
 | `--mcp <mode>` | `PAGEDEX_MCP_MODE` | `full` | Controls which MCP tools are exposed (`read`, `write`, `full`, or `off`) |
 | `--mcp-git` | `PAGEDEX_MCP_GIT` | `false` | Opt-in flag to expose `git_commit` and `git_discard` (requires `write` or `full`) |
-| `--mcp-token-file <path>` | `PAGEDEX_MCP_TOKEN_FILE` | — | File containing Bearer token required in `Authorization: Bearer <token>` on `/mcp` |
+| `--mcp-token-file <path>` | `PAGEDEX_MCP_TOKEN_FILE` | — | File containing comma/newline-separated Bearer tokens required in `Authorization: Bearer <token>` on `/mcp` (supports key rotation; empty file fails closed) |
 | — | `PAGEDEX_MCP_TOKEN` | — | Optional env fallback if `--mcp-token-file` is not set |
 | `--read-only` | `PAGEDEX_READ_ONLY` | `false` | Blocks all REST mutations (`403`) and forces MCP to `read` mode (unless `off`) |
 

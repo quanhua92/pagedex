@@ -142,4 +142,43 @@ test('auth-token-file locks REST endpoints, supports cookie login, key rotation,
     headers: { Authorization: 'Bearer beta-key' }
   });
   assert.equal(emptyFileRes.status, 401);
+
+  // 10. MCP token file supports comma-separated key rotation and fails closed when empty
+  fs.writeFileSync(mcpTokenFile, 'mcp-key-1, mcp-key-2\n', 'utf8');
+  const mcpHeaders = (token) => ({
+    'Content-Type': 'application/json',
+    Accept: 'application/json, text/event-stream',
+    Authorization: `Bearer ${token}`
+  });
+  const mcpKey1 = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: mcpHeaders('mcp-key-1'),
+    body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' })
+  });
+  assert.equal(mcpKey1.status, 200);
+
+  // Rotate out mcp-key-1, keep mcp-key-2
+  fs.writeFileSync(mcpTokenFile, 'mcp-key-2\n', 'utf8');
+  const mcpKey1Revoked = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: mcpHeaders('mcp-key-1'),
+    body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/list' })
+  });
+  assert.equal(mcpKey1Revoked.status, 401);
+
+  const mcpKey2 = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: mcpHeaders('mcp-key-2'),
+    body: JSON.stringify({ jsonrpc: '2.0', id: 4, method: 'tools/list' })
+  });
+  assert.equal(mcpKey2.status, 200);
+
+  // Empty mcp-token-file fails closed
+  fs.writeFileSync(mcpTokenFile, '  \n', 'utf8');
+  const mcpEmpty = await fetch(`${BASE}/mcp`, {
+    method: 'POST',
+    headers: mcpHeaders('mcp-key-2'),
+    body: JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'tools/list' })
+  });
+  assert.equal(mcpEmpty.status, 401);
 });

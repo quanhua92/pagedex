@@ -8,21 +8,28 @@ export function isAuthEnabled() {
   return Boolean(process.env.PAGEDEX_AUTH_TOKEN_FILE);
 }
 
-export function readAuthTokens() {
-  const tokenFile = process.env.PAGEDEX_AUTH_TOKEN_FILE;
-  if (!tokenFile) return [];
+export function parseTokenList(raw) {
+  if (typeof raw !== 'string') return [];
+  return raw
+    .split(/[,\r\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+export function readTokenFile(filePath) {
+  if (!filePath) return [];
   try {
-    const raw = fs.readFileSync(tokenFile, 'utf8');
-    return raw
-      .split(/[,\r\n]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    return parseTokenList(fs.readFileSync(filePath, 'utf8'));
   } catch {
     return [];
   }
 }
 
-function safeEqual(a, b) {
+export function readAuthTokens() {
+  return readTokenFile(process.env.PAGEDEX_AUTH_TOKEN_FILE);
+}
+
+export function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   const aBuf = Buffer.from(a, 'utf8');
   const bBuf = Buffer.from(b, 'utf8');

@@ -1,7 +1,8 @@
-import { randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import { McpServer, createMcpHandler, parseJSONRPCMessage } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { parseTokenList, readTokenFile, safeEqual } from './auth.js';
 import {
   deleteNote,
   discardGitChange,
@@ -33,24 +34,32 @@ export function getMcpConfig() {
   return { mode, readOnly, allowWrite, allowDelete, allowGit };
 }
 
-function readMcpToken() {
+function isMcpAuthEnabled() {
+  return Boolean(process.env.PAGEDEX_MCP_TOKEN_FILE || (process.env.PAGEDEX_MCP_TOKEN || '').trim());
+}
+
+function readMcpTokens() {
   const tokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE;
   if (tokenFile) {
-    return fs.readFileSync(tokenFile, 'utf8').trim();
+    return readTokenFile(tokenFile);
   }
-  return (process.env.PAGEDEX_MCP_TOKEN || '').trim();
+  return parseTokenList(process.env.PAGEDEX_MCP_TOKEN || '');
 }
 
 function isAuthorizedMcpRequest(req) {
-  const expected = readMcpToken();
-  if (!expected) return true;
+  if (!isMcpAuthEnabled()) return true;
   const auth = req.headers.get('authorization') || '';
   const match = auth.match(/^Bearer\s+(.+)$/i);
   if (!match) return false;
   const provided = match[1].trim();
-  const a = Buffer.from(provided, 'utf8');
-  const b = Buffer.from(expected, 'utf8');
-  return a.length === b.length && timingSafeEqual(a, b);
+  const tokens = readMcpTokens();
+  let ok = false;
+  for (const expected of tokens) {
+    if (safeEqual(provided, expected)) {
+      ok = true;
+    }
+  }
+  return ok;
 }
 
 const sseSessions = new Map();
