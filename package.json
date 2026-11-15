@@ -3,6 +3,10 @@
   "version": "0.1.1",
   "description": "Local-first Markdown knowledge viewer, editor, Git bridge, and MCP v2 server for any directory.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/quanhua92/pagedex.git"
+  },
   "type": "module",
   "engines": {
     "node": ">=22.5.0"
