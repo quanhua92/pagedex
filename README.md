@@ -3,8 +3,8 @@
   <h1>PageDex</h1>
   <p>A fast, browsable catalog (<strong>-dex</strong>, like Rolodex/Pokédex) for any local folder of notes and files, with full-text search, backlinks, Git, and MCP.</p>
   <p>
-    <a href="#quick-start">Quick Start</a> ·
     <a href="#screenshots">Screenshots</a> ·
+    <a href="#quick-start">Quick Start</a> ·
     <a href="#mcp-for-ai-agents">MCP Setup</a> ·
     <a href="./docs/README.md">Full Docs</a>
   </p>
@@ -21,8 +21,18 @@
 | **Obsidian users** | Browse, search, and edit your Obsidian notes from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]`, backlinks, and SSE live reload alongside Obsidian Sync—no extra clutter |
 | **Git-backed notes & repos** | Live-reloads on external edits via SSE and lets you inspect diffs, discard changes, commit, and push directly from the UI |
 | **Developers & tech writers** | Explore repo `docs/`, preview sandboxed HTML, CSV, PDF, and media files, and review/commit changes with the built-in Git diff UI |
-| **AI & agent builders** | Connect Claude Code, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
+| **AI & agent builders** | Connect Claude Code, Codex, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
 | **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
+
+## Screenshots
+
+| WYSIWYG Editor (Tiptap) | Quick Switcher (`Cmd/Ctrl+K`) |
+|---|---|
+| ![Desktop Editor](./docs/images/desktop-edit.png) | ![Quick Switcher](./docs/images/desktop-switcher.png) |
+
+| Token Lock Screen (`--auth-token-file`) | Mobile View & Bottom Bar |
+|---|---|
+| ![Auth Lock Screen](./docs/images/desktop-auth.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
 
 ## Quick Start
 
@@ -78,7 +88,7 @@ Options:
 
 ## MCP for AI Agents
 
-Point Claude Code, Cursor, or any HTTP MCP client at `http://127.0.0.1:4321/mcp`:
+Point Claude Code, Codex, Cursor, or any HTTP MCP client at `http://127.0.0.1:4321/mcp`:
 
 ```json
 {
@@ -96,16 +106,6 @@ Point Claude Code, Cursor, or any HTTP MCP client at `http://127.0.0.1:4321/mcp`
 - **Git (`--mcp-git`):** `git_commit`, `git_discard`
 
 See **[docs/MCP.md](./docs/MCP.md)** for token auth headers and full tool schemas.
-
-## Screenshots
-
-| WYSIWYG Editor (Tiptap) | Quick Switcher (`Cmd/Ctrl+K`) |
-|---|---|
-| ![Desktop Editor](./docs/images/desktop-edit.png) | ![Quick Switcher](./docs/images/desktop-switcher.png) |
-
-| Token Lock Screen (`--auth-token-file`) | Mobile View & Bottom Bar |
-|---|---|
-| ![Auth Lock Screen](./docs/images/desktop-auth.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
 
 ## Search Index Cache
 
