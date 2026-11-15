@@ -68,8 +68,8 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           git push origin main --follow-tags
 
-      - name: Publish to npm (OIDC)
-        run: npm publish --access public
+      - name: Stage publish to npm (OIDC)
+        run: npm stage publish
 
       - name: Create GitHub Release
         env:
