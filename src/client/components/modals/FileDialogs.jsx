@@ -1,5 +1,6 @@
 import React from 'react';
 import { buildNewNotePath } from '../../lib/paths.js';
+import FolderPicker from '../FolderPicker.jsx';
 
 export function NewNoteModal({
   newNoteOpen,
@@ -37,28 +38,14 @@ export function NewNoteModal({
           </div>
           <div className="field">
             <label>Folder</label>
-            <input
-              type="text"
-              placeholder="(vault root) or type/select folder"
+            <FolderPicker
               value={newNoteFolder}
-              onChange={(e) => setNewNoteFolder(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && confirmNewNote()}
+              onChange={setNewNoteFolder}
+              allFolders={allFolders}
+              allowCustom
+              onEnter={confirmNewNote}
+              placeholder="(vault root) or type/select folder"
             />
-            <div className="folder-picker">
-              {allFolders.map((f) => {
-                const active = newNoteFolder.trim().replace(/^\/+|\/+$/g, '') === f;
-                return (
-                  <button
-                    key={f || '__root__'}
-                    type="button"
-                    className={`folder-pick-item${active ? ' active' : ''}`}
-                    onClick={() => setNewNoteFolder(f)}
-                  >
-                    {f ? f : '/ (vault root)'}
-                  </button>
-                );
-              })}
-            </div>
           </div>
           {buildNewNotePath(newNoteTitle, newNoteFolder) && (
             <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
@@ -96,18 +83,22 @@ export function RenameModal({
     <div className="modal-backdrop" onClick={() => setRenameTarget(null)}>
       <div className="modal" style={{ height: 'auto', maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>Rename / Move</h2>
+          <h2>{renameTarget.type === 'dir' ? 'Rename folder' : 'Rename file'}</h2>
           <button className="btn" onClick={() => setRenameTarget(null)}>
             Close
           </button>
         </div>
         <div className="modal-body">
+          <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+            Folder: {renameTarget.parentDir ? `${renameTarget.parentDir}/` : '/'}
+          </div>
           <div className="field">
-            <label>New path</label>
+            <label>New name</label>
             <input
               type="text"
-              value={renameTarget.newPath}
-              onChange={(e) => setRenameTarget((r) => ({ ...r, newPath: e.target.value }))}
+              autoFocus
+              value={renameTarget.newName}
+              onChange={(e) => setRenameTarget((r) => ({ ...r, newName: e.target.value }))}
               onKeyDown={(e) => e.key === 'Enter' && confirmRenameFile()}
             />
           </div>
@@ -123,6 +114,63 @@ export function RenameModal({
           </button>
           <button className="btn primary" onClick={confirmRenameFile}>
             Rename
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function MoveModal({
+  moveTarget,
+  setMoveTarget,
+  allFolders,
+  moveError,
+  confirmMoveItem
+}) {
+  if (!moveTarget) return null;
+
+  const cleanDest = (moveTarget.destFolder || '').trim().replace(/^\/+|\/+$/g, '');
+  const destPath = cleanDest ? `${cleanDest}/${moveTarget.name}` : moveTarget.name;
+
+  return (
+    <div className="modal-backdrop" onClick={() => setMoveTarget(null)}>
+      <div className="modal" style={{ height: 'auto', maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>{moveTarget.type === 'dir' ? 'Move folder' : 'Move file'}</h2>
+          <button className="btn" onClick={() => setMoveTarget(null)}>
+            Close
+          </button>
+        </div>
+        <div className="modal-body">
+          <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+            From: {moveTarget.oldPath}
+          </div>
+          <div className="field">
+            <label>Destination folder</label>
+            <FolderPicker
+              value={moveTarget.destFolder}
+              onChange={(destFolder) => setMoveTarget((m) => ({ ...m, destFolder }))}
+              allFolders={allFolders}
+              excludePrefix={moveTarget.type === 'dir' ? moveTarget.oldPath : ''}
+              onEnter={confirmMoveItem}
+            />
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+            To: {destPath}
+          </div>
+          {moveError && (
+            <div className="git-output" style={{ color: '#f87171' }}>
+              {moveError}
+            </div>
+          )}
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={() => setMoveTarget(null)}>
+            Cancel
+          </button>
+          <button className="btn primary" onClick={confirmMoveItem}>
+            Move
           </button>
         </div>
       </div>

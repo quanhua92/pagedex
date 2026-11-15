@@ -26,6 +26,7 @@ import FileContextMenu from './components/modals/FileContextMenu.jsx';
 import {
   NewNoteModal,
   RenameModal,
+  MoveModal,
   DeleteConfirmModal,
   DiscardConfirmModal
 } from './components/modals/FileDialogs.jsx';
@@ -56,8 +57,10 @@ export default function App() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteError, setDeleteError] = useState('');
   const [fileMenu, setFileMenu] = useState(null); // { type, path, x, y }
-  const [renameTarget, setRenameTarget] = useState(null); // { type, oldPath, newPath }
+  const [renameTarget, setRenameTarget] = useState(null); // { type, oldPath, parentDir, newName }
   const [renameError, setRenameError] = useState('');
+  const [moveTarget, setMoveTarget] = useState(null); // { type, oldPath, name, destFolder }
+  const [moveError, setMoveError] = useState('');
   const [newNoteOpen, setNewNoteOpen] = useState(false);
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteFolder, setNewNoteFolder] = useState('');
@@ -530,35 +533,75 @@ export default function App() {
     }
   }
 
-  async function confirmRenameFile() {
-    if (!renameTarget?.oldPath || !renameTarget?.newPath.trim()) return;
-    setRenameError('');
-    const isDir = renameTarget.type === 'dir';
+  async function performRenameOrMove(type, oldPath, cleanNew, onError) {
+    const isDir = type === 'dir';
     const endpoint = isDir ? '/api/v1/dir/rename' : '/api/v1/file/rename';
-    const cleanNew = renameTarget.newPath.trim().replace(/^\/+|\/+$/g, '');
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        oldPath: renameTarget.oldPath,
-        newPath: cleanNew
-      })
+      body: JSON.stringify({ oldPath, newPath: cleanNew })
     });
     const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      const { oldPath } = renameTarget;
-      setRenameTarget(null);
-      await fetchTree();
-      if (isDir) {
-        if (activePath.startsWith(`${oldPath}/`)) {
-          openFile(`${cleanNew}${activePath.slice(oldPath.length)}`);
-        }
-      } else if (oldPath === activePath) {
-        openFile(cleanNew);
-      }
-    } else {
-      setRenameError(data.error || 'Failed to rename');
+    if (!res.ok) {
+      onError(data.error || 'Operation failed');
+      return false;
     }
+    await fetchTree();
+    setTabs((prev) =>
+      prev.map((t) => {
+        if (!t.path) return t;
+        if (isDir && t.path.startsWith(`${oldPath}/`)) {
+          const nextPath = `${cleanNew}${t.path.slice(oldPath.length)}`;
+          return { ...t, path: nextPath, title: baseTitle(nextPath) };
+        }
+        if (!isDir && t.path === oldPath) {
+          return { ...t, path: cleanNew, title: baseTitle(cleanNew) };
+        }
+        return t;
+      })
+    );
+    if (isDir) {
+      if (activePath.startsWith(`${oldPath}/`)) {
+        openFile(`${cleanNew}${activePath.slice(oldPath.length)}`);
+      }
+    } else if (oldPath === activePath) {
+      openFile(cleanNew);
+    }
+    return true;
+  }
+
+  async function confirmRenameFile() {
+    if (!renameTarget?.oldPath) return;
+    const cleanName = renameTarget.newName.trim();
+    if (!cleanName) {
+      setRenameError('Please enter a name');
+      return;
+    }
+    if (cleanName.includes('/')) {
+      setRenameError('Name cannot contain / (use Move to change folder)');
+      return;
+    }
+    setRenameError('');
+    const cleanNew = renameTarget.parentDir ? `${renameTarget.parentDir}/${cleanName}` : cleanName;
+    if (cleanNew === renameTarget.oldPath) {
+      setRenameTarget(null);
+      return;
+    }
+    const ok = await performRenameOrMove(renameTarget.type, renameTarget.oldPath, cleanNew, setRenameError);
+    if (ok) setRenameTarget(null);
+  }
+
+  async function confirmMoveItem() {
+    if (!moveTarget?.oldPath) return;
+    setMoveError('');
+    const cleanDest = (moveTarget.destFolder || '').trim().replace(/^\/+|\/+$/g, '');
+    const cleanNew = cleanDest ? `${cleanDest}/${moveTarget.name}` : moveTarget.name;
+    if (cleanNew === moveTarget.oldPath) {
+      setMoveTarget(null);
+      return;
+    }
+    const ok = await performRenameOrMove(moveTarget.type, moveTarget.oldPath, cleanNew, setMoveError);
+    if (ok) setMoveTarget(null);
   }
 
   function openRowMenu(targetPath, rect, type = 'file') {
@@ -794,6 +837,7 @@ export default function App() {
         fabOpen ||
         newNoteOpen ||
         renameTarget ||
+        moveTarget ||
         deleteTarget ||
         discardTarget
     )
@@ -976,6 +1020,8 @@ export default function App() {
         uploadInputRef={uploadInputRef}
         setRenameError={setRenameError}
         setRenameTarget={setRenameTarget}
+        setMoveError={setMoveError}
+        setMoveTarget={setMoveTarget}
         setTabs={setTabs}
         setActiveTabId={setActiveTabId}
         setViewMode={setViewMode}
@@ -1004,6 +1050,14 @@ export default function App() {
         setRenameTarget={setRenameTarget}
         renameError={renameError}
         confirmRenameFile={confirmRenameFile}
+      />
+
+      <MoveModal
+        moveTarget={moveTarget}
+        setMoveTarget={setMoveTarget}
+        allFolders={allFolders}
+        moveError={moveError}
+        confirmMoveItem={confirmMoveItem}
       />
 
       <DeleteConfirmModal

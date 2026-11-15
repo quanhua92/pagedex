@@ -9,6 +9,8 @@ export default function FileContextMenu({
   uploadInputRef,
   setRenameError,
   setRenameTarget,
+  setMoveError,
+  setMoveTarget,
   setTabs,
   setActiveTabId,
   setViewMode,
@@ -57,12 +59,29 @@ export default function FileContextMenu({
               className="more-item"
               onClick={() => {
                 const target = fileMenu.path;
+                const parts = target.split('/');
+                const newName = parts.pop() || '';
+                const parentDir = parts.join('/');
                 setFileMenu(null);
                 setRenameError('');
-                setRenameTarget({ type: 'dir', oldPath: target, newPath: target });
+                setRenameTarget({ type: 'dir', oldPath: target, parentDir, newName });
               }}
             >
-              <span>Rename / Move</span>
+              <span>Rename</span>
+            </button>
+            <button
+              className="more-item"
+              onClick={() => {
+                const target = fileMenu.path;
+                const parts = target.split('/');
+                const name = parts.pop() || '';
+                const destFolder = parts.join('/');
+                setFileMenu(null);
+                setMoveError('');
+                setMoveTarget({ type: 'dir', oldPath: target, name, destFolder });
+              }}
+            >
+              <span>Move</span>
             </button>
             <button
               className="more-item"
@@ -94,12 +113,29 @@ export default function FileContextMenu({
               className="more-item"
               onClick={() => {
                 const target = fileMenu.path;
+                const parts = target.split('/');
+                const newName = parts.pop() || '';
+                const parentDir = parts.join('/');
                 setFileMenu(null);
                 setRenameError('');
-                setRenameTarget({ type: 'file', oldPath: target, newPath: target });
+                setRenameTarget({ type: 'file', oldPath: target, parentDir, newName });
               }}
             >
-              <span>Rename / Move</span>
+              <span>Rename</span>
+            </button>
+            <button
+              className="more-item"
+              onClick={() => {
+                const target = fileMenu.path;
+                const parts = target.split('/');
+                const name = parts.pop() || '';
+                const destFolder = parts.join('/');
+                setFileMenu(null);
+                setMoveError('');
+                setMoveTarget({ type: 'file', oldPath: target, name, destFolder });
+              }}
+            >
+              <span>Move</span>
             </button>
             <button
               className="more-item"
