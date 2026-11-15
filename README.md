@@ -2,9 +2,13 @@
 
 > A fast, browsable catalog (**-dex**, like Rolodex/Pokédex) for any local folder of notes and files—served as a web **page** with full-text search, backlinks, Git sync, and MCP.
 
-**pagedex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index is stored outside at `~/.cache/pagedex/`).
+**pagedex** turns any plain directory on disk into an instant, zero-lock-in knowledge workspace—combining a Markdown reader & WYSIWYG editor, `[[wikilink]]` backlinks, SQLite FTS5 trigram search, built-in Git diff/commit, and a permission-scoped MCP server on one port. Your folder stays 100% clean (the search index lives outside at `~/.cache/pagedex/`).
 
-### Who is it for?
+[Quick Start](#quick-start) · [Screenshots](#screenshots) · [MCP Setup](#mcp-for-ai-agents) · [Full Docs](./docs/README.md)
+
+![pagedex Desktop Preview](./docs/images/desktop-preview.png)
+
+## Who is it for?
 
 | Who | Why `pagedex` |
 |---|---|
@@ -14,31 +18,35 @@
 | **AI & agent builders** | Connect Claude Code, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
 | **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
 
-## Requirements
-
-- **Node.js `>= 22.5.0`** (uses built-in `node:sqlite` for FTS5 trigram search)
-
 ## Quick Start
 
+**Requirement:** Node.js `>= 22.5.0` (uses built-in `node:sqlite` for FTS5 trigram search).
+
 ```bash
-npx pagedex [dir]
+# Serve the current folder on http://127.0.0.1:4321 and open your browser
+npx pagedex --open
+
+# Serve an Obsidian vault or docs folder on your LAN / Tailscale
+npx pagedex ~/vault --host 0.0.0.0 --port 4321
 ```
 
-By default, `pagedex` serves the current directory on `http://127.0.0.1:4321`:
+One server exposes everything on the same port:
+- **`/`** — React + Tiptap web UI (desktop tabs, pinned folders/notes, outline & backlinks, mobile edge-swipe drawers)
+- **`/api/v1/*`** — REST API for reading, editing, searching, uploading, and Git diff/commit
+- **`/mcp`** — Multi-era MCP endpoint (`2026-07-28`, `2025-11-25` Streamable HTTP, `2024-11-05` HTTP+SSE)
 
-- `/` — React + Tiptap web UI (desktop & mobile with edge-swipe drawers + long-press tree actions)
-- `/api/v1/*` — REST API for reading, editing, searching, and Git diff/commit
-- `/mcp` — MCP endpoint supporting `2026-07-28` (`server/discover`), `2025-11-25` Streamable HTTP, and `2024-11-05` HTTP+SSE (see [MCP Server Guide](./docs/MCP.md))
+### Common Recipes
 
-## Screenshots
+```bash
+# Read-only web + MCP mode (safe for browsing/sharing)
+npx pagedex ~/vault --read-only
 
-| Desktop Preview & Pinned Sidebar | WYSIWYG Editor (Tiptap) |
-|---|---|
-| ![Desktop Preview](./docs/images/desktop-preview.png) | ![Desktop Editor](./docs/images/desktop-edit.png) |
+# LAN access with write-scoped MCP (no delete_note) + Bearer token from a 0600 file
+npx pagedex ~/vault --host 0.0.0.0 --mcp write --mcp-token-file ~/.config/pagedex/mcp-token
 
-| Quick Switcher (`Cmd/Ctrl+K`) | Mobile View & Bottom Bar |
-|---|---|
-| ![Quick Switcher](./docs/images/desktop-switcher.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
+# Allow MCP create/edit/move + local git_commit / git_discard (never auto-pushes)
+npx pagedex ~/vault --mcp write --mcp-git
+```
 
 ### CLI Options
 
@@ -61,32 +69,53 @@ Options:
   -h, --help                 Show this help
 ```
 
-### Examples
+## MCP for AI Agents
 
-```bash
-# Serve current folder on default port 4321
-npx pagedex
+Point Claude Code, Cursor, or any HTTP MCP client at `http://127.0.0.1:4321/mcp`:
 
-# Serve a specific notes folder on LAN/Tailscale with read-only MCP and Bearer token file
-npx pagedex ~/vault --host 0.0.0.0 --mcp read --mcp-token-file ~/.config/pagedex/mcp-token
-
-# Allow MCP create/edit/move + local git commit/discard without delete_note
-npx pagedex ~/vault --mcp write --mcp-git
+```json
+{
+  "mcpServers": {
+    "pagedex": {
+      "url": "http://127.0.0.1:4321/mcp"
+    }
+  }
+}
 ```
+
+- **Read tools:** `list_vault`, `read_note`, `search_vault`, `get_vault_info`, `get_note_links`, `git_status`, `git_diff`
+- **Write tools (`write`, `full`):** `write_note`, `move_path`
+- **Destructive (`full`):** `delete_note`
+- **Git (`--mcp-git`):** `git_commit`, `git_discard`
+
+See **[docs/MCP.md](./docs/MCP.md)** for token auth headers and full tool schemas.
+
+## Screenshots
+
+| WYSIWYG Editor (Tiptap) | Quick Switcher (`Cmd/Ctrl+K`) | Mobile View & Bottom Bar |
+|---|---|---|
+| ![Desktop Editor](./docs/images/desktop-edit.png) | ![Quick Switcher](./docs/images/desktop-switcher.png) | ![Mobile Preview](./docs/images/mobile-preview.png) |
 
 ## Search Index Cache
 
 The SQLite FTS5 trigram index is stored outside your target folder at `~/.cache/pagedex/<hash>.db` (override with `PAGEDEX_INDEX_DIR` or `PAGEDEX_INDEX_PATH`) so running `pagedex` never dirties `git status`.
 
+## Documentation
+
+- [Getting Started](./docs/getting-started.md) — CLI flags, UI features, wikilinks, Git sync, and mobile gestures
+- [Supported File Types](./docs/supported-files.md) — Markdown, sandboxed HTML, PDF, audio/video, CSV/TSV, SVG, and code
+- [MCP Server Guide](./docs/MCP.md) — Scoped MCP modes, `--mcp-token-file`, and all 12 tools
+- [MCP & REST API](./docs/mcp-and-api.md) — REST endpoints, `/raw/*`, and SSE live reload
+- [Security Model](./docs/security.md) — Sandboxed HTML iframes, CSP/CORS, `Origin: null` guard, and path protection
+- [Development & Release](./docs/development.md) — Local dev, tests, and npm packaging
+
 ## Development
 
 ```bash
 pnpm install
-pnpm dev      # Hono API/MCP on :4321 + Vite HMR on :5173
-pnpm build    # Build production UI into dist/
-pnpm test     # Run unit tests
-pnpm test:playwright # Run Playwright E2E tests
-pnpm smoke    # Run REST + multi-era MCP smoke checks
+pnpm dev              # Hono API/MCP on :4321 + Vite HMR on :5173
+pnpm build            # Build production UI into dist/
+pnpm test             # Run unit tests
+pnpm test:playwright  # Run Playwright E2E tests
+pnpm smoke            # Run REST + multi-era MCP smoke checks
 ```
-
-See [docs/README.md](./docs/README.md) for full documentation.
