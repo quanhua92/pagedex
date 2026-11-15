@@ -27,6 +27,10 @@ npx pagedex ~/vault --host 0.0.0.0 --port 4321
 | `-p, --port <port>` | `PORT` | `4321` | HTTP port |
 | `-H, --host <host>` | `HOST` | `127.0.0.1` | Bind address (`0.0.0.0` for LAN/Tailscale) |
 | `-o, --open` | — | `false` | Open browser on startup |
+| `--mcp <mode>` | `PAGEDEX_MCP_MODE` | `full` | MCP mode: `read`, `write`, `full`, or `off` |
+| `--mcp-git` | `PAGEDEX_MCP_GIT` | `false` | Enable `git_commit` and `git_discard` MCP tools |
+| `--mcp-token-file <path>` | `PAGEDEX_MCP_TOKEN_FILE` | — | File containing Bearer token for `/mcp` |
+| `--read-only` | `PAGEDEX_READ_ONLY` | `false` | Disable all REST & MCP write/delete mutations |
 | `-v, --version` | — | — | Print version |
 | `-h, --help` | — | — | Print CLI help |
 

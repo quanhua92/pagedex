@@ -1,9 +1,57 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import fs from 'node:fs';
 import { McpServer, createMcpHandler, parseJSONRPCMessage } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import { deleteNote, editNote, getCachedVault, resolveSafe, writeNote } from './vault.js';
-import { removeFileFromIndex, searchFts, upsertFileInIndex } from './search-index.js';
+import {
+  deleteNote,
+  discardGitChange,
+  editNote,
+  getCachedVault,
+  getGitChanges,
+  getGitDiff,
+  gitCommitAndPush,
+  renameDir,
+  renameNote,
+  resolveSafe,
+  writeNote
+} from './vault.js';
+import { removeFileFromIndex, searchFts, syncIndex, upsertFileInIndex } from './search-index.js';
+
+const VALID_MCP_MODES = new Set(['read', 'write', 'full', 'off']);
+
+export function getMcpConfig() {
+  const readOnly = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
+  const rawMode = (process.env.PAGEDEX_MCP_MODE || 'full').toLowerCase();
+  const normalized = VALID_MCP_MODES.has(rawMode) ? rawMode : 'full';
+  const mode = normalized === 'off' ? 'off' : readOnly ? 'read' : normalized;
+  const allowWrite = mode === 'write' || mode === 'full';
+  const allowDelete = mode === 'full';
+  const allowGit =
+    !readOnly &&
+    (process.env.PAGEDEX_MCP_GIT === '1' || process.env.PAGEDEX_MCP_GIT === 'true') &&
+    allowWrite;
+  return { mode, readOnly, allowWrite, allowDelete, allowGit };
+}
+
+function readMcpToken() {
+  const tokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE;
+  if (tokenFile) {
+    return fs.readFileSync(tokenFile, 'utf8').trim();
+  }
+  return (process.env.PAGEDEX_MCP_TOKEN || '').trim();
+}
+
+function isAuthorizedMcpRequest(req) {
+  const expected = readMcpToken();
+  if (!expected) return true;
+  const auth = req.headers.get('authorization') || '';
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) return false;
+  const provided = match[1].trim();
+  const a = Buffer.from(provided, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 const sseSessions = new Map();
 const encoder = new TextEncoder();
@@ -88,7 +136,7 @@ class WebStandardSSEServerTransport {
   }
 }
 
-function createVaultMcpServer() {
+function createVaultMcpServer(config = getMcpConfig()) {
   const server = new McpServer({
     name: 'vault-mcp',
     version: '0.1.0'
@@ -233,68 +281,40 @@ function createVaultMcpServer() {
   );
 
   server.registerTool(
-    'write_note',
+    'get_vault_info',
     {
-      title: 'Write or Edit Note',
-      description:
-        'Create/overwrite/append a note (with content), or partially edit an existing note (with target + replacement).',
+      title: 'Get Vault Info',
+      description: 'Return vault summary: total indexed files and the most recently modified files.',
       inputSchema: z.object({
-        path: z.string(),
-        content: z.string().optional(),
-        append: z.boolean().optional(),
-        target: z.string().optional(),
-        replacement: z.string().optional(),
-        replaceAll: z.boolean().optional()
+        recentLimit: z.number().int().min(1).max(50).optional()
       }),
       outputSchema: z.object({
-        ok: z.boolean(),
-        path: z.string(),
-        mode: z.enum(['write', 'append', 'edit']),
-        bytes: z.number().optional(),
-        replacements: z.number().optional()
+        totalFiles: z.number(),
+        recentFiles: z.array(
+          z.object({
+            path: z.string(),
+            mtimeMs: z.number()
+          })
+        )
       })
     },
-    async ({ path: relPath, content, append, target, replacement, replaceAll }) => {
-      if (typeof target === 'string' && typeof replacement === 'string') {
-        const result = editNote(relPath, target, replacement, { replaceAll: Boolean(replaceAll) });
-        if (result.error) {
-          return { isError: true, content: [{ type: 'text', text: result.error }] };
-        }
-        upsertFileInIndex(result.path);
-        return {
-          structuredContent: {
-            ok: true,
-            path: result.path,
-            mode: 'edit',
-            replacements: result.replacements
-          },
-          content: [
-            {
-              type: 'text',
-              text: `Edited ${result.path} (${result.replacements} replacement${result.replacements === 1 ? '' : 's'})`
-            }
-          ]
-        };
-      }
-      if (typeof content !== 'string') {
-        return { isError: true, content: [{ type: 'text', text: 'Provide either content or target + replacement' }] };
-      }
-      const result = writeNote(relPath, content, { append: Boolean(append) });
-      if (!result) {
-        return { isError: true, content: [{ type: 'text', text: `Invalid or protected path: ${relPath}` }] };
-      }
-      upsertFileInIndex(result.path);
+    async ({ recentLimit }) => {
+      const { flatFiles, fileStats } = getCachedVault();
+      const limit = recentLimit ?? 15;
+      const recentFiles = [...(fileStats || [])]
+        .sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0))
+        .slice(0, limit)
+        .map((f) => ({ path: f.path, mtimeMs: f.mtimeMs || 0 }));
+      const lines = recentFiles.map((f) => f.path);
       return {
         structuredContent: {
-          ok: true,
-          path: result.path,
-          mode: append ? 'append' : 'write',
-          bytes: result.bytes
+          totalFiles: flatFiles.length,
+          recentFiles
         },
         content: [
           {
             type: 'text',
-            text: `${append ? 'Appended' : 'Wrote'} ${result.path} (${result.bytes} bytes)`
+            text: `Total files: ${flatFiles.length}\nRecent files:\n${lines.length ? lines.join('\n') : '(none)'}`
           }
         ]
       };
@@ -302,40 +322,378 @@ function createVaultMcpServer() {
   );
 
   server.registerTool(
-    'delete_note',
+    'get_note_links',
     {
-      title: 'Delete Note',
-      description: 'Delete a note/file from the vault by relative path.',
+      title: 'Get Note Links and Outline',
+      description: 'Return outgoing [[wikilinks]], incoming backlinks, and Markdown headings for a note.',
       inputSchema: z.object({
         path: z.string()
       }),
       outputSchema: z.object({
-        ok: z.boolean(),
-        path: z.string()
+        path: z.string(),
+        outgoingLinks: z.array(z.string()),
+        backlinks: z.array(z.string()),
+        headings: z.array(
+          z.object({
+            level: z.number(),
+            text: z.string()
+          })
+        )
       })
     },
     async ({ path: relPath }) => {
-      const result = deleteNote(relPath);
-      if (!result) {
-        return { isError: true, content: [{ type: 'text', text: `Not found or protected path: ${relPath}` }] };
+      const full = resolveSafe(relPath);
+      if (!full || !fs.existsSync(full) || !fs.statSync(full).isFile()) {
+        return { isError: true, content: [{ type: 'text', text: `Not found: ${relPath}` }] };
       }
-      removeFileFromIndex(result.path);
+      const raw = fs.readFileSync(full, 'utf8');
+      const outgoingSet = new Set();
+      for (const m of raw.matchAll(/\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]/g)) {
+        const target = m[1].trim();
+        if (target) outgoingSet.add(target);
+      }
+      const headings = [];
+      for (const line of raw.split('\n')) {
+        const hm = line.match(/^(#{1,6})\s+(.+?)\s*#*$/);
+        if (hm) headings.push({ level: hm[1].length, text: hm[2].trim() });
+      }
+      const { backlinks } = getCachedVault();
+      const outgoingLinks = [...outgoingSet];
+      const incoming = backlinks[relPath] || [];
       return {
         structuredContent: {
-          ok: true,
-          path: result.path
+          path: relPath,
+          outgoingLinks,
+          backlinks: incoming,
+          headings
         },
-        content: [{ type: 'text', text: `Deleted ${result.path}` }]
+        content: [
+          {
+            type: 'text',
+            text: [
+              `# ${relPath}`,
+              `Outgoing: ${outgoingLinks.length ? outgoingLinks.join(', ') : 'none'}`,
+              `Backlinks: ${incoming.length ? incoming.join(', ') : 'none'}`,
+              `Headings: ${headings.length ? headings.map((h) => `${'#'.repeat(h.level)} ${h.text}`).join(' | ') : 'none'}`
+            ].join('\n')
+          }
+        ]
       };
     }
   );
 
+  server.registerTool(
+    'git_status',
+    {
+      title: 'Git Status',
+      description: 'List uncommitted modified, added, or untracked files in the vault.',
+      inputSchema: z.object({}),
+      outputSchema: z.object({
+        isGit: z.boolean(),
+        count: z.number(),
+        changes: z.array(
+          z.object({
+            status: z.string(),
+            path: z.string(),
+            mtimeMs: z.number()
+          })
+        )
+      })
+    },
+    async () => {
+      const { isGit, changes } = getGitChanges();
+      const lines = changes.map((c) => `[${c.status}] ${c.path}`);
+      return {
+        structuredContent: {
+          isGit,
+          count: changes.length,
+          changes
+        },
+        content: [
+          {
+            type: 'text',
+            text: !isGit
+              ? 'Not a git repository'
+              : lines.length
+                ? lines.join('\n')
+                : 'Working tree clean'
+          }
+        ]
+      };
+    }
+  );
+
+  server.registerTool(
+    'git_diff',
+    {
+      title: 'Git Diff',
+      description: 'Get the unified git diff for a specific file in the vault.',
+      inputSchema: z.object({
+        path: z.string()
+      }),
+      outputSchema: z.object({
+        path: z.string(),
+        untracked: z.boolean(),
+        raw: z.string()
+      })
+    },
+    async ({ path: relPath }) => {
+      const diff = getGitDiff(relPath);
+      if (diff.error) {
+        return { isError: true, content: [{ type: 'text', text: diff.error }] };
+      }
+      return {
+        structuredContent: {
+          path: diff.path,
+          untracked: Boolean(diff.untracked),
+          raw: diff.raw || ''
+        },
+        content: [
+          {
+            type: 'text',
+            text: diff.raw ? diff.raw : `No changes in ${diff.path}`
+          }
+        ]
+      };
+    }
+  );
+
+  if (config.allowWrite) {
+    server.registerTool(
+      'write_note',
+      {
+        title: 'Write or Edit Note',
+        description:
+          'Create/overwrite/append a note (with content), or partially edit an existing note (with target + replacement).',
+        inputSchema: z.object({
+          path: z.string(),
+          content: z.string().optional(),
+          append: z.boolean().optional(),
+          target: z.string().optional(),
+          replacement: z.string().optional(),
+          replaceAll: z.boolean().optional()
+        }),
+        outputSchema: z.object({
+          ok: z.boolean(),
+          path: z.string(),
+          mode: z.enum(['write', 'append', 'edit']),
+          bytes: z.number().optional(),
+          replacements: z.number().optional()
+        })
+      },
+      async ({ path: relPath, content, append, target, replacement, replaceAll }) => {
+        if (typeof target === 'string' && typeof replacement === 'string') {
+          const result = editNote(relPath, target, replacement, { replaceAll: Boolean(replaceAll) });
+          if (result.error) {
+            return { isError: true, content: [{ type: 'text', text: result.error }] };
+          }
+          upsertFileInIndex(result.path);
+          return {
+            structuredContent: {
+              ok: true,
+              path: result.path,
+              mode: 'edit',
+              replacements: result.replacements
+            },
+            content: [
+              {
+                type: 'text',
+                text: `Edited ${result.path} (${result.replacements} replacement${result.replacements === 1 ? '' : 's'})`
+              }
+            ]
+          };
+        }
+        if (typeof content !== 'string') {
+          return { isError: true, content: [{ type: 'text', text: 'Provide either content or target + replacement' }] };
+        }
+        const result = writeNote(relPath, content, { append: Boolean(append) });
+        if (!result) {
+          return { isError: true, content: [{ type: 'text', text: `Invalid or protected path: ${relPath}` }] };
+        }
+        upsertFileInIndex(result.path);
+        return {
+          structuredContent: {
+            ok: true,
+            path: result.path,
+            mode: append ? 'append' : 'write',
+            bytes: result.bytes
+          },
+          content: [
+            {
+              type: 'text',
+              text: `${append ? 'Appended' : 'Wrote'} ${result.path} (${result.bytes} bytes)`
+            }
+          ]
+        };
+      }
+    );
+
+    server.registerTool(
+      'move_path',
+      {
+        title: 'Move or Rename File/Folder',
+        description: 'Rename or move a file or folder within the vault.',
+        inputSchema: z.object({
+          oldPath: z.string(),
+          newPath: z.string(),
+          type: z.enum(['auto', 'file', 'dir']).optional()
+        }),
+        outputSchema: z.object({
+          ok: z.boolean(),
+          type: z.enum(['file', 'dir']),
+          oldPath: z.string(),
+          newPath: z.string()
+        })
+      },
+      async ({ oldPath, newPath, type = 'auto' }) => {
+        const full = resolveSafe(oldPath);
+        if (!full || !fs.existsSync(full)) {
+          return { isError: true, content: [{ type: 'text', text: `Source not found: ${oldPath}` }] };
+        }
+        const isDir = type === 'dir' || (type === 'auto' && fs.statSync(full).isDirectory());
+        const result = isDir ? renameDir(oldPath, newPath) : renameNote(oldPath, newPath);
+        if (result.error) {
+          return { isError: true, content: [{ type: 'text', text: result.error }] };
+        }
+        if (isDir) {
+          syncIndex();
+        } else {
+          removeFileFromIndex(result.oldPath);
+          upsertFileInIndex(result.newPath);
+        }
+        return {
+          structuredContent: {
+            ok: true,
+            type: isDir ? 'dir' : 'file',
+            oldPath: result.oldPath,
+            newPath: result.newPath
+          },
+          content: [{ type: 'text', text: `Moved ${result.oldPath} -> ${result.newPath}` }]
+        };
+      }
+    );
+  }
+
+  if (config.allowDelete) {
+    server.registerTool(
+      'delete_note',
+      {
+        title: 'Delete Note',
+        description: 'Delete a note/file from the vault by relative path.',
+        inputSchema: z.object({
+          path: z.string()
+        }),
+        outputSchema: z.object({
+          ok: z.boolean(),
+          path: z.string()
+        })
+      },
+      async ({ path: relPath }) => {
+        const result = deleteNote(relPath);
+        if (!result) {
+          return { isError: true, content: [{ type: 'text', text: `Not found or protected path: ${relPath}` }] };
+        }
+        removeFileFromIndex(result.path);
+        return {
+          structuredContent: {
+            ok: true,
+            path: result.path
+          },
+          content: [{ type: 'text', text: `Deleted ${result.path}` }]
+        };
+      }
+    );
+  }
+
+  if (config.allowGit) {
+    server.registerTool(
+      'git_commit',
+      {
+        title: 'Git Commit',
+        description: 'Stage and commit vault changes locally (never pushes).',
+        inputSchema: z.object({
+          message: z.string(),
+          files: z.array(z.string()).optional()
+        }),
+        outputSchema: z.object({
+          ok: z.boolean(),
+          output: z.string()
+        })
+      },
+      async ({ message, files }) => {
+        const result = gitCommitAndPush({ message, files, push: false });
+        if (result.error) {
+          return { isError: true, content: [{ type: 'text', text: result.error }] };
+        }
+        return {
+          structuredContent: {
+            ok: true,
+            output: result.output || ''
+          },
+          content: [{ type: 'text', text: result.output || 'Committed' }]
+        };
+      }
+    );
+
+    server.registerTool(
+      'git_discard',
+      {
+        title: 'Git Discard File Changes',
+        description: 'Discard all uncommitted changes to a file (or remove an untracked file).',
+        inputSchema: z.object({
+          path: z.string()
+        }),
+        outputSchema: z.object({
+          ok: z.boolean(),
+          path: z.string(),
+          discarded: z.string()
+        })
+      },
+      async ({ path: relPath }) => {
+        const result = discardGitChange({ path: relPath });
+        if (result.error) {
+          return { isError: true, content: [{ type: 'text', text: result.error }] };
+        }
+        syncIndex();
+        return {
+          structuredContent: {
+            ok: true,
+            path: result.path,
+            discarded: result.discarded || 'file'
+          },
+          content: [{ type: 'text', text: `Discarded changes in ${result.path} (${result.discarded})` }]
+        };
+      }
+    );
+  }
+
   return server;
 }
 
-const mcpHandler = createMcpHandler(createVaultMcpServer);
+const mcpHandlers = new Map();
+
+function getMcpHandler(config) {
+  const key = `${config.mode}:${config.allowGit}`;
+  let handler = mcpHandlers.get(key);
+  if (!handler) {
+    handler = createMcpHandler(() => createVaultMcpServer(config));
+    mcpHandlers.set(key, handler);
+  }
+  return handler;
+}
 
 export async function handleMcpRequest(req) {
+  const config = getMcpConfig();
+  if (config.mode === 'off') {
+    return Response.json({ error: 'MCP endpoint is disabled' }, { status: 404 });
+  }
+  if (!isAuthorizedMcpRequest(req)) {
+    return Response.json(
+      { error: 'Unauthorized' },
+      { status: 401, headers: { 'WWW-Authenticate': 'Bearer' } }
+    );
+  }
+
   const url = new URL(req.url, 'http://localhost');
   const sessionId = url.searchParams.get('sessionId');
   const isStreamableHttpGet =
@@ -345,7 +703,7 @@ export async function handleMcpRequest(req) {
   if (req.method === 'GET' && !sessionId && !isStreamableHttpGet) {
     const transport = new WebStandardSSEServerTransport(url.pathname);
     sseSessions.set(transport.sessionId, transport);
-    const server = createVaultMcpServer();
+    const server = createVaultMcpServer(config);
     await server.connect(transport);
     return transport.createResponse(req.signal);
   }
@@ -360,5 +718,5 @@ export async function handleMcpRequest(req) {
   }
 
   // 3. Official MCP v2 handler: supports BOTH Modern (2026-07-28 server/discover) and Legacy Streamable HTTP (2025-11-25 initialize)
-  return mcpHandler.fetch(req);
+  return getMcpHandler(config).fetch(req);
 }

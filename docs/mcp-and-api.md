@@ -25,13 +25,14 @@ Point any HTTP-capable MCP client (Claude Code, Cursor, VS Code, etc.) at:
 
 ### Exposed MCP Tools
 
-| Tool | Purpose |
+See the full **[MCP Server Guide](./MCP.md)** for CLI access control (`--mcp`, `--mcp-git`, `--mcp-token-file`, `--read-only`) and detailed schemas.
+
+| Tier | Tools |
 |---|---|
-| `list_vault` | List files/folders and metadata in the served root |
-| `read_note` | Read file contents and backlinks |
-| `search_vault` | Run SQLite FTS5 trigram full-text search |
-| `write_note` | Create, overwrite, append, or patch (`target` → `replacement`) files |
-| `delete_note` | Delete a file from disk and update the search index |
+| Read (`read`, `write`, `full`) | `list_vault`, `read_note`, `search_vault`, `get_vault_info`, `get_note_links`, `git_status`, `git_diff` |
+| Write (`write`, `full`) | `write_note`, `move_path` |
+| Full (`full` default) | `delete_note` |
+| Git mutations (`--mcp-git`) | `git_commit`, `git_discard` |
 
 ## REST API (`/api/v1/*`)
 

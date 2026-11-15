@@ -18,7 +18,7 @@ By default, `pagedex` serves the current directory on `http://127.0.0.1:4321`:
 
 - `/` — React + Tiptap web UI (desktop & mobile with edge-swipe drawers + long-press tree actions)
 - `/api/v1/*` — REST API for reading, editing, searching, and Git diff/commit
-- `/mcp` — MCP endpoint supporting `2026-07-28` (`server/discover`), `2025-11-25` Streamable HTTP, and `2024-11-05` HTTP+SSE
+- `/mcp` — MCP endpoint supporting `2026-07-28` (`server/discover`), `2025-11-25` Streamable HTTP, and `2024-11-05` HTTP+SSE (see [MCP Server Guide](./docs/MCP.md))
 
 ### CLI Options
 
@@ -27,14 +27,18 @@ Usage:
   pagedex [dir] [options]
 
 Arguments:
-  dir                 Directory to serve (defaults to current working directory)
+  dir                        Directory to serve (defaults to current working directory)
 
 Options:
-  -p, --port <port>   Port to listen on (default: 4321, or PORT env)
-  -H, --host <host>   Host to bind (default: 127.0.0.1, or HOST env; use 0.0.0.0 for LAN)
-  -o, --open          Open browser after starting
-  -v, --version       Show version
-  -h, --help          Show this help
+  -p, --port <port>          Port to listen on (default: 4321, or PORT env)
+  -H, --host <host>          Host to bind (default: 127.0.0.1, or HOST env; use 0.0.0.0 for LAN)
+  -o, --open                 Open browser after starting
+  --mcp <mode>               MCP mode: read, write, full (default), or off (or PAGEDEX_MCP_MODE)
+  --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
+  --mcp-token-file <path>    File containing Bearer token for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
+  --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
+  -v, --version              Show version
+  -h, --help                 Show this help
 ```
 
 ### Examples
@@ -43,8 +47,11 @@ Options:
 # Serve current folder on default port 4321
 npx pagedex
 
-# Serve a specific notes folder on LAN/Tailscale
-npx pagedex ~/vault --host 0.0.0.0 --port 4321
+# Serve a specific notes folder on LAN/Tailscale with read-only MCP and Bearer token file
+npx pagedex ~/vault --host 0.0.0.0 --mcp read --mcp-token-file ~/.config/pagedex/mcp-token
+
+# Allow MCP create/edit/move + local git commit/discard without delete_note
+npx pagedex ~/vault --mcp write --mcp-git
 ```
 
 ## Search Index Cache
@@ -58,5 +65,8 @@ pnpm install
 pnpm dev      # Hono API/MCP on :4321 + Vite HMR on :5173
 pnpm build    # Build production UI into dist/
 pnpm test     # Run unit tests
+pnpm test:playwright # Run Playwright E2E tests
 pnpm smoke    # Run REST + multi-era MCP smoke checks
 ```
+
+See [docs/README.md](./docs/README.md) for full documentation.

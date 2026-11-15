@@ -12,6 +12,7 @@ import { registerEventRoutes, startVaultWatcher } from './routes/events.js';
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 4321);
+const READ_ONLY = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
 
 try {
   syncIndex();
@@ -27,6 +28,9 @@ const app = new Hono();
 app.use('/api/v1/*', async (c, next) => {
   const method = c.req.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    if (READ_ONLY) {
+      return c.json({ error: 'Server is running in read-only mode' }, 403);
+    }
     if (c.req.header('origin') === 'null') {
       return c.json({ error: 'Forbidden origin' }, 403);
     }

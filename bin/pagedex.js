@@ -16,11 +16,15 @@ Arguments:
   dir                 Directory to serve (defaults to current working directory)
 
 Options:
-  -p, --port <port>   Port to listen on (default: 4321, or PORT env)
-  -H, --host <host>   Host to bind (default: 127.0.0.1, or HOST env; use 0.0.0.0 for LAN)
-  -o, --open          Open browser after starting
-  -v, --version       Show version
-  -h, --help          Show this help
+  -p, --port <port>          Port to listen on (default: 4321, or PORT env)
+  -H, --host <host>          Host to bind (default: 127.0.0.1, or HOST env; use 0.0.0.0 for LAN)
+  -o, --open                 Open browser after starting
+  --mcp <mode>               MCP mode: read, write, full (default), or off (or PAGEDEX_MCP_MODE)
+  --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
+  --mcp-token-file <path>    File containing Bearer token for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
+  --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
+  -v, --version              Show version
+  -h, --help                 Show this help
 `);
 }
 
@@ -40,6 +44,12 @@ let targetDir = null;
 let port = process.env.PORT || '4321';
 let host = process.env.HOST || '127.0.0.1';
 let shouldOpen = false;
+let mcpMode = process.env.PAGEDEX_MCP_MODE || 'full';
+let mcpGit = process.env.PAGEDEX_MCP_GIT === '1' || process.env.PAGEDEX_MCP_GIT === 'true';
+let mcpTokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE || '';
+let readOnly = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
+
+const VALID_MCP_MODES = new Set(['read', 'write', 'full', 'off']);
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -53,6 +63,46 @@ for (let i = 0; i < args.length; i++) {
   }
   if (arg === '-o' || arg === '--open') {
     shouldOpen = true;
+    continue;
+  }
+  if (arg === '--read-only') {
+    readOnly = true;
+    continue;
+  }
+  if (arg === '--mcp-git') {
+    mcpGit = true;
+    continue;
+  }
+  if (arg === '--mcp') {
+    mcpMode = (args[++i] || '').toLowerCase();
+    if (!VALID_MCP_MODES.has(mcpMode)) {
+      console.error(`Invalid --mcp mode: ${mcpMode || '(missing)'}. Expected: read, write, full, or off`);
+      process.exit(1);
+    }
+    continue;
+  }
+  if (arg.startsWith('--mcp=')) {
+    mcpMode = arg.slice('--mcp='.length).toLowerCase();
+    if (!VALID_MCP_MODES.has(mcpMode)) {
+      console.error(`Invalid --mcp mode: ${mcpMode || '(missing)'}. Expected: read, write, full, or off`);
+      process.exit(1);
+    }
+    continue;
+  }
+  if (arg === '--mcp-token-file') {
+    mcpTokenFile = args[++i];
+    if (!mcpTokenFile) {
+      console.error('Missing value for --mcp-token-file');
+      process.exit(1);
+    }
+    continue;
+  }
+  if (arg.startsWith('--mcp-token-file=')) {
+    mcpTokenFile = arg.slice('--mcp-token-file='.length);
+    if (!mcpTokenFile) {
+      console.error('Missing value for --mcp-token-file');
+      process.exit(1);
+    }
     continue;
   }
   if (arg === '-p' || arg === '--port') {
@@ -95,10 +145,28 @@ if (!fs.existsSync(resolvedRoot) || !fs.statSync(resolvedRoot).isDirectory()) {
   process.exit(1);
 }
 
+if (!VALID_MCP_MODES.has(mcpMode.toLowerCase())) {
+  console.error(`Invalid PAGEDEX_MCP_MODE: ${mcpMode}. Expected: read, write, full, or off`);
+  process.exit(1);
+}
+
+if (mcpTokenFile) {
+  const resolvedTokenFile = path.resolve(mcpTokenFile);
+  if (!fs.existsSync(resolvedTokenFile) || !fs.statSync(resolvedTokenFile).isFile()) {
+    console.error(`MCP token file not found: ${resolvedTokenFile}`);
+    process.exit(1);
+  }
+  mcpTokenFile = resolvedTokenFile;
+}
+
 process.env.PAGEDEX_ROOT = resolvedRoot;
 process.env.VAULT_ROOT = resolvedRoot;
 process.env.PORT = String(port);
 process.env.HOST = String(host);
+process.env.PAGEDEX_MCP_MODE = mcpMode.toLowerCase();
+if (mcpGit) process.env.PAGEDEX_MCP_GIT = '1';
+if (mcpTokenFile) process.env.PAGEDEX_MCP_TOKEN_FILE = mcpTokenFile;
+if (readOnly) process.env.PAGEDEX_READ_ONLY = '1';
 
 await import('../src/server/index.js');
 
