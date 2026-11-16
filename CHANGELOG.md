@@ -2,6 +2,12 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.9] - 2026-11-16
+
+### Features
+
+- **auth:** add global failed-attempt rate limit on /api/v1/auth/login (788e069)
+
 ## [0.1.8] - 2026-11-15
 
 ### Features
