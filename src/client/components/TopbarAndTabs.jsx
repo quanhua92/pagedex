@@ -18,7 +18,7 @@ import {
   RotateCcw,
   Trash2
 } from 'lucide-react';
-import { buildMoveTarget, buildRenameTarget } from '../lib/paths.js';
+import { buildMoveTarget, buildRenameTarget, isMarkdownPath } from '../lib/paths.js';
 
 function MenuIcon({ icon: Icon }) {
   return <Icon className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
@@ -99,6 +99,16 @@ export default function TopbarAndTabs({
         <div className="crumbs">{activePath || 'New tab'}</div>
       </div>
       <div className="actions">
+        {activePath && !readOnly && isMarkdownPath(activePath) && (
+          <button
+            className={`icon-btn${viewMode === 'edit' ? ' active' : ''}`}
+            aria-label={viewMode === 'edit' ? 'Switch to preview' : 'Edit note'}
+            title={viewMode === 'edit' ? 'Preview note (Cmd/Ctrl+E)' : 'Edit note (Cmd/Ctrl+E)'}
+            onClick={() => setViewMode(viewMode === 'edit' ? 'preview' : 'edit')}
+          >
+            {viewMode === 'edit' ? <Eye size={16} strokeWidth={1.8} /> : <Pencil size={16} strokeWidth={1.8} />}
+          </button>
+        )}
         <button
           className={`icon-btn outline-toggle-btn${isOutlineActive ? ' active' : ''}`}
           aria-label="Toggle outline"
