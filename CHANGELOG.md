@@ -2,6 +2,15 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.10] - 2026-11-17
+
+### Features
+
+- **ui:** add 1-click topbar Pencil/Eye toggle between preview and edit (ba62cd3)
+- **preview:** render mermaid diagrams lazily with quote-safe HTML extraction (02dd0ad)
+- **editor:** add Raw/Edit toolbar toggle and top-right code block language selector (e2d0cbe)
+- **ui:** add New note/folder here to file menu and editable Raw Markdown mode (e8a9c51)
+
 ## [0.1.9] - 2026-11-16
 
 ### Features
