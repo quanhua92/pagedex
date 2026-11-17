@@ -23,6 +23,7 @@ export default function NoteViewer({
   reloadTick,
   isBinaryDownload,
   viewMode,
+  setViewMode,
   settings,
   diffData,
   requestDiscard,
@@ -201,6 +202,7 @@ export default function NoteViewer({
             setDirty(md !== content);
           }}
           onSave={saveActiveNote}
+          onSwitchToRaw={() => setViewMode('raw')}
         />
       ) : isHtml && viewMode === 'preview' ? (
         <div className="media-viewer html-viewer">
@@ -257,6 +259,7 @@ export default function NoteViewer({
             setDirty(md !== content);
           }}
           onSave={saveActiveNote}
+          onSwitchToEdit={() => setViewMode('edit')}
         />
       ) : viewMode === 'raw' || !isMarkdown ? (
         <pre

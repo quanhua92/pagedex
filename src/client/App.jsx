@@ -1211,6 +1211,7 @@ export default function App() {
                 reloadTick={reloadTick}
                 isBinaryDownload={isBinaryDownload}
                 viewMode={viewMode}
+                setViewMode={setViewMode}
                 settings={settings}
                 diffData={diffData}
                 requestDiscard={requestDiscard}

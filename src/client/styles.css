@@ -974,5 +974,44 @@ html, body, #root {
 .raw-textarea:focus {
   border-color: var(--accent);
 }
+.tiptap-codeblock {
+  position: relative;
+  margin: 16px 0;
+}
+.tiptap-codeblock pre {
+  margin: 0;
+  padding-top: 36px;
+}
+.tiptap-codeblock-lang {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tiptap-lang-select,
+.tiptap-lang-input {
+  padding: 2px 5px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+}
+.tiptap-lang-select {
+  width: 88px;
+}
+.tiptap-lang-input {
+  width: 84px;
+}
+.tiptap-lang-select:focus,
+.tiptap-lang-input:focus {
+  border-color: var(--accent);
+  color: var(--text);
+}
 
 

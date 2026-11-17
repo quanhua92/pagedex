@@ -1,11 +1,107 @@
-import React, { useEffect } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import React, { useEffect, useState } from 'react';
+import { EditorContent, NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from 'tiptap-markdown';
 
-export default function TiptapEditor({ content, fileKey, fontSize, lineHeight, maxWidth, saving, dirty, onChange, onSave }) {
+const CODE_LANGUAGES = [
+  'mermaid',
+  'bash',
+  'python',
+  'javascript',
+  'typescript',
+  'json',
+  'yaml',
+  'sql',
+  'html',
+  'css',
+  'go',
+  'rust',
+  'markdown'
+];
+
+function CodeBlockNodeView({ node, updateAttributes }) {
+  const currentLang = node.attrs.language || '';
+  const isKnown = currentLang === '' || CODE_LANGUAGES.includes(currentLang);
+  const [customOpen, setCustomOpen] = useState(!isKnown);
+
+  useEffect(() => {
+    if (!isKnown) setCustomOpen(true);
+  }, [isKnown]);
+
+  const selectValue = customOpen || !isKnown ? '__other__' : currentLang;
+
+  return (
+    <NodeViewWrapper className="tiptap-codeblock">
+      <div className="tiptap-codeblock-lang" contentEditable={false}>
+        {(customOpen || !isKnown) && (
+          <input
+            type="text"
+            className="tiptap-lang-input"
+            aria-label="Custom code block language"
+            placeholder="e.g. rust"
+            autoFocus
+            value={currentLang}
+            onChange={(e) => updateAttributes({ language: e.target.value })}
+          />
+        )}
+        <select
+          className="tiptap-lang-select"
+          aria-label="Code block language"
+          value={selectValue}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === '__other__') {
+              setCustomOpen(true);
+            } else {
+              setCustomOpen(false);
+              updateAttributes({ language: val });
+            }
+          }}
+        >
+          <option value="">plain</option>
+          {CODE_LANGUAGES.map((lang) => (
+            <option key={lang} value={lang}>
+              {lang}
+            </option>
+          ))}
+          <option value="__other__">Other...</option>
+        </select>
+      </div>
+      <pre>
+        <NodeViewContent as="code" />
+      </pre>
+    </NodeViewWrapper>
+  );
+}
+
+const CodeBlockStarterKit = StarterKit.extend({
+  addExtensions() {
+    return (this.parent?.() ?? []).map((ext) =>
+      ext.name === 'codeBlock'
+        ? ext.extend({
+            addNodeView() {
+              return ReactNodeViewRenderer(CodeBlockNodeView);
+            }
+          })
+        : ext
+    );
+  }
+});
+
+export default function TiptapEditor({
+  content,
+  fileKey,
+  fontSize,
+  lineHeight,
+  maxWidth,
+  saving,
+  dirty,
+  onChange,
+  onSave,
+  onSwitchToRaw
+}) {
   const editor = useEditor({
-    extensions: [StarterKit, Markdown],
+    extensions: [CodeBlockStarterKit, Markdown],
     content
   });
 
@@ -68,9 +164,20 @@ export default function TiptapEditor({ content, fileKey, fontSize, lineHeight, m
         >
           Code
         </button>
+        {onSwitchToRaw && (
+          <button
+            type="button"
+            className="btn"
+            style={{ marginLeft: 'auto' }}
+            title="Switch to Raw Markdown"
+            onClick={onSwitchToRaw}
+          >
+            Raw
+          </button>
+        )}
         <button
           className={`btn${dirty ? ' primary' : ''}`}
-          style={{ marginLeft: 'auto' }}
+          style={onSwitchToRaw ? undefined : { marginLeft: 'auto' }}
           disabled={saving}
           onClick={() => onSave(editor.storage.markdown?.getMarkdown?.() ?? '')}
         >

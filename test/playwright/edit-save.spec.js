@@ -30,6 +30,15 @@ test('Edit mode renders existing content, saves edits to disk, and round-trips t
     await page.keyboard.press('End');
     await page.keyboard.press('Enter');
     await page.keyboard.type('Appended line');
+    await page.keyboard.press('Enter');
+
+    // Toggle a code block and set language to mermaid via select
+    await page.locator('.tiptap-toolbar').getByRole('button', { name: 'Code' }).click();
+    const langSelect = page.getByLabel('Code block language');
+    await langSelect.waitFor();
+    await langSelect.selectOption('mermaid');
+    await editor.locator('pre').click();
+    await page.keyboard.type('graph TD; A-->B;');
 
     const saveBtn = page.locator('.tiptap-toolbar').getByRole('button', { name: 'Save *' });
     await saveBtn.waitFor();
@@ -43,6 +52,7 @@ test('Edit mode renders existing content, saves edits to disk, and round-trips t
 
     const diskContent = fs.readFileSync(path.join(env.vaultDir, 'notes/hello.md'), 'utf8');
     assert.match(diskContent, /Appended line/);
+    assert.match(diskContent, /```mermaid/);
     assert.equal(pageErrors.length, 0);
 
     await context.close();
@@ -74,6 +84,12 @@ test('Raw mode edits Markdown directly, saves to disk, and renders in Preview', 
     await saveBtn.waitFor();
     await saveBtn.click();
     await page.locator('.raw-editor-wrap .tiptap-toolbar').getByRole('button', { name: 'Saved' }).waitFor();
+
+    // Toolbar toggle: Raw -> Edit -> Raw
+    await page.locator('.raw-editor-wrap .tiptap-toolbar').getByRole('button', { name: 'Edit' }).click();
+    await page.locator('.tiptap-body .ProseMirror').waitFor();
+    await page.locator('.tiptap-toolbar').getByRole('button', { name: 'Raw' }).click();
+    await page.getByLabel('Raw Markdown editor').waitFor();
 
     // Switch back to Preview and verify rendered heading + disk persistence
     await page.getByRole('button', { name: 'Note options' }).click();

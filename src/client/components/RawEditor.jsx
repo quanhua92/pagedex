@@ -8,7 +8,8 @@ export default function RawEditor({
   saving,
   dirty,
   onChange,
-  onSave
+  onSave,
+  onSwitchToEdit
 }) {
   const textareaRef = useRef(null);
 
@@ -43,10 +44,21 @@ export default function RawEditor({
     <div className="raw-editor-wrap" style={{ maxWidth: `${maxWidth + 80}px` }}>
       <div className="tiptap-toolbar">
         <span className="raw-editor-label">Raw Markdown</span>
+        {onSwitchToEdit && (
+          <button
+            type="button"
+            className="btn"
+            style={{ marginLeft: 'auto' }}
+            title="Switch to WYSIWYG Editor"
+            onClick={onSwitchToEdit}
+          >
+            Edit
+          </button>
+        )}
         <button
           type="button"
           className={`btn${dirty ? ' primary' : ''}`}
-          style={{ marginLeft: 'auto' }}
+          style={onSwitchToEdit ? undefined : { marginLeft: 'auto' }}
           disabled={saving}
           onClick={() => onSave(value)}
         >
