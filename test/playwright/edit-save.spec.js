@@ -45,10 +45,11 @@ test('Edit mode renders existing content, saves edits to disk, and round-trips t
     await saveBtn.click();
     await page.locator('.tiptap-toolbar').getByRole('button', { name: 'Saved' }).waitFor();
 
-    // Switch back to Preview and verify content + disk persistence
+    // Switch back to Preview and verify content + mermaid SVG + disk persistence
     await page.getByRole('button', { name: 'Note options' }).click();
     await page.locator('.more-menu').getByRole('button', { name: 'Preview' }).click();
     await page.locator('.doc').getByText('Appended line').waitFor();
+    await page.locator('.doc .mermaid-svg svg').waitFor();
 
     const diskContent = fs.readFileSync(path.join(env.vaultDir, 'notes/hello.md'), 'utf8');
     assert.match(diskContent, /Appended line/);

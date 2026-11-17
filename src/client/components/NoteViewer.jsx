@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { Folder, Home, Plus, Search, Settings } from 'lucide-react';
 import { parseDelimitedText } from '../lib/csv.js';
 import TiptapEditor from '../TiptapEditor.jsx';
@@ -40,6 +40,47 @@ export default function NoteViewer({
   readOnly = false
 }) {
   const editorValue = dirty ? draftContent : content;
+  const docRef = useRef(null);
+
+  useEffect(() => {
+    if (viewMode !== 'preview' || !isMarkdown || !docRef.current) return;
+    const blocks = Array.from(docRef.current.querySelectorAll('.mermaid-block'));
+    if (blocks.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const { default: mermaid } = await import('mermaid');
+      if (cancelled) return;
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: settings.theme === 'dark' ? 'dark' : 'default',
+        securityLevel: 'strict'
+      });
+      for (const block of blocks) {
+        if (cancelled) return;
+        const code = block.querySelector('code')?.textContent || '';
+        const id = `mermaid-${Math.random().toString(36).slice(2, 10)}`;
+        try {
+          const { svg } = await mermaid.render(id, code);
+          if (!cancelled) {
+            block.innerHTML = `<div class="mermaid-svg">${svg}</div>`;
+          }
+        } catch (err) {
+          if (!cancelled && !block.querySelector('.mermaid-error')) {
+            const note = document.createElement('div');
+            note.className = 'mermaid-error';
+            note.textContent = `Mermaid error: ${err?.message || 'Invalid diagram syntax'}`;
+            block.prepend(note);
+          }
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [renderedHtml, viewMode, isMarkdown, settings.theme]);
+
   const csvRows = useMemo(() => {
     if (!isCsv || viewMode !== 'preview' || !content) return [];
     const delimiter = activePath.toLowerCase().endsWith('.tsv') ? '\t' : ',';
@@ -273,6 +314,7 @@ export default function NoteViewer({
         </pre>
       ) : (
         <div
+          ref={docRef}
           className="doc"
           style={{
             fontSize: `${settings.fontSize}px`,

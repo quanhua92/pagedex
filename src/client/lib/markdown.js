@@ -24,7 +24,12 @@ export const EXT_TO_LANG = {
 };
 
 export function escapeHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function highlightCode(code, lang) {
@@ -84,6 +89,11 @@ export function renderMarkdownWithLinks(content, activePath, flatFiles) {
     return `<a class="md-rel-link" data-href="${href.replace(/"/g, '&quot;')}">${text}</a>`;
   };
   renderer.code = ({ text, lang }) => {
+    const cleanLang = (lang || '').trim().toLowerCase();
+    if (cleanLang === 'mermaid') {
+      const raw = String(text ?? '');
+      return `<div class="mermaid-block"><pre><code class="hljs language-mermaid">${escapeHtml(raw)}</code></pre></div>`;
+    }
     const highlighted = highlightCode(text, lang);
     const cls = lang ? `hljs language-${escapeHtml(lang.trim())}` : 'hljs';
     return `<pre><code class="${cls}">${highlighted}</code></pre>`;
