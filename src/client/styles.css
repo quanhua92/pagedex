@@ -949,4 +949,30 @@ html, body, #root {
   margin-top: 8px;
 }
 
+.raw-editor-wrap {
+  margin: 0 auto;
+}
+.raw-editor-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 6px;
+}
+.raw-textarea {
+  width: 100%;
+  min-height: 420px;
+  resize: none;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  outline: none;
+}
+.raw-textarea:focus {
+  border-color: var(--accent);
+}
+
 

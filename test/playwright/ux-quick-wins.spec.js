@@ -19,6 +19,16 @@ test('UX quick wins: sidebar + button, right-click menu + toast, keyboard shortc
     // 2. Right-click on tree row opens context menu & Pin shows toast
     await page.getByRole('button', { name: 'alpha.md', exact: true }).click({ button: 'right' });
     await page.locator('.file-ctx-menu').waitFor();
+    await page.locator('.file-ctx-menu').getByRole('button', { name: 'New note here', exact: true }).waitFor();
+    await page.locator('.file-ctx-menu').getByRole('button', { name: 'New folder here', exact: true }).click();
+    await page.getByRole('heading', { name: 'New folder' }).waitFor();
+    await page.getByPlaceholder('my-folder').fill('sub');
+    await page.getByRole('button', { name: 'Create folder' }).click();
+    await page.locator('.tree-dir-btn[title="notes/sub"]').waitFor();
+    assert.equal(await page.locator('.toast').textContent(), 'Created folder notes/sub');
+
+    await page.getByRole('button', { name: 'alpha.md', exact: true }).click({ button: 'right' });
+    await page.locator('.file-ctx-menu').waitFor();
     await page.locator('.file-ctx-menu').getByRole('button', { name: 'Pin', exact: true }).click();
     assert.equal(await page.locator('.toast').textContent(), 'Pinned alpha.md');
 

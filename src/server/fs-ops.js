@@ -118,3 +118,17 @@ export function writeBinaryFile(relPath, buffer) {
   updateVaultCacheFile(clean);
   return { path: clean, bytes: buffer.length };
 }
+
+export function createDir(relPath) {
+  const clean = typeof relPath === 'string' ? relPath.trim().replace(/^\/+|\/+$/g, '') : '';
+  if (!clean || isProtectedPath(clean)) return { error: 'Invalid folder path' };
+  const full = resolveSafe(clean);
+  if (!full || full === VAULT_ROOT) return { error: 'Invalid folder path' };
+  if (fs.existsSync(full)) {
+    if (fs.statSync(full).isDirectory()) return { error: 'Folder already exists' };
+    return { error: 'A file already exists at that path' };
+  }
+  fs.mkdirSync(full, { recursive: true });
+  invalidateVaultCache();
+  return { ok: true, path: clean };
+}

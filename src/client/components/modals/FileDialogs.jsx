@@ -1,5 +1,5 @@
 import React from 'react';
-import { buildNewNotePath } from '../../lib/paths.js';
+import { buildNewFolderPath, buildNewNotePath } from '../../lib/paths.js';
 import FolderPicker from '../FolderPicker.jsx';
 
 export function NewNoteModal({
@@ -64,6 +64,75 @@ export function NewNoteModal({
           </button>
           <button className="btn primary" onClick={confirmNewNote}>
             Create note
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NewFolderModal({
+  newFolderOpen,
+  setNewFolderOpen,
+  newFolderName,
+  setNewFolderName,
+  newFolderParent,
+  setNewFolderParent,
+  allFolders,
+  newFolderError,
+  confirmNewFolder
+}) {
+  if (!newFolderOpen) return null;
+
+  return (
+    <div className="modal-backdrop" onClick={() => setNewFolderOpen(false)}>
+      <div className="modal" style={{ height: 'auto', maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>New folder</h2>
+          <button className="btn" onClick={() => setNewFolderOpen(false)}>
+            Close
+          </button>
+        </div>
+        <div className="modal-body">
+          <div className="field">
+            <label>Folder name</label>
+            <input
+              type="text"
+              autoFocus
+              placeholder="my-folder"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && confirmNewFolder()}
+            />
+          </div>
+          <div className="field">
+            <label>Parent folder</label>
+            <FolderPicker
+              value={newFolderParent}
+              onChange={setNewFolderParent}
+              allFolders={allFolders}
+              allowCreate={false}
+              defaultExpanded={false}
+              onEnter={confirmNewFolder}
+            />
+          </div>
+          {buildNewFolderPath(newFolderName, newFolderParent) && (
+            <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-mono)' }}>
+              Path: {buildNewFolderPath(newFolderName, newFolderParent)}
+            </div>
+          )}
+          {newFolderError && (
+            <div className="git-output" style={{ color: '#f87171' }}>
+              {newFolderError}
+            </div>
+          )}
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={() => setNewFolderOpen(false)}>
+            Cancel
+          </button>
+          <button className="btn primary" onClick={confirmNewFolder}>
+            Create folder
           </button>
         </div>
       </div>

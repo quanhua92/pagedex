@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Folder, Home, Plus, Search, Settings } from 'lucide-react';
 import { parseDelimitedText } from '../lib/csv.js';
 import TiptapEditor from '../TiptapEditor.jsx';
+import RawEditor from './RawEditor.jsx';
 
 export default function NoteViewer({
   scrollRef,
@@ -26,6 +27,7 @@ export default function NoteViewer({
   diffData,
   requestDiscard,
   content,
+  draftContent,
   saving,
   dirty,
   setDraftContent,
@@ -36,6 +38,7 @@ export default function NoteViewer({
   renderedHtml,
   readOnly = false
 }) {
+  const editorValue = dirty ? draftContent : content;
   const csvRows = useMemo(() => {
     if (!isCsv || viewMode !== 'preview' || !content) return [];
     const delimiter = activePath.toLowerCase().endsWith('.tsv') ? '\t' : ',';
@@ -187,7 +190,7 @@ export default function NoteViewer({
       ) : viewMode === 'edit' && isMarkdown ? (
         <TiptapEditor
           fileKey={activePath}
-          content={content}
+          content={editorValue}
           fontSize={settings.fontSize}
           lineHeight={settings.lineHeight}
           maxWidth={settings.maxWidth}
@@ -241,6 +244,20 @@ export default function NoteViewer({
             </div>
           )}
         </div>
+      ) : viewMode === 'raw' && isMarkdown && !readOnly ? (
+        <RawEditor
+          value={editorValue}
+          fontSize={settings.fontSize}
+          lineHeight={settings.lineHeight}
+          maxWidth={settings.maxWidth}
+          saving={saving}
+          dirty={dirty}
+          onChange={(md) => {
+            setDraftContent(md);
+            setDirty(md !== content);
+          }}
+          onSave={saveActiveNote}
+        />
       ) : viewMode === 'raw' || !isMarkdown ? (
         <pre
           className="raw-view"

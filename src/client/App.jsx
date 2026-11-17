@@ -12,6 +12,7 @@ import {
   isSvgPath,
   isVideoPath,
   resolveRelative,
+  buildNewFolderPath,
   buildNewNotePath
 } from './lib/paths.js';
 import { renderMarkdownWithLinks, highlightRawFile } from './lib/markdown.js';
@@ -24,6 +25,7 @@ import MobileOverlays from './components/modals/MobileOverlays.jsx';
 import QuickSwitcherModal from './components/modals/QuickSwitcherModal.jsx';
 import FileContextMenu from './components/modals/FileContextMenu.jsx';
 import {
+  NewFolderModal,
   NewNoteModal,
   RenameModal,
   MoveModal,
@@ -66,6 +68,10 @@ export default function App() {
   const [newNoteTitle, setNewNoteTitle] = useState('');
   const [newNoteFolder, setNewNoteFolder] = useState('');
   const [newNoteError, setNewNoteError] = useState('');
+  const [newFolderOpen, setNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderParent, setNewFolderParent] = useState('');
+  const [newFolderError, setNewFolderError] = useState('');
   const uploadInputRef = useRef(null);
   const uploadDirRef = useRef('');
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
@@ -822,6 +828,43 @@ export default function App() {
     await openInNewTab(relPath, 'preview');
   }
 
+  function openNewFolderDialog(defaultFolder = null) {
+    const fallbackFolder = activePath.includes('/') ? activePath.split('/').slice(0, -1).join('/') : '';
+    const resolved = typeof defaultFolder === 'string' ? defaultFolder : fallbackFolder;
+    setNewFolderName('');
+    setNewFolderParent(resolved.replace(/^\/+|\/+$/g, ''));
+    setNewFolderError('');
+    setNewFolderOpen(true);
+  }
+
+  async function confirmNewFolder() {
+    const relPath = buildNewFolderPath(newFolderName, newFolderParent);
+    if (!relPath) {
+      setNewFolderError('Please enter a folder name');
+      return;
+    }
+    setNewFolderError('');
+    const res = await fetch('/api/v1/dir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: relPath })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.error) {
+      setNewFolderError(data.error || 'Failed to create folder');
+      return;
+    }
+    setNewFolderOpen(false);
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (newFolderParent) next.delete(newFolderParent);
+      next.delete(relPath);
+      return next;
+    });
+    await fetchTree();
+    showToast(`Created folder ${relPath}`);
+  }
+
   useEffect(() => {
     fetch('/api/v1/auth/status')
       .then((r) => (r.ok ? r.json() : { required: false, authenticated: true }))
@@ -1172,6 +1215,7 @@ export default function App() {
                 diffData={diffData}
                 requestDiscard={requestDiscard}
                 content={content}
+                draftContent={draftContent}
                 saving={saving}
                 dirty={dirty}
                 setDraftContent={setDraftContent}
@@ -1262,6 +1306,7 @@ export default function App() {
         fileMenu={fileMenu}
         setFileMenu={setFileMenu}
         openNewNoteDialog={openNewNoteDialog}
+        openNewFolderDialog={openNewFolderDialog}
         uploadDirRef={uploadDirRef}
         uploadInputRef={uploadInputRef}
         setRenameError={setRenameError}
@@ -1292,6 +1337,18 @@ export default function App() {
         allFolders={allFolders}
         newNoteError={newNoteError}
         confirmNewNote={confirmNewNote}
+      />
+
+      <NewFolderModal
+        newFolderOpen={newFolderOpen}
+        setNewFolderOpen={setNewFolderOpen}
+        newFolderName={newFolderName}
+        setNewFolderName={setNewFolderName}
+        newFolderParent={newFolderParent}
+        setNewFolderParent={setNewFolderParent}
+        allFolders={allFolders}
+        newFolderError={newFolderError}
+        confirmNewFolder={confirmNewFolder}
       />
 
       <RenameModal

@@ -70,6 +70,13 @@ export function buildNewNotePath(title, folder) {
   return cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 }
 
+export function buildNewFolderPath(name, parentFolder) {
+  const cleanName = (name || '').trim().replace(/^\/+|\/+$/g, '');
+  if (!cleanName) return '';
+  const cleanParent = (parentFolder || '').trim().replace(/^\/+|\/+$/g, '');
+  return cleanParent ? `${cleanParent}/${cleanName}` : cleanName;
+}
+
 export function buildRenameTarget(targetPath, type = 'file') {
   const parts = targetPath.split('/');
   const newName = parts.pop() || '';

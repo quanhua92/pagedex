@@ -50,3 +50,43 @@ test('Edit mode renders existing content, saves edits to disk, and round-trips t
     await env.cleanup();
   }
 });
+
+test('Raw mode edits Markdown directly, saves to disk, and renders in Preview', async () => {
+  const env = await createPlaywrightVault({
+    'notes/raw-test.md': '# Raw Note\n\nOriginal line\n'
+  });
+
+  try {
+    const { context, page, pageErrors } = await env.openAppPage();
+
+    await page.getByRole('button', { name: 'raw-test.md', exact: true }).click();
+    await page.locator('.doc').getByRole('heading', { name: 'Raw Note' }).waitFor();
+
+    // Switch to Raw mode via Note options
+    await page.getByRole('button', { name: 'Note options' }).click();
+    await page.locator('.more-menu').getByRole('button', { name: 'Raw' }).click();
+
+    const textarea = page.getByLabel('Raw Markdown editor');
+    await textarea.waitFor();
+    await textarea.fill('# Raw Note\n\n## Added Raw Heading\n\nEdited in raw mode\n');
+
+    const saveBtn = page.locator('.raw-editor-wrap .tiptap-toolbar').getByRole('button', { name: 'Save *' });
+    await saveBtn.waitFor();
+    await saveBtn.click();
+    await page.locator('.raw-editor-wrap .tiptap-toolbar').getByRole('button', { name: 'Saved' }).waitFor();
+
+    // Switch back to Preview and verify rendered heading + disk persistence
+    await page.getByRole('button', { name: 'Note options' }).click();
+    await page.locator('.more-menu').getByRole('button', { name: 'Preview' }).click();
+    await page.locator('.doc').getByRole('heading', { name: 'Added Raw Heading' }).waitFor();
+    await page.locator('.doc').getByText('Edited in raw mode').waitFor();
+
+    const diskContent = fs.readFileSync(path.join(env.vaultDir, 'notes/raw-test.md'), 'utf8');
+    assert.match(diskContent, /## Added Raw Heading/);
+    assert.equal(pageErrors.length, 0);
+
+    await context.close();
+  } finally {
+    await env.cleanup();
+  }
+});

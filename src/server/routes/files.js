@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   MIME_TYPES,
   VAULT_ROOT,
+  createDir,
   deleteNote,
   editNote,
   getCachedVault,
@@ -213,6 +214,16 @@ function serveFileResponse(c, full, contentType, { isDownload = false, extraHead
     if (result.error) return c.json(result, 400);
     removeFileFromIndex(result.oldPath);
     upsertFileInIndex(result.newPath);
+    return c.json(result);
+  });
+
+  app.post('/api/v1/dir', async (c) => {
+    const body = await c.req.json().catch(() => null);
+    if (!body || typeof body.path !== 'string') {
+      return c.json({ error: 'Expected JSON { path }' }, 400);
+    }
+    const result = createDir(body.path);
+    if (result.error) return c.json(result, 400);
     return c.json(result);
   });
 

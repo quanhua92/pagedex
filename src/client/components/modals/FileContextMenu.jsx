@@ -4,6 +4,7 @@ import {
   Download,
   ExternalLink,
   FolderInput,
+  FolderPlus,
   GitCompare,
   Link2,
   Pencil,
@@ -24,6 +25,7 @@ export default function FileContextMenu({
   fileMenu,
   setFileMenu,
   openNewNoteDialog,
+  openNewFolderDialog,
   uploadDirRef,
   uploadInputRef,
   setRenameError,
@@ -69,6 +71,17 @@ export default function FileContextMenu({
                 >
                   <MenuIcon icon={Plus} />
                   <span>New note here</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    setFileMenu(null);
+                    openNewFolderDialog(target);
+                  }}
+                >
+                  <MenuIcon icon={FolderPlus} />
+                  <span>New folder here</span>
                 </button>
                 <button
                   className="more-item"
@@ -133,6 +146,34 @@ export default function FileContextMenu({
           </>
         ) : (
           <>
+            {!readOnly && (
+              <>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parentDir = target.includes('/') ? target.split('/').slice(0, -1).join('/') : '';
+                    setFileMenu(null);
+                    openNewNoteDialog(parentDir);
+                  }}
+                >
+                  <MenuIcon icon={Plus} />
+                  <span>New note here</span>
+                </button>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    const target = fileMenu.path;
+                    const parentDir = target.includes('/') ? target.split('/').slice(0, -1).join('/') : '';
+                    setFileMenu(null);
+                    openNewFolderDialog(parentDir);
+                  }}
+                >
+                  <MenuIcon icon={FolderPlus} />
+                  <span>New folder here</span>
+                </button>
+              </>
+            )}
             <button
               className="more-item"
               onClick={() => {
