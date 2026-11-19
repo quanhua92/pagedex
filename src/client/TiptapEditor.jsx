@@ -123,6 +123,20 @@ export default function TiptapEditor({
     return () => editor.off('update', handler);
   }, [editor, onChange]);
 
+  useEffect(() => {
+    if (!editor) return;
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (!saving) {
+          onSave(editor.storage.markdown?.getMarkdown?.() ?? '');
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [editor, onSave, saving]);
+
   if (!editor) return null;
 
   return (

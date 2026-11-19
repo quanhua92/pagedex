@@ -405,6 +405,17 @@ html, body, #root {
   padding: 10px 12px; font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px;
   word-break: break-all;
 }
+.shortcut-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border);
+  margin-bottom: 8px; font-size: 13px;
+}
+.shortcut-keys { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.shortcut-kbd {
+  display: inline-block; padding: 2px 7px; border-radius: 5px;
+  border: 1px solid var(--border); background: var(--bg-alt);
+  font-family: var(--font-mono); font-size: 11.5px; color: var(--text);
+}
 .modal-foot {
   display: flex; justify-content: space-between; gap: 8px;
   padding: 12px 18px; border-top: 1px solid var(--border); flex-shrink: 0;

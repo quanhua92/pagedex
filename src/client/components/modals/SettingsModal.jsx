@@ -48,6 +48,7 @@ export default function SettingsModal({
             ['general', 'General'],
             ['appearance', 'Appearance'],
             ['files', 'Files & Search'],
+            ['shortcuts', 'Shortcuts'],
             ['endpoints', 'API & MCP']
           ].map(([id, label]) => (
             <button
@@ -182,6 +183,51 @@ export default function SettingsModal({
                   }}
                   onBlur={() => setHiddenFoldersText(settings.hiddenFolders.join(', '))}
                 />
+              </div>
+            </>
+          )}
+
+          {settingsTab === 'shortcuts' && (
+            <>
+              <div className="field">
+                <label>Navigation &amp; Workspace</label>
+                {[
+                  ['Open Quick Switcher', ['Cmd/Ctrl + K', 'Cmd/Ctrl + O', '/']],
+                  ['Previous / next tab', ['[', ']', 'Alt + [ / ]']],
+                  ['Toggle left files sidebar', ['Cmd/Ctrl + \\']],
+                  ['Toggle Preview / Edit', ['Cmd/Ctrl + E']],
+                  ['Save note (in Editor / Raw)', ['Cmd/Ctrl + S']]
+                ].map(([desc, keys]) => (
+                  <div className="shortcut-row" key={desc}>
+                    <span>{desc}</span>
+                    <span className="shortcut-keys">
+                      {keys.map((k) => (
+                        <kbd className="shortcut-kbd" key={k}>
+                          {k}
+                        </kbd>
+                      ))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="field">
+                <label>Quick Switcher &amp; Dialogs</label>
+                {[
+                  ['Move selection', ['↑', '↓']],
+                  ['Open selected file', ['Enter']],
+                  ['Close Quick Switcher / dialog', ['Esc']]
+                ].map(([desc, keys]) => (
+                  <div className="shortcut-row" key={desc}>
+                    <span>{desc}</span>
+                    <span className="shortcut-keys">
+                      {keys.map((k) => (
+                        <kbd className="shortcut-kbd" key={k}>
+                          {k}
+                        </kbd>
+                      ))}
+                    </span>
+                  </div>
+                ))}
               </div>
             </>
           )}

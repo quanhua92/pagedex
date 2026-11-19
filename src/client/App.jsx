@@ -138,8 +138,11 @@ export default function App() {
   const scrollRef = useRef(null);
   const activePathRef = useRef(activePath);
   const activeTabIdRef = useRef(activeTab?.id || activeTabId);
+  const tabsRef = useRef(tabs);
+  const switchTabRef = useRef(null);
   activePathRef.current = activePath;
   activeTabIdRef.current = activeTab?.id || activeTabId;
+  tabsRef.current = tabs;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
@@ -229,8 +232,16 @@ export default function App() {
   }
 
   useEffect(() => {
+    const cycleTab = (delta) => {
+      const list = tabsRef.current;
+      if (list.length <= 1) return;
+      const idx = list.findIndex((t) => t.id === activeTabIdRef.current);
+      const nextIdx = idx === -1 ? 0 : (idx + delta + list.length) % list.length;
+      switchTabRef.current?.(list[nextIdx]);
+    };
     const onKey = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      const key = e.key.toLowerCase();
+      if ((e.metaKey || e.ctrlKey) && (key === 'k' || key === 'o')) {
         e.preventDefault();
         openSwitcher();
         return;
@@ -240,11 +251,16 @@ export default function App() {
         setSidebarCollapsed((v) => !v);
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+      if ((e.metaKey || e.ctrlKey) && key === 'e') {
         if (!readOnly && activePathRef.current && isMarkdownPath(activePathRef.current)) {
           e.preventDefault();
           setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
         }
+        return;
+      }
+      if (e.altKey && !e.metaKey && !e.ctrlKey && (e.code === 'BracketLeft' || e.code === 'BracketRight')) {
+        e.preventDefault();
+        cycleTab(e.code === 'BracketRight' ? 1 : -1);
         return;
       }
       const el = document.activeElement;
@@ -253,6 +269,11 @@ export default function App() {
         el?.tagName === 'TEXTAREA' ||
         el?.tagName === 'SELECT' ||
         el?.isContentEditable;
+      if (!inEditable && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === '[' || e.key === ']')) {
+        e.preventDefault();
+        cycleTab(e.key === ']' ? 1 : -1);
+        return;
+      }
       if (e.key === '/' && !inEditable) {
         e.preventDefault();
         openSwitcher();
@@ -456,6 +477,12 @@ export default function App() {
   }
 
   async function openInNewTab(relPath, mode = 'preview') {
+    const existing = tabsRef.current.find((t) => t.path === relPath);
+    if (existing) {
+      switchTab(existing);
+      setViewMode(mode);
+      return;
+    }
     const id = `tab-${Date.now()}`;
     activePathRef.current = relPath;
     activeTabIdRef.current = id;
@@ -504,6 +531,8 @@ export default function App() {
   }
 
   function switchTab(tab) {
+    activeTabIdRef.current = tab.id;
+    activePathRef.current = tab.path || '';
     setActiveTabId(tab.id);
     setTabsOpen(false);
     if (tab.path) {
@@ -513,6 +542,7 @@ export default function App() {
       location.hash = '';
     }
   }
+  switchTabRef.current = switchTab;
 
   async function openFile(relPath, preserveScroll = false, targetTabId = activeTab?.id || activeTabId) {
     if (!relPath) {
@@ -1296,6 +1326,7 @@ export default function App() {
         switcherItems={switcherItems}
         switcherData={switcherData}
         openFile={openFile}
+        openInNewTab={openInNewTab}
         isLargeVault={isLargeVault}
         pagedFiles={pagedFiles}
         loadMorePagedFiles={loadMorePagedFiles}

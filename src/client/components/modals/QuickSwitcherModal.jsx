@@ -13,6 +13,7 @@ export default function QuickSwitcherModal({
   switcherItems,
   switcherData,
   openFile,
+  openInNewTab,
   isLargeVault,
   pagedFiles,
   loadMorePagedFiles,
@@ -79,7 +80,7 @@ export default function QuickSwitcherModal({
                       className={`switcher-item${idx === switcherIdx ? ' selected' : ''}`}
                       onClick={() => {
                         setSwitcherOpen(false);
-                        openFile(item.path);
+                        (openInNewTab || openFile)(item.path);
                       }}
                     >
                       <div className="switcher-row-top">
@@ -120,7 +121,7 @@ export default function QuickSwitcherModal({
               } else if (e.key === 'Enter' && switcherItems[switcherIdx]) {
                 e.preventDefault();
                 setSwitcherOpen(false);
-                openFile(switcherItems[switcherIdx].path);
+                (openInNewTab || openFile)(switcherItems[switcherIdx].path);
               }
             }}
           />
