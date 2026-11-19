@@ -8,6 +8,7 @@ import {
   isHtmlPath,
   isImagePath,
   isMarkdownPath,
+  isTextEditablePath,
   isPdfPath,
   isSvgPath,
   isVideoPath,
@@ -258,9 +259,11 @@ export default function App() {
         return;
       }
       if ((e.metaKey || e.ctrlKey) && key === 'e') {
-        if (!readOnly && activePathRef.current && isMarkdownPath(activePathRef.current)) {
+        const path = activePathRef.current;
+        if (!readOnly && path && isTextEditablePath(path)) {
           e.preventDefault();
-          setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'));
+          const isMd = isMarkdownPath(path);
+          setViewMode((m) => (m === 'edit' || (!isMd && m === 'raw') ? 'preview' : isMd ? 'edit' : 'raw'));
         }
         return;
       }

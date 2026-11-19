@@ -9,7 +9,8 @@ export default function RawEditor({
   dirty,
   onChange,
   onSave,
-  onSwitchToEdit
+  onSwitchToEdit,
+  label = 'Raw Markdown'
 }) {
   const textareaRef = useRef(null);
 
@@ -43,7 +44,7 @@ export default function RawEditor({
   return (
     <div className="raw-editor-wrap" style={{ maxWidth: `${maxWidth + 80}px` }}>
       <div className="tiptap-toolbar">
-        <span className="raw-editor-label">Raw Markdown</span>
+        <span className="raw-editor-label">{label}</span>
         {onSwitchToEdit && (
           <button
             type="button"

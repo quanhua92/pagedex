@@ -39,6 +39,17 @@ export function isDownloadOnlyPath(p) {
   return /\.(epub|zip|tar|gz|tgz|7z|rar|docx?|xlsx?|pptx?|odt|ods|odp|mkv|avi|dmg|exe|bin|whl|sqlite|db)$/i.test(p);
 }
 
+export function isTextEditablePath(p) {
+  if (!p) return false;
+  return (
+    (!isImagePath(p) || isSvgPath(p)) &&
+    !isPdfPath(p) &&
+    !isAudioPath(p) &&
+    !isVideoPath(p) &&
+    !isDownloadOnlyPath(p)
+  );
+}
+
 export function resolveRelative(basePath, href) {
   const clean = href.split('#')[0];
   const dir = basePath.includes('/') ? basePath.split('/').slice(0, -1).join('/') : '';

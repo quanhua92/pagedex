@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { Folder, Home, Plus, Search, Settings } from 'lucide-react';
 import { parseDelimitedText } from '../lib/csv.js';
+import { isTextEditablePath } from '../lib/paths.js';
 import TiptapEditor from '../TiptapEditor.jsx';
 import RawEditor from './RawEditor.jsx';
 
@@ -287,7 +288,7 @@ export default function NoteViewer({
             </div>
           )}
         </div>
-      ) : viewMode === 'raw' && isMarkdown && !readOnly ? (
+      ) : (viewMode === 'raw' || (viewMode === 'edit' && !isMarkdown)) && isTextEditablePath(activePath) && !readOnly ? (
         <RawEditor
           value={editorValue}
           fontSize={settings.fontSize}
@@ -295,12 +296,13 @@ export default function NoteViewer({
           maxWidth={settings.maxWidth}
           saving={saving}
           dirty={dirty}
+          label={isMarkdown ? 'Raw Markdown' : 'Edit Text'}
           onChange={(md) => {
             setDraftContent(md);
             setDirty(md !== content);
           }}
           onSave={saveActiveNote}
-          onSwitchToEdit={() => setViewMode('edit')}
+          onSwitchToEdit={isMarkdown ? () => setViewMode('edit') : undefined}
         />
       ) : viewMode === 'raw' || !isMarkdown ? (
         <pre
