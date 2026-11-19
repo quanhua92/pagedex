@@ -53,6 +53,9 @@ See the full **[MCP Server Guide](./MCP.md)** for CLI access control (`--mcp`, `
 | `POST /api/v1/git/discard` | Discard line, hunk, or entire file changes |
 | `POST /api/v1/git/commit` | Commit selected files (and optional push) |
 | `GET /api/v1/events` | Server-Sent Events stream for live filesystem changes |
+| `GET /api/v1/auth/status` | Check whether token auth is enabled and session is authenticated |
+| `POST /api/v1/auth/login` | Validate token and set `pagedex_auth` session cookie |
+| `POST /api/v1/auth/logout` | Clear `pagedex_auth` session cookie |
 
 ## Static / Raw Route (`/raw/*`)
 

@@ -17,6 +17,7 @@ pagedex/
 ├── src/
 │   ├── server/
 │   │   ├── index.js                # Hono server, Origin: null guard, /api/v1, /mcp, dist/ serving
+│   │   ├── auth.js                 # Token-file auth, HMAC cookie, login rate limiting
 │   │   ├── dev.js                  # Concurrent API (:4321) + Vite (:5173) dev launcher
 │   │   ├── paths.js                # VAULT_ROOT, IGNORED, MIME_TYPES, resolveSafe, isProtectedPath
 │   │   ├── vault-cache.js          # In-memory tree, fileStats, backlinks cache
@@ -41,9 +42,14 @@ pagedex/
 │       │   ├── paths.js            # File-type predicates (markdown, image, pdf, audio/video, html, csv)
 │       │   ├── csv.js              # Quoted CSV/TSV parser
 │       │   └── markdown.js
-│       └── components/             # TopbarAndTabs, NoteViewer, Sidebar, OutlineSidebar, modals
+│       ├── components/             # TopbarAndTabs, NoteViewer, RawEditor, Sidebar, OutlineSidebar, modals
+│       └── public/
+│           └── sw.js               # PWA service worker (bypasses /api/*, /mcp, SSE)
 ├── test/
 │   ├── api-mcp.test.js             # Unit/integration tests (node --test)
+│   ├── auth.test.js                # Auth token-file, cookie rotation, rate-limit tests
+│   ├── mcp-modes.test.js           # --mcp read/write/full/off and --read-only tests
+│   ├── playwright/                 # Playwright E2E specs
 │   └── smoke.js                    # REST + MCP v2 (2026-07-28, 2025-11-25, 2024-11-05 SSE) smoke suite
 ├── dist/                           # Prebuilt Vite client bundle (gitignored, published to npm)
 ├── package.json

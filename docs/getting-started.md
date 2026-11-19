@@ -30,6 +30,7 @@ npx pagedex ~/vault --host 0.0.0.0 --port 4321
 | `--mcp <mode>` | `PAGEDEX_MCP_MODE` | `full` | MCP mode: `read`, `write`, `full`, or `off` |
 | `--mcp-git` | `PAGEDEX_MCP_GIT` | `false` | Enable `git_commit` and `git_discard` MCP tools |
 | `--mcp-token-file <path>` | `PAGEDEX_MCP_TOKEN_FILE` | — | File containing Bearer token for `/mcp` |
+| `--auth-token-file <path>` | `PAGEDEX_AUTH_TOKEN_FILE` | — | File containing tokens for Web & REST auth |
 | `--read-only` | `PAGEDEX_READ_ONLY` | `false` | Disable all REST & MCP write/delete mutations |
 | `-v, --version` | — | — | Print version |
 | `-h, --help` | — | — | Print CLI help |
@@ -47,11 +48,12 @@ Override the cache location with:
 ![Desktop Preview](./images/desktop-preview.png)
 
 - **View Modes (top-right `⋮` menu):**
-  - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
-  - **Preview** — rendered Markdown, sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
+  - **Preview** — rendered Markdown (with Mermaid diagrams), sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
   - **Edit** — lazy-loaded Tiptap WYSIWYG editor for Markdown (`.md`, `.markdown`, `.mdx`)
+  - **Raw** — editable source (`RawEditor`) for Markdown and all non-binary text/code files (`.txt`, `.json`, `.js`, `.html`, `.csv`, `.svg`, etc.)
   - **Diff** — line-by-line Git diff with per-line, per-hunk, and per-file discard
-  - **Raw** — syntax-highlighted source (including SVG XML, HTML, CSV, and code)
+  - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
+  - **Print** — triggers `window.print()` with an A4 multi-page stylesheet (hides UI chrome and renders Mermaid in light theme; uncheck **Headers and footers** in the browser print dialog to hide the page title/URL)
 - **Wikilinks & Backlinks:** `[[note]]` and relative links resolve across the folder, and the outline panel lists incoming backlinks.
 - **Git Integration:** Browse changed files in the Changes tab, inspect hunks, discard changes, or commit & push directly from the UI.
 - **Live Reload (SSE):** External edits on disk (e.g. from your editor or an AI agent via MCP) refresh open files and the sidebar tree automatically via `/api/v1/events`.

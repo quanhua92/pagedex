@@ -4,15 +4,15 @@
 
 | Type | Extensions | Preview Mode | Raw / Edit | Search Indexed |
 |---|---|---|---|---|
-| **Markdown** | `.md`, `.markdown`, `.mdx` | Rendered HTML, wikilinks, backlinks, outline | WYSIWYG (`TiptapEditor`), Raw, Diff | Yes (FTS5) |
-| **HTML** | `.html`, `.htm` | Sandboxed `<iframe src="/raw/...">` | Syntax-highlighted XML/HTML | Yes |
+| **Markdown** | `.md`, `.markdown`, `.mdx` | Rendered HTML, wikilinks, backlinks, outline | WYSIWYG (`TiptapEditor`), Raw (`RawEditor`), Diff | Yes (FTS5) |
+| **HTML** | `.html`, `.htm` | Sandboxed `<iframe src="/raw/...">` | Editable (`RawEditor`), Diff | Yes |
 | **PDF** | `.pdf` | Built-in browser PDF `<iframe>` + Download | — | No |
 | **Audio** | `.mp3`, `.wav`, `.m4a`, `.ogg` | `<audio controls>` with HTTP `Range` seeking | — | No |
 | **Video** | `.mp4`, `.webm`, `.mov` | `<video controls>` with HTTP `Range` seeking | — | No |
-| **Tables** | `.csv`, `.tsv` | Styled HTML `<table>` | Raw text | Yes |
+| **Tables** | `.csv`, `.tsv` | Styled HTML `<table>` | Editable (`RawEditor`), Diff | Yes |
 | **Images** | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico` | Inline `<img>` | — | No |
-| **SVG** | `.svg` | Inline `<img>` | Raw XML toggle | No |
-| **Text / Code** | `.txt`, `.js`, `.ts`, `.py`, `.json`, `.yaml`, etc. | Syntax-highlighted raw view | Raw / Diff | Yes (≤ 2 MB) |
+| **SVG** | `.svg` | Inline `<img>` | Editable XML (`RawEditor`), Diff | No |
+| **Text / Code** | `.txt`, `.js`, `.ts`, `.py`, `.json`, `.yaml`, etc. | Syntax-highlighted raw view | Editable (`RawEditor`), Diff | Yes (≤ 2 MB) |
 | **Other Binaries** | `.epub`, `.zip`, `.docx`, `.sqlite`, `.db`, etc. | Download card | — | No |
 
 ## HTML + Sibling Files (`style.css`, `data.json`, `app.js`)

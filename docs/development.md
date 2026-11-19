@@ -15,9 +15,11 @@ PAGEDEX_ROOT=~/vault HOST=0.0.0.0 pnpm dev
 ## Build & Test
 
 ```bash
-pnpm build   # Build production React bundle into dist/
-pnpm test    # Run node:test suite (test/api-mcp.test.js)
-pnpm smoke   # Run REST + multi-era MCP smoke checks against :4321
+pnpm build            # Build production React bundle into dist/
+pnpm test             # Run node:test suite (test/*.test.js)
+pnpm test:playwright  # Run Playwright E2E tests (test/playwright/*.spec.js)
+pnpm smoke            # Run REST + multi-era MCP smoke checks against :4321
+pnpm vault            # Convenience dev script for ~/vault on 0.0.0.0 with token files
 ```
 
 ## npm Package Contents

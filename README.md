@@ -51,6 +51,8 @@ One server exposes everything on the same port:
 - **`/api/v1/*`** — REST API for reading, editing, searching, uploading, and Git diff/commit
 - **`/mcp`** — Multi-era MCP endpoint (`2026-07-28`, `2025-11-25` Streamable HTTP, `2024-11-05` HTTP+SSE)
 
+> **Printing (A4):** Use `Cmd/Ctrl+P` or **`⋮` → Print** for a clean multi-page A4 layout (hides UI chrome, switches to light paper colors, and prints Mermaid diagrams in light theme; uncheck **Headers and footers** in your browser's print dialog to hide the title/URL).
+
 ### Common Recipes
 
 ```bash
