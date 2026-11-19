@@ -23,6 +23,19 @@
 | **Developers & tech writers** | Explore repo `docs/`, preview sandboxed HTML, CSV, PDF, and media files, and review/commit changes with the built-in Git diff UI |
 | **AI & agent builders** | Connect Claude Code, Codex, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
 | **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
+| **Multi-vault & shared hosts** | Serve multiple folders (`personal`, `work`, `docs`) on one port via `--config` / `PAGEDEX_ROOT_CONFIG` with per-vault passwords (`allowGlobalAuth`), read-only vaults, and live config auto-reload |
+
+## How PageDex Compares
+
+| Feature | **PageDex** | **Obsidian** | **Notion** |
+|---|---|---|---|
+| **Storage & Lock-in** | Plain local folder (`.md`, code, media); external index cache (`~/.cache/pagedex/`) | Local `.md` folder (with `.obsidian/` config dir) | Cloud SaaS proprietary blocks |
+| **Self-Hosted Web UI** | Built-in (`npx pagedex`), single port, mobile-ready | Native desktop/mobile apps (web via plugins / Publish) | Cloud-hosted only |
+| **Multi-Vault & Auth** | Built-in `--config` with per-vault passwords (`allowGlobalAuth`) & auto-reload | Separate windows per vault (no built-in web auth) | Cloud workspaces & account login |
+| **Sync** | Built-in Git commit & push + SSE live reload (works alongside Obsidian Sync / iCloud / Syncthing) | Paid Obsidian Sync, iCloud, or community Git plugins | Automatic cloud sync |
+| **REST API & MCP** | Native `/api/v1/*` + multi-era `/mcp` (`read` / `write` / `full`, token-scoped) | Via community plugins (Local REST API / MCP) | Cloud REST API & remote OAuth MCP |
+| **Git Diff & Commit UI** | Built-in line/hunk diff, discard, commit & push | Via community plugin (e.g. Obsidian Git) | Proprietary page history (no Git) |
+| **Strengths** | Sandboxed `/raw/*` HTML, CSV, PDF, Range media, A4 Mermaid print | Graph view, Canvas, 1,000+ plugins | Relational databases, Kanban, real-time team collab |
 
 ## Screenshots
 
