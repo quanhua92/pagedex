@@ -130,3 +130,100 @@ pnpm test             # Run unit tests
 pnpm test:playwright  # Run Playwright E2E tests
 pnpm smoke            # Run REST + multi-era MCP smoke checks
 ```
+
+## macOS Background Service (`launchd`)
+
+To run PageDex automatically at login (and keep it alive) via `launchd`, create `~/Library/LaunchAgents/com.pagedex.vault.plist` (or swap `ProgramArguments` for `pnpm vault` if running from a local repo clone):
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.pagedex.vault</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/npx</string>
+    <string>-y</string>
+    <string>pagedex</string>
+    <string>/Users/yourname/vault</string>
+    <string>--host</string>
+    <string>0.0.0.0</string>
+    <string>--auth-token-file</string>
+    <string>/Users/yourname/.config/pagedex/auth-token</string>
+    <string>--mcp-token-file</string>
+    <string>/Users/yourname/.config/pagedex/mcp-token</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOME</key>
+    <string>/Users/yourname</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/yourname/Library/Logs/pagedex-vault.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/yourname/Library/Logs/pagedex-vault.err.log</string>
+</dict>
+</plist>
+```
+
+Manage the service with `launchctl`:
+
+```bash
+# Start / load
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pagedex.vault.plist
+
+# Restart
+launchctl kickstart -k gui/$(id -u)/com.pagedex.vault
+
+# Stop / unload
+launchctl bootout gui/$(id -u) ~/Library/LaunchAgents/com.pagedex.vault.plist
+
+# Status & logs
+launchctl print gui/$(id -u)/com.pagedex.vault
+tail -f ~/Library/Logs/pagedex-vault.log ~/Library/Logs/pagedex-vault.err.log
+```
+
+## Linux Background Service (`systemd --user`)
+
+To run PageDex automatically on Linux via `systemd` user services, create `~/.config/systemd/user/pagedex-vault.service`:
+
+```ini
+[Unit]
+Description=PageDex Vault
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env npx -y pagedex %h/vault --host 0.0.0.0 --auth-token-file %h/.config/pagedex/auth-token --mcp-token-file %h/.config/pagedex/mcp-token
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
+```
+
+Manage the service with `systemctl --user`:
+
+```bash
+# Reload units, enable on login, and start
+systemctl --user daemon-reload
+systemctl --user enable --now pagedex-vault.service
+
+# Restart / stop
+systemctl --user restart pagedex-vault.service
+systemctl --user stop pagedex-vault.service
+
+# Status & logs
+systemctl --user status pagedex-vault.service
+journalctl --user -u pagedex-vault.service -f
+```
+
+> **Tip:** To keep the service running after you log out (e.g., on a headless server), run `sudo loginctl enable-linger $USER`.
