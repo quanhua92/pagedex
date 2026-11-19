@@ -53,6 +53,10 @@ app.all('/mcp', (c) => handleMcpRequest(c.req.raw));
 const distDir = path.resolve(import.meta.dirname, '../../dist');
 if (fs.existsSync(distDir)) {
   const relDist = path.relative(process.cwd(), distDir) || '.';
+  app.use('/sw.js', async (c, next) => {
+    await next();
+    c.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+  });
   app.use('/*', serveStatic({ root: relDist }));
 }
 

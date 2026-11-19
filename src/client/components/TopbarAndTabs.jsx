@@ -74,6 +74,8 @@ export default function TopbarAndTabs({
   showToast,
   outlinePosition,
   outlineDrawerOpen,
+  sidebarCollapsed = false,
+  onToggleSidebar,
   onToggleOutline,
   onOpenOutline,
   readOnly = false
@@ -93,7 +95,12 @@ export default function TopbarAndTabs({
   return (
     <div className="topbar">
       <div className="topbar-left">
-        <button className="icon-btn menu-btn" aria-label="Toggle files" onClick={() => setDrawerOpen((o) => !o)}>
+        <button
+          className={`icon-btn menu-btn${!sidebarCollapsed ? ' active' : ''}`}
+          aria-label="Toggle files"
+          title="Toggle files sidebar"
+          onClick={() => (onToggleSidebar ? onToggleSidebar() : setDrawerOpen((o) => !o))}
+        >
           <PanelLeft size={17} strokeWidth={1.8} />
         </button>
         <div className="crumbs">{activePath || 'New tab'}</div>

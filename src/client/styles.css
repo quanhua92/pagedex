@@ -269,7 +269,7 @@ html, body, #root {
 .btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; font-weight: 600; }
 .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
-.menu-btn { display: none; gap: 5px; }
+.menu-btn { display: inline-flex; gap: 5px; }
 .backdrop { display: none; }
 
 .content-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; min-width: 0; padding: 28px 36px 80px; }
@@ -485,11 +485,12 @@ html, body, #root {
 .folder-pick-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
 .desktop-tabs {
-  display: flex; align-items: center; gap: 4px; padding: 6px 14px 0;
+  height: 44px; flex-shrink: 0;
+  display: flex; align-items: flex-end; gap: 4px; padding: 0 14px;
   background: var(--bg-alt); border-bottom: 1px solid var(--border); overflow-x: auto;
 }
 .desktop-tab {
-  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px;
   border-radius: 8px 8px 0 0; border: 1px solid transparent; border-bottom: 0;
   background: none; color: var(--muted); font-size: 12px; cursor: pointer; font-family: inherit;
   white-space: nowrap; max-width: 180px;
@@ -499,7 +500,7 @@ html, body, #root {
 .desktop-tab-title { overflow: hidden; text-overflow: ellipsis; }
 .desktop-tab-close { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1; }
 .desktop-tab-close:hover { color: var(--text); }
-.desktop-tab-add { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px 8px; font-size: 16px; border-radius: 6px; }
+.desktop-tab-add { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px 8px; margin-bottom: 4px; font-size: 16px; border-radius: 6px; }
 .desktop-tab-add:hover { background: var(--bg-hover); color: var(--text); }
 
 .new-tab-view {
@@ -567,6 +568,7 @@ html, body, #root {
   .app { grid-template-columns: 1fr; }
   .workspace-body.outline-bottom .rightbar-body { grid-template-columns: 1fr; gap: 10px; padding: 10px 14px calc(74px + env(safe-area-inset-bottom, 0px)); }
   .menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; }
+  .menu-btn.active { color: var(--muted); background: transparent; }
   .menu-btn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .icon-btn { width: 34px; height: 34px; }
   .desktop-tabs { display: none; }

@@ -23,6 +23,7 @@ export default function MobileOverlays({
   openSwitcher,
   drawerOpen,
   setDrawerOpen,
+  onToggleSidebar,
   openFile,
   viewMode,
   setViewMode,
@@ -60,7 +61,8 @@ export default function MobileOverlays({
               className="fab-item"
               onClick={() => {
                 setFabOpen(false);
-                setDrawerOpen((o) => !o);
+                if (onToggleSidebar) onToggleSidebar();
+                else setDrawerOpen((o) => !o);
               }}
             >
               📁 Toggle files
@@ -150,7 +152,8 @@ export default function MobileOverlays({
                 className="sheet-item"
                 onClick={() => {
                   setFabOpen(false);
-                  setDrawerOpen((o) => !o);
+                  if (onToggleSidebar) onToggleSidebar();
+                  else setDrawerOpen((o) => !o);
                 }}
               >
                 <PanelLeft size={18} strokeWidth={1.9} />

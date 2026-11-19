@@ -1060,6 +1060,14 @@ export default function App() {
       setOutlineDrawerOpen(true);
     }
   };
+  const handleToggleSidebar = () => {
+    if (window.innerWidth <= 768) {
+      setOutlineDrawerOpen(false);
+      setDrawerOpen((o) => !o);
+    } else {
+      setSidebarCollapsed((c) => !c);
+    }
+  };
   const handleToggleOutline = () => {
     if (window.innerWidth <= 960) {
       if (outlinePosition === 'bottom') {
@@ -1187,6 +1195,8 @@ export default function App() {
                 showToast={showToast}
                 outlinePosition={outlinePosition}
                 outlineDrawerOpen={outlineDrawerOpen}
+                sidebarCollapsed={sidebarCollapsed}
+                onToggleSidebar={handleToggleSidebar}
                 onToggleOutline={handleToggleOutline}
                 onOpenOutline={handleOpenOutline}
                 readOnly={readOnly}
@@ -1252,6 +1262,7 @@ export default function App() {
         openSwitcher={openSwitcher}
         drawerOpen={drawerOpen}
         setDrawerOpen={setDrawerOpen}
+        onToggleSidebar={handleToggleSidebar}
         onToggleOutline={handleToggleOutline}
         openFile={openFile}
         viewMode={viewMode}
