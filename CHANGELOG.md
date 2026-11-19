@@ -2,6 +2,29 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.13] - 2026-11-19
+
+### Features
+
+- **ui,auth:** add multi-vault login selector, multi-session cookies, and New Tab welcome heading (4ce2a6d)
+- **multi-vault:** add PAGEDEX_ROOT_CONFIG (--config) with per-vault auth, allowGlobalAuth, and auto-reload (49a8c8d)
+- **ui:** add Cmd/Ctrl+Shift+E shortcut to toggle Raw mode (4cefd33)
+- **print:** add A4 multi-page print layout, light Mermaid print render, and Print menu button (598e61a)
+- **editor:** allow editing all non-binary text files in RawEditor (5778830)
+- **ui:** add Open Tabs tab in Quick Switcher and Cmd/Ctrl+/ outline toggle (a3d7f20)
+- **sidebar:** open file in new tab on Cmd/Ctrl+Click or middle-click (7fd12d9)
+- **ui:** add Cmd+O/Cmd+S shortcuts, tab cycling, Shortcuts tab, and tab deduplication (e7f9d8f)
+
+### Bug Fixes
+
+- **ui,test:** fix Mermaid strict-mode locator, restore Edit note aria-label, and improve inline code contrast (f3db210)
+
+### Documentation
+
+- add Multi-Vault Guide and refine README comparison strengths (fc91374)
+- **readme:** add multi-vault row and PageDex vs Obsidian vs Notion comparison table (590e659)
+- sync README, docs, and AGENTS.md with print, text editing, auth, and test updates (b474599)
+
 ## [0.1.12] - 2026-11-19
 
 ### Bug Fixes
