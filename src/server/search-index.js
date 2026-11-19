@@ -3,13 +3,25 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { IGNORED, VAULT_ROOT, isImagePath, isProtectedPath, resolveSafe } from './vault.js';
+import { IGNORED, getVaultRoot, isImagePath, isProtectedPath, resolveSafe } from './vault.js';
+import { getActiveVault } from './vault-manager.js';
 
 const BINARY_EXT_RE = /\.(png|jpe?g|gif|webp|svg|ico|epub|pdf|zip|tar|gz|tgz|7z|rar|docx?|xlsx?|pptx?|odt|ods|odp|mp3|wav|m4a|mp4|mov|webm|mkv|avi|dmg|exe|bin|whl|sqlite|db)$/i;
 const MAX_INDEX_BYTES = 2 * 1024 * 1024;
 
-let db = null;
-let syncedOnce = false;
+function getSearchState() {
+  return getActiveVault().search;
+}
+
+export function closeVaultSearchIndex(vault) {
+  if (vault?.search?.db) {
+    try {
+      vault.search.db.close();
+    } catch {}
+    vault.search.db = null;
+    vault.search.syncedOnce = false;
+  }
+}
 
 function isTextIndexable(relPath, size) {
   if (isImagePath(relPath) || BINARY_EXT_RE.test(relPath)) return false;
@@ -20,15 +32,16 @@ function resolveDbPath() {
   if (process.env.PAGEDEX_INDEX_PATH) return path.resolve(process.env.PAGEDEX_INDEX_PATH);
   const cacheDir = process.env.PAGEDEX_INDEX_DIR || path.join(os.homedir(), '.cache', 'pagedex');
   fs.mkdirSync(cacheDir, { recursive: true });
-  const hash = createHash('sha256').update(VAULT_ROOT).digest('hex').slice(0, 16);
+  const hash = createHash('sha256').update(getVaultRoot()).digest('hex').slice(0, 16);
   return path.join(cacheDir, `${hash}.db`);
 }
 
 function getDb() {
-  if (db) return db;
+  const state = getSearchState();
+  if (state.db) return state.db;
   const dbPath = resolveDbPath();
-  db = new DatabaseSync(dbPath);
-  db.exec(`
+  const conn = new DatabaseSync(dbPath);
+  conn.exec(`
     PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
     CREATE TABLE IF NOT EXISTS files (
@@ -46,10 +59,12 @@ function getDb() {
       tokenize='trigram'
     );
   `);
-  return db;
+  state.db = conn;
+  state.dbPath = dbPath;
+  return conn;
 }
 
-function walkDiskFiles(dir = VAULT_ROOT, relBase = '', out = []) {
+function walkDiskFiles(dir = getVaultRoot(), relBase = '', out = []) {
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -132,12 +147,12 @@ export function syncIndex() {
     conn.exec('ROLLBACK');
     throw err;
   }
-  syncedOnce = true;
+  getSearchState().syncedOnce = true;
   return { total: diskFiles.length };
 }
 
 function ensureSynced() {
-  if (!syncedOnce) syncIndex();
+  if (!getSearchState().syncedOnce) syncIndex();
 }
 
 export function upsertFileInIndex(relPath) {
@@ -317,7 +332,7 @@ export function searchFts(query, limit = 50) {
       .all();
     for (const r of recentText) {
       if (seen.has(r.path)) continue;
-      const full = path.join(VAULT_ROOT, r.path);
+      const full = path.join(getVaultRoot(), r.path);
       try {
         const text = fs.readFileSync(full, 'utf8');
         const idx = text.toLowerCase().indexOf(lowerQ);

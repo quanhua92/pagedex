@@ -97,6 +97,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [authState, setAuthState] = useState({ checked: false, required: false, authenticated: false });
+  const [vaultsInfo, setVaultsInfo] = useState({ activeVault: 'default', vaults: [] });
+  const [vaultTick, setVaultTick] = useState(0);
   const [switcherTab, setSwitcherTab] = useState('recent'); // 'recent' | 'alpha'
   const [switcherQuery, setSwitcherQuery] = useState('');
   const [switcherIdx, setSwitcherIdx] = useState(0);
@@ -961,9 +963,40 @@ export default function App() {
         if (d && typeof d.readOnly === 'boolean') setReadOnly(d.readOnly);
       })
       .catch(() => {});
+    fetch('/api/v1/vaults')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && Array.isArray(d.vaults)) {
+          setVaultsInfo({ activeVault: d.activeVault || 'default', vaults: d.vaults });
+        }
+      })
+      .catch(() => {});
     fetchTree();
     openFile(activePath);
-  }, [canAccessVault]);
+  }, [canAccessVault, vaultTick]);
+
+  async function selectVault(vaultId) {
+    const res = await fetch('/api/v1/vault/select', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vault: vaultId })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (typeof data.readOnly === 'boolean') setReadOnly(data.readOnly);
+    const nextPath = resolveStartupPath(settings);
+    const freshId = `tab-${Date.now()}`;
+    setTabs([{ id: freshId, path: nextPath, title: baseTitle(nextPath), preview: '' }]);
+    setActiveTabId(freshId);
+    activeTabIdRef.current = freshId;
+    activePathRef.current = nextPath || '';
+    setContent('');
+    setDraftContent('');
+    setDirty(false);
+    setFilter('');
+    setVaultsInfo((prev) => ({ ...prev, activeVault: data.vault || vaultId }));
+    setVaultTick((t) => t + 1);
+  }
 
   async function handleLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
@@ -998,7 +1031,7 @@ export default function App() {
     };
     es.onerror = () => setLive(false);
     return () => es.close();
-  }, [canAccessVault]);
+  }, [canAccessVault, vaultTick]);
 
   async function saveActiveNote(markdown) {
     if (!activePath) return;
@@ -1227,6 +1260,9 @@ export default function App() {
           onStartResizeSidebar={startResizeSidebar}
           authRequired={authState.required}
           onLogout={handleLogout}
+          vaults={vaultsInfo.vaults}
+          activeVault={vaultsInfo.activeVault}
+          onSelectVault={selectVault}
         />
 
         <main className="main">

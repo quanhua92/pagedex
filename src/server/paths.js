@@ -1,8 +1,13 @@
 import path from 'node:path';
+import { getActiveVault } from './vault-manager.js';
 
 export const VAULT_ROOT = path.resolve(
   process.env.PAGEDEX_ROOT || process.env.VAULT_ROOT || process.cwd()
 );
+
+export function getVaultRoot() {
+  return getActiveVault()?.root || VAULT_ROOT;
+}
 
 export const IGNORED = new Set([
   '.git',
@@ -70,9 +75,10 @@ export function isImagePath(p) {
 }
 
 export function resolveSafe(relPath) {
+  const root = getVaultRoot();
   const cleaned = String(relPath || '').replace(/^\/+/, '');
-  const resolved = path.resolve(VAULT_ROOT, cleaned);
-  if (resolved !== VAULT_ROOT && !resolved.startsWith(VAULT_ROOT + path.sep)) {
+  const resolved = path.resolve(root, cleaned);
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
     return null;
   }
   return resolved;

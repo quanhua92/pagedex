@@ -23,6 +23,7 @@ Options:
   --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
   --mcp-token-file <path>    File containing comma-separated Bearer tokens for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
   --auth-token-file <path>   File containing comma-separated tokens for Web & REST auth (or PAGEDEX_AUTH_TOKEN_FILE)
+  -c, --config <path>        Multi-vault JSON config file (or PAGEDEX_ROOT_CONFIG)
   --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
   -v, --version              Show version
   -h, --help                 Show this help
@@ -49,6 +50,7 @@ let mcpMode = process.env.PAGEDEX_MCP_MODE || 'full';
 let mcpGit = process.env.PAGEDEX_MCP_GIT === '1' || process.env.PAGEDEX_MCP_GIT === 'true';
 let mcpTokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE || '';
 let authTokenFile = process.env.PAGEDEX_AUTH_TOKEN_FILE || '';
+let configFile = process.env.PAGEDEX_ROOT_CONFIG || '';
 let readOnly = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
 
 const VALID_MCP_MODES = new Set(['read', 'write', 'full', 'off']);
@@ -135,6 +137,22 @@ for (let i = 0; i < args.length; i++) {
     port = arg.slice('--port='.length);
     continue;
   }
+  if (arg === '-c' || arg === '--config') {
+    configFile = args[++i];
+    if (!configFile) {
+      console.error('Missing value for --config');
+      process.exit(1);
+    }
+    continue;
+  }
+  if (arg.startsWith('--config=')) {
+    configFile = arg.slice('--config='.length);
+    if (!configFile) {
+      console.error('Missing value for --config');
+      process.exit(1);
+    }
+    continue;
+  }
   if (arg === '-H' || arg === '--host') {
     host = args[++i];
     if (!host) {
@@ -158,7 +176,16 @@ for (let i = 0; i < args.length; i++) {
 }
 
 const resolvedRoot = path.resolve(targetDir || process.env.PAGEDEX_ROOT || process.env.VAULT_ROOT || process.cwd());
-if (!fs.existsSync(resolvedRoot) || !fs.statSync(resolvedRoot).isDirectory()) {
+if (configFile) {
+  const resolvedConfig = path.resolve(configFile);
+  if (!fs.existsSync(resolvedConfig) || !fs.statSync(resolvedConfig).isFile()) {
+    console.error(`Config file not found: ${resolvedConfig}`);
+    process.exit(1);
+  }
+  configFile = resolvedConfig;
+}
+
+if (!configFile && (!fs.existsSync(resolvedRoot) || !fs.statSync(resolvedRoot).isDirectory())) {
   console.error(`Directory not found: ${resolvedRoot}`);
   process.exit(1);
 }
@@ -194,6 +221,7 @@ process.env.PAGEDEX_MCP_MODE = mcpMode.toLowerCase();
 if (mcpGit) process.env.PAGEDEX_MCP_GIT = '1';
 if (mcpTokenFile) process.env.PAGEDEX_MCP_TOKEN_FILE = mcpTokenFile;
 if (authTokenFile) process.env.PAGEDEX_AUTH_TOKEN_FILE = authTokenFile;
+if (configFile) process.env.PAGEDEX_ROOT_CONFIG = configFile;
 if (readOnly) process.env.PAGEDEX_READ_ONLY = '1';
 
 await import('../src/server/index.js');

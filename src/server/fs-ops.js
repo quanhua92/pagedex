@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { VAULT_ROOT, isProtectedPath, resolveSafe } from './paths.js';
+import { getVaultRoot, isProtectedPath, resolveSafe } from './paths.js';
 import { invalidateVaultCache, removeVaultCacheFile, updateVaultCacheFile } from './vault-cache.js';
 
 export function writeNote(relPath, content, { append = false } = {}) {
   if (!relPath || isProtectedPath(relPath)) return null;
   const full = resolveSafe(relPath);
-  if (!full || full === VAULT_ROOT) return null;
+  if (!full || full === getVaultRoot()) return null;
   fs.mkdirSync(path.dirname(full), { recursive: true });
   if (append && fs.existsSync(full)) {
     fs.appendFileSync(full, String(content ?? ''), 'utf8');
@@ -63,7 +63,7 @@ export function renameNote(oldPath, newPath) {
   const cleanNew = newPath.replace(/^\/+/, '');
   const srcFull = resolveSafe(cleanOld);
   const dstFull = resolveSafe(cleanNew);
-  if (!srcFull || !dstFull || srcFull === VAULT_ROOT || dstFull === VAULT_ROOT) {
+  if (!srcFull || !dstFull || srcFull === getVaultRoot() || dstFull === getVaultRoot()) {
     return { error: 'Invalid path' };
   }
   if (!fs.existsSync(srcFull) || !fs.statSync(srcFull).isFile()) {
@@ -90,7 +90,7 @@ export function renameDir(oldPath, newPath) {
   }
   const srcFull = resolveSafe(cleanOld);
   const dstFull = resolveSafe(cleanNew);
-  if (!srcFull || !dstFull || srcFull === VAULT_ROOT || dstFull === VAULT_ROOT) {
+  if (!srcFull || !dstFull || srcFull === getVaultRoot() || dstFull === getVaultRoot()) {
     return { error: 'Invalid path' };
   }
   if (!fs.existsSync(srcFull) || !fs.statSync(srcFull).isDirectory()) {
@@ -112,7 +112,7 @@ export function writeBinaryFile(relPath, buffer) {
   if (!relPath || isProtectedPath(relPath)) return null;
   const clean = relPath.replace(/^\/+/, '');
   const full = resolveSafe(clean);
-  if (!full || full === VAULT_ROOT) return null;
+  if (!full || full === getVaultRoot()) return null;
   fs.mkdirSync(path.dirname(full), { recursive: true });
   fs.writeFileSync(full, buffer);
   updateVaultCacheFile(clean);
@@ -123,7 +123,7 @@ export function createDir(relPath) {
   const clean = typeof relPath === 'string' ? relPath.trim().replace(/^\/+|\/+$/g, '') : '';
   if (!clean || isProtectedPath(clean)) return { error: 'Invalid folder path' };
   const full = resolveSafe(clean);
-  if (!full || full === VAULT_ROOT) return { error: 'Invalid folder path' };
+  if (!full || full === getVaultRoot()) return { error: 'Invalid folder path' };
   if (fs.existsSync(full)) {
     if (fs.statSync(full).isDirectory()) return { error: 'Folder already exists' };
     return { error: 'A file already exists at that path' };

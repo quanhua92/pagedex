@@ -31,6 +31,7 @@ npx pagedex ~/vault --host 0.0.0.0 --port 4321
 | `--mcp-git` | `PAGEDEX_MCP_GIT` | `false` | Enable `git_commit` and `git_discard` MCP tools |
 | `--mcp-token-file <path>` | `PAGEDEX_MCP_TOKEN_FILE` | — | File containing Bearer token for `/mcp` |
 | `--auth-token-file <path>` | `PAGEDEX_AUTH_TOKEN_FILE` | — | File containing tokens for Web & REST auth |
+| `-c, --config <path>` | `PAGEDEX_ROOT_CONFIG` | — | Multi-vault JSON config file (auto-reloads on edit) |
 | `--read-only` | `PAGEDEX_READ_ONLY` | `false` | Disable all REST & MCP write/delete mutations |
 | `-v, --version` | — | — | Print version |
 | `-h, --help` | — | — | Print CLI help |

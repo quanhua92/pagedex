@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { VAULT_ROOT, isImagePath, isProtectedPath, resolveSafe } from './paths.js';
+import { getVaultRoot, isImagePath, isProtectedPath, resolveSafe } from './paths.js';
 import { removeVaultCacheFile, updateVaultCacheFile } from './vault-cache.js';
 
 export function getGitChanges() {
   try {
     const out = execFileSync('git', ['status', '--porcelain', '-uall'], {
-      cwd: VAULT_ROOT,
+      cwd: getVaultRoot(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore']
     });
@@ -25,7 +25,7 @@ export function getGitChanges() {
         let mtimeMs = 0;
         if (status !== 'D') {
           try {
-            mtimeMs = fs.statSync(path.join(VAULT_ROOT, filePath)).mtimeMs;
+            mtimeMs = fs.statSync(path.join(getVaultRoot(), filePath)).mtimeMs;
           } catch {
             mtimeMs = 0;
           }
@@ -47,14 +47,14 @@ export function gitCommitAndPush({ message, files = [], push = false }) {
       ? files.filter((f) => typeof f === 'string' && f && !isProtectedPath(f) && resolveSafe(f))
       : [];
     if (safeFiles.length > 0) {
-      execFileSync('git', ['add', '--', ...safeFiles], { cwd: VAULT_ROOT, encoding: 'utf8' });
+      execFileSync('git', ['add', '--', ...safeFiles], { cwd: getVaultRoot(), encoding: 'utf8' });
     } else {
-      execFileSync('git', ['add', '-A'], { cwd: VAULT_ROOT, encoding: 'utf8' });
+      execFileSync('git', ['add', '-A'], { cwd: getVaultRoot(), encoding: 'utf8' });
     }
-    const commitOut = execFileSync('git', ['commit', '-m', msg], { cwd: VAULT_ROOT, encoding: 'utf8' });
+    const commitOut = execFileSync('git', ['commit', '-m', msg], { cwd: getVaultRoot(), encoding: 'utf8' });
     let pushOut = '';
     if (push) {
-      pushOut = execFileSync('git', ['push'], { cwd: VAULT_ROOT, encoding: 'utf8' });
+      pushOut = execFileSync('git', ['push'], { cwd: getVaultRoot(), encoding: 'utf8' });
     }
     return { ok: true, output: [commitOut, pushOut].filter(Boolean).join('\n').trim() };
   } catch (err) {
@@ -108,14 +108,14 @@ export function getGitDiff(relPath) {
   const cleanPath = relPath.replace(/^\/+/, '');
   try {
     let raw = execFileSync('git', ['diff', '--no-color', '-U3', '--', cleanPath], {
-      cwd: VAULT_ROOT,
+      cwd: getVaultRoot(),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
     });
     let untracked = false;
     if (!raw.trim()) {
       const st = execFileSync('git', ['status', '--porcelain', '--', cleanPath], {
-        cwd: VAULT_ROOT,
+        cwd: getVaultRoot(),
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore']
       });
@@ -150,7 +150,7 @@ export function discardGitChange({ path: relPath, hunkIndex, lineIndex }) {
   try {
     if (hunkIndex === undefined || hunkIndex === null) {
       const st = execFileSync('git', ['status', '--porcelain', '--', cleanPath], {
-        cwd: VAULT_ROOT,
+        cwd: getVaultRoot(),
         encoding: 'utf8'
       });
       if (st.startsWith('??')) {
@@ -158,7 +158,7 @@ export function discardGitChange({ path: relPath, hunkIndex, lineIndex }) {
         removeVaultCacheFile(cleanPath);
         return { ok: true, path: cleanPath, discarded: 'untracked' };
       }
-      execFileSync('git', ['checkout', '--', cleanPath], { cwd: VAULT_ROOT, encoding: 'utf8' });
+      execFileSync('git', ['checkout', '--', cleanPath], { cwd: getVaultRoot(), encoding: 'utf8' });
       updateVaultCacheFile(cleanPath);
       return { ok: true, path: cleanPath, discarded: 'file' };
     }

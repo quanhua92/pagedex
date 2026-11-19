@@ -82,6 +82,13 @@ html, body, #root {
 .brand-logo { display: block; flex-shrink: 0; border-radius: 5px; }
 .pill { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--green); font-weight: 600; }
 .pill.off { color: var(--amber); }
+.vault-switcher-bar { padding: 8px 12px 0; }
+.vault-select {
+  width: 100%; padding: 6px 9px; border-radius: 7px;
+  border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  font-size: 12.5px; font-weight: 600; font-family: inherit; outline: none; cursor: pointer;
+}
+.vault-select:focus { border-color: var(--accent); }
 
 .sidebar-tabs {
   display: grid; grid-template-columns: 1fr 1fr; gap: 2px;

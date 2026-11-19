@@ -30,6 +30,24 @@ Pass `--auth-token-file <path>` (or `PAGEDEX_AUTH_TOKEN_FILE`) to lock the Web U
 - **REST & CLI access:** Requests to `/api/v1/*` accept either the `pagedex_auth` cookie or `Authorization: Bearer <token>`, returning `401 Unauthorized` otherwise. (`/api/v1/auth/status`, `/api/v1/auth/login`, and `/api/v1/auth/logout` remain public; an empty token file fails closed.)
 - **Separate from MCP:** `/mcp` continues to be governed independently by `--mcp-token-file` (which also supports comma/newline-separated tokens for key rotation and fails closed if empty).
 
+## Multi-Vault Config (`--config` / `PAGEDEX_ROOT_CONFIG`)
+
+Pass `--config <path>` (or `PAGEDEX_ROOT_CONFIG`) pointing to a JSON file to serve multiple vaults on one server (auto-reloaded when edited):
+
+```json
+{
+  "default": "personal",
+  "vaults": {
+    "personal": { "root": "~/vault", "allowGlobalAuth": true },
+    "work": { "root": "~/work-notes", "authTokenFile": "~/.config/pagedex/work-auth", "allowGlobalAuth": false },
+    "docs": { "root": "~/docs", "readOnly": true, "allowGlobalAuth": true }
+  }
+}
+```
+
+- `allowGlobalAuth`: defaults to `true` when `authTokenFile` is omitted, or `false` when `authTokenFile` is set. Set explicitly to `true`/`false` to control whether global `PAGEDEX_AUTH_TOKEN_FILE` / `PAGEDEX_MCP_TOKEN_FILE` tokens can also unlock that vault.
+- Entering a token on `/api/v1/auth/login` unlocks only the vaults that accept that token; `GET /api/v1/vaults` and `POST /api/v1/vault/select` enforce per-vault authorization.
+
 ## Notes on LAN / Tailscale Hosting
 
 Without `--auth-token-file`, `pagedex` has no user authentication. Bind to `127.0.0.1` (default) for local-only use, or pass `--auth-token-file` / `--read-only` when exposing via `--host 0.0.0.0` or Tailscale.

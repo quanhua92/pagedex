@@ -17,11 +17,12 @@ import {
   writeNote
 } from './vault.js';
 import { removeFileFromIndex, searchFts, syncIndex, upsertFileInIndex } from './search-index.js';
+import { getActiveVault, isVaultReadOnly } from './vault-manager.js';
 
 const VALID_MCP_MODES = new Set(['read', 'write', 'full', 'off']);
 
 export function getMcpConfig() {
-  const readOnly = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
+  const readOnly = isVaultReadOnly();
   const rawMode = (process.env.PAGEDEX_MCP_MODE || 'full').toLowerCase();
   const normalized = VALID_MCP_MODES.has(rawMode) ? rawMode : 'full';
   const mode = normalized === 'off' ? 'off' : readOnly ? 'read' : normalized;
@@ -35,10 +36,18 @@ export function getMcpConfig() {
 }
 
 function isMcpAuthEnabled() {
+  const vault = getActiveVault();
+  if (vault?.mcpTokenFile) return true;
+  if (vault && !vault.allowGlobalAuth) return false;
   return Boolean(process.env.PAGEDEX_MCP_TOKEN_FILE || (process.env.PAGEDEX_MCP_TOKEN || '').trim());
 }
 
 function readMcpTokens() {
+  const vault = getActiveVault();
+  if (vault?.mcpTokenFile) {
+    return readTokenFile(vault.mcpTokenFile);
+  }
+  if (vault && !vault.allowGlobalAuth) return [];
   const tokenFile = process.env.PAGEDEX_MCP_TOKEN_FILE;
   if (tokenFile) {
     return readTokenFile(tokenFile);

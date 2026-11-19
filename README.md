@@ -83,6 +83,7 @@ Options:
   --mcp-git                  Enable MCP git_commit and git_discard tools (or PAGEDEX_MCP_GIT=1)
   --mcp-token-file <path>    File containing comma-separated Bearer tokens for /mcp (or PAGEDEX_MCP_TOKEN_FILE)
   --auth-token-file <path>   File containing comma-separated tokens for Web & REST auth (or PAGEDEX_AUTH_TOKEN_FILE)
+  -c, --config <path>        Multi-vault JSON config file (or PAGEDEX_ROOT_CONFIG)
   --read-only                Disable all REST & MCP write/delete mutations (or PAGEDEX_READ_ONLY=1)
   -v, --version              Show version
   -h, --help                 Show this help

@@ -4,34 +4,66 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { getCachedVault } from './vault.js';
-import { syncIndex } from './search-index.js';
+import { closeVaultSearchIndex, syncIndex } from './search-index.js';
 import { handleMcpRequest } from './mcp.js';
 import { registerFileRoutes } from './routes/files.js';
 import { registerGitRoutes } from './routes/git.js';
-import { registerEventRoutes, startVaultWatcher } from './routes/events.js';
-import { authMiddleware, registerAuthRoutes } from './auth.js';
+import { registerEventRoutes, startAllVaultWatchers, startVaultWatcher } from './routes/events.js';
+import { authMiddleware, parseVaultCookie, registerAuthRoutes } from './auth.js';
+import {
+  getActiveVault,
+  getDefaultVault,
+  getVault,
+  initVaultManager,
+  isMultiVault,
+  isVaultReadOnly,
+  listVaults,
+  vaultStorage
+} from './vault-manager.js';
 
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 4321);
-const READ_ONLY = process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true';
 
-try {
-  syncIndex();
-  getCachedVault();
-} catch (err) {
-  console.warn('search index init warning:', err.message);
+function initVaultRuntime(vault) {
+  try {
+    vaultStorage.run(vault, () => {
+      syncIndex();
+      getCachedVault();
+    });
+  } catch (err) {
+    console.warn(`search index init warning (${vault.id}):`, err.message);
+  }
+  startVaultWatcher(vault);
 }
 
-startVaultWatcher();
+initVaultManager({
+  onVaultAdded: initVaultRuntime,
+  onVaultRemoved: (vault) => closeVaultSearchIndex(vault)
+});
+
+startAllVaultWatchers();
 
 const app = new Hono();
+
+async function resolveVaultMiddleware(c, next) {
+  const requestedId =
+    c.req.query('vault') ||
+    c.req.header('x-pagedex-vault') ||
+    parseVaultCookie(c.req.header('cookie') || '');
+  const vault = (requestedId && getVault(requestedId)) || getDefaultVault();
+  return vaultStorage.run(vault, () => next());
+}
+
+app.use('/api/v1/*', resolveVaultMiddleware);
+app.use('/raw/*', resolveVaultMiddleware);
+app.use('/mcp', resolveVaultMiddleware);
 
 app.use('/api/v1/*', authMiddleware);
 
 app.use('/api/v1/*', async (c, next) => {
   const method = c.req.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    if (READ_ONLY) {
+    if (isVaultReadOnly(getActiveVault())) {
       return c.json({ error: 'Server is running in read-only mode' }, 403);
     }
     if (c.req.header('origin') === 'null') {
@@ -61,5 +93,8 @@ if (fs.existsSync(distDir)) {
 }
 
 serve({ fetch: app.fetch, hostname: HOST, port: PORT }, () => {
-  console.log(`Pagedex listening on http://${HOST}:${PORT} (root: ${process.env.PAGEDEX_ROOT || process.env.VAULT_ROOT || process.cwd()})`);
+  const summary = isMultiVault()
+    ? `${listVaults().length} vaults: ${listVaults().map((v) => v.id).join(', ')}`
+    : `root: ${getDefaultVault()?.root || process.cwd()}`;
+  console.log(`Pagedex listening on http://${HOST}:${PORT} (${summary})`);
 });

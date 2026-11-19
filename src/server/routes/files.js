@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   MIME_TYPES,
-  VAULT_ROOT,
+  getVaultRoot,
   createDir,
   deleteNote,
   editNote,
@@ -23,14 +23,18 @@ import {
   upsertFileInIndex
 } from '../search-index.js';
 
+import { getActiveVault, isVaultReadOnly } from '../vault-manager.js';
+
 export function registerFileRoutes(app) {
-  app.get('/api/v1/health', (c) =>
-    c.json({
+  app.get('/api/v1/health', (c) => {
+    const vault = getActiveVault();
+    return c.json({
       ok: true,
-      root: VAULT_ROOT,
-      readOnly: process.env.PAGEDEX_READ_ONLY === '1' || process.env.PAGEDEX_READ_ONLY === 'true'
-    })
-  );
+      vault: vault.id,
+      root: getVaultRoot(),
+      readOnly: isVaultReadOnly(vault)
+    });
+  });
 
   app.get('/api/v1/tree', (c) => {
     const rawLimit = Number(c.req.query('limit') || 10000);

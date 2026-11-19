@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { IGNORED, VAULT_ROOT, isImagePath, isProtectedPath, resolveSafe } from './paths.js';
-
-let vaultCache = null;
+import { IGNORED, getVaultRoot, isImagePath, isProtectedPath, resolveSafe } from './paths.js';
+import { getActiveVault } from './vault-manager.js';
 
 export function invalidateVaultCache() {
-  vaultCache = null;
+  const vault = getActiveVault();
+  if (vault) vault.vaultCache = null;
 }
 
 function sortTreeNodes(nodes) {
@@ -52,7 +52,7 @@ function removeTreeFile(nodes, relPath) {
   if (!dirNode) return;
   removeTreeFile(dirNode.children, parts.slice(1).join('/'));
   dirNode.mtimeMs = dirNode.children.reduce((max, n) => Math.max(max, n.mtimeMs || 0), 0);
-  if (dirNode.children.length === 0 && !fs.existsSync(path.join(VAULT_ROOT, dirNode.path))) {
+  if (dirNode.children.length === 0 && !fs.existsSync(path.join(getVaultRoot(), dirNode.path))) {
     const idx = nodes.indexOf(dirNode);
     if (idx !== -1) nodes.splice(idx, 1);
   }
@@ -93,6 +93,7 @@ function extractWikiTargets(text, resolveWiki) {
 }
 
 export function removeVaultCacheFile(relPath) {
+  const vaultCache = getActiveVault()?.vaultCache;
   if (!vaultCache || !relPath) return;
   const clean = relPath.replace(/^\/+/, '');
   const fIdx = vaultCache.flatFiles.indexOf(clean);
@@ -108,6 +109,7 @@ export function removeVaultCacheFile(relPath) {
 }
 
 export function updateVaultCacheFile(relPath) {
+  const vaultCache = getActiveVault()?.vaultCache;
   if (!vaultCache || !relPath) return;
   const clean = relPath.replace(/^\/+/, '');
   if (isProtectedPath(clean)) return;
@@ -170,7 +172,7 @@ export function sortTree(nodes, sort = 'name') {
     .sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0) || a.name.localeCompare(b.name));
 }
 
-export function scanVault(dir = VAULT_ROOT, relBase = '') {
+export function scanVault(dir = getVaultRoot(), relBase = '') {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const dirs = [];
   const files = [];
@@ -212,7 +214,7 @@ export function buildLinkIndex(flatFiles) {
   const backlinks = Object.fromEntries(mdFiles.map((p) => [p, []]));
 
   for (const src of mdFiles) {
-    const full = path.join(VAULT_ROOT, src);
+    const full = path.join(getVaultRoot(), src);
     let text = '';
     try {
       text = fs.readFileSync(full, 'utf8');
@@ -230,12 +232,14 @@ export function buildLinkIndex(flatFiles) {
 }
 
 export function getCachedVault() {
-  if (vaultCache) return vaultCache;
+  const vault = getActiveVault();
+  if (vault?.vaultCache) return vault.vaultCache;
   const { tree, flatFiles, fileStats } = scanVault();
   const { backlinks } = buildLinkIndex(flatFiles);
   const sortedStats = [...fileStats].sort((a, b) => b.mtimeMs - a.mtimeMs);
-  vaultCache = { tree, flatFiles, fileStats, sortedStats, backlinks };
-  return vaultCache;
+  const built = { tree, flatFiles, fileStats, sortedStats, backlinks };
+  if (vault) vault.vaultCache = built;
+  return built;
 }
 
 export function searchVault(query, limit = 50) {
@@ -247,7 +251,7 @@ export function searchVault(query, limit = 50) {
 
   for (const { path: rel, mtimeMs } of sorted) {
     if (isImagePath(rel)) continue;
-    const full = path.join(VAULT_ROOT, rel);
+    const full = path.join(getVaultRoot(), rel);
     let text = '';
     try {
       text = fs.readFileSync(full, 'utf8');

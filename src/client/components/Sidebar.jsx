@@ -207,7 +207,10 @@ export default function Sidebar({
   onReorderPinned,
   onStartResizeSidebar,
   authRequired = false,
-  onLogout
+  onLogout,
+  vaults = [],
+  activeVault = 'default',
+  onSelectVault
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true);
   const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
@@ -264,6 +267,23 @@ export default function Sidebar({
           </button>
         </div>
       </div>
+      {vaults.length > 1 && onSelectVault && (
+        <div className="vault-switcher-bar">
+          <select
+            className="vault-select"
+            aria-label="Active vault"
+            value={activeVault}
+            onChange={(e) => onSelectVault(e.target.value)}
+          >
+            {vaults.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.id}
+                {v.readOnly ? ' (read-only)' : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="sidebar-tabs">
         <button
           className={`sidebar-tab${sidebarTab === 'files' ? ' active' : ''}`}
