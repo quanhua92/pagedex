@@ -15,6 +15,7 @@ import {
   Pencil,
   Pin,
   PinOff,
+  Printer,
   RotateCcw,
   Trash2
 } from 'lucide-react';
@@ -285,6 +286,16 @@ export default function TopbarAndTabs({
                     <MenuIcon icon={Download} />
                     <span>Download</span>
                   </a>
+                  <button
+                    className="more-item"
+                    onClick={() => {
+                      setMoreMenuOpen(false);
+                      requestAnimationFrame(() => window.print());
+                    }}
+                  >
+                    <MenuIcon icon={Printer} />
+                    <span>Print</span>
+                  </button>
                   {!readOnly && hasGitChanges && requestDiscard && (
                     <button
                       className="more-item"

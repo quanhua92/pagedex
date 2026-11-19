@@ -1041,10 +1041,161 @@ html, body, #root {
   max-width: 100%;
   height: auto;
 }
+.mermaid-svg-print {
+  display: none;
+}
 .mermaid-error {
   font-size: 12px;
   color: #f87171;
   margin-bottom: 6px;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+
+  :root,
+  [data-theme='dark'],
+  [data-theme='light'] {
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --bg-hover: #f3f4f6;
+    --text: #111827;
+    --muted: #4b5563;
+    --border: #d1d5db;
+    --accent: #1d4ed8;
+    --accent-soft: #f3f4f6;
+    --code-bg: #f6f8fa;
+  }
+
+  html,
+  body,
+  #root,
+  .app,
+  .main,
+  .workspace-body,
+  .note-pane,
+  .scroll {
+    display: block !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .sidebar,
+  .rightbar,
+  .sidebar-resizer,
+  .desktop-tabs,
+  .topbar,
+  .fab-wrap,
+  .mobile-bar,
+  .tabs-overlay,
+  .bottom-sheet,
+  .sheet-backdrop,
+  .backdrop,
+  .toast,
+  .modal-backdrop,
+  .switcher-backdrop,
+  .context-menu,
+  .tiptap-toolbar {
+    display: none !important;
+  }
+
+  .doc,
+  .raw-view,
+  .tiptap-wrap {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.55 !important;
+    color: #111827 !important;
+  }
+
+  .doc h1,
+  .doc h2,
+  .doc h3,
+  .doc h4,
+  .doc h5,
+  .doc h6 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .doc p,
+  .doc li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .doc pre,
+  .doc blockquote,
+  .doc tr,
+  .doc img,
+  .mermaid-svg {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .mermaid-svg {
+    display: flex !important;
+    justify-content: center;
+    overflow: visible !important;
+    background: #ffffff !important;
+    border-color: #d1d5db !important;
+  }
+
+  .mermaid-svg svg {
+    max-width: 100% !important;
+    max-height: 240mm !important;
+    height: auto !important;
+  }
+
+  [data-theme='dark'] .mermaid-svg:not(.mermaid-svg-print) {
+    display: none !important;
+  }
+
+  [data-theme='dark'] .mermaid-svg.mermaid-svg-print {
+    display: flex !important;
+  }
+
+  .doc pre,
+  .doc blockquote {
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  .doc pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow: visible !important;
+  }
+
+  .doc table {
+    display: table;
+    width: 100%;
+    overflow: visible !important;
+  }
+
+  .doc thead {
+    display: table-header-group;
+  }
+
+  .doc a {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+}
+
 
 

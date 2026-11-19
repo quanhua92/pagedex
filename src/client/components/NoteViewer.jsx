@@ -52,11 +52,13 @@ export default function NoteViewer({
     (async () => {
       const { default: mermaid } = await import('mermaid');
       if (cancelled) return;
+      const isDark = settings.theme === 'dark';
       mermaid.initialize({
         startOnLoad: false,
-        theme: settings.theme === 'dark' ? 'dark' : 'default',
+        theme: isDark ? 'dark' : 'default',
         securityLevel: 'strict'
       });
+      const renderedForPrint = [];
       for (const block of blocks) {
         if (cancelled) return;
         const code = block.querySelector('code')?.textContent || '';
@@ -65,6 +67,7 @@ export default function NoteViewer({
           const { svg } = await mermaid.render(id, code);
           if (!cancelled) {
             block.innerHTML = `<div class="mermaid-svg">${svg}</div>`;
+            if (isDark) renderedForPrint.push({ block, code });
           }
         } catch (err) {
           if (!cancelled && !block.querySelector('.mermaid-error')) {
@@ -72,6 +75,28 @@ export default function NoteViewer({
             note.className = 'mermaid-error';
             note.textContent = `Mermaid error: ${err?.message || 'Invalid diagram syntax'}`;
             block.prepend(note);
+          }
+        }
+      }
+      if (!cancelled && isDark && renderedForPrint.length > 0) {
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: 'default',
+          securityLevel: 'strict'
+        });
+        for (const { block, code } of renderedForPrint) {
+          if (cancelled) return;
+          const printId = `mermaid-p-${Math.random().toString(36).slice(2, 10)}`;
+          try {
+            const { svg } = await mermaid.render(printId, code);
+            if (!cancelled) {
+              const printDiv = document.createElement('div');
+              printDiv.className = 'mermaid-svg mermaid-svg-print';
+              printDiv.innerHTML = svg;
+              block.appendChild(printDiv);
+            }
+          } catch {
+            // Keep dark SVG fallback if light re-render fails
           }
         }
       }
