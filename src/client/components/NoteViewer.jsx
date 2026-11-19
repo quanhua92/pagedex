@@ -91,7 +91,7 @@ export default function NoteViewer({
             const { svg } = await mermaid.render(printId, code);
             if (!cancelled) {
               const printDiv = document.createElement('div');
-              printDiv.className = 'mermaid-svg mermaid-svg-print';
+              printDiv.className = 'mermaid-svg-print';
               printDiv.innerHTML = svg;
               block.appendChild(printDiv);
             }

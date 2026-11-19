@@ -12,6 +12,7 @@
   --green: #4ade80;
   --amber: #fbbf24;
   --code-bg: #16181f;
+  --inline-code-bg: rgba(255, 255, 255, 0.08);
   --glass: rgba(24, 26, 32, 0.88);
   --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -31,6 +32,7 @@
   --green: #16a34a;
   --amber: #d97706;
   --code-bg: #f3f4f6;
+  --inline-code-bg: #ebedf0;
   --glass: rgba(247, 247, 249, 0.9);
 }
 
@@ -282,9 +284,9 @@ html, body, #root {
 .doc a, .wikilink { color: var(--accent); text-decoration: none; cursor: pointer; }
 .doc a:hover, .wikilink:hover { text-decoration: underline; }
 .wikilink.broken { color: var(--amber); border-bottom: 1px dashed var(--amber); }
-.doc code { font-family: var(--font-mono); font-size: 0.88em; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.doc code { font-family: var(--font-mono); font-size: 0.88em; background: var(--inline-code-bg); border: 1px solid var(--border); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
 .doc pre { background: var(--code-bg); border: 1px solid var(--border); padding: 14px 16px; border-radius: 8px; max-width: 100%; overflow-x: auto; font-size: 13px; line-height: 1.5; }
-.doc pre code { background: none; padding: 0; }
+.doc pre code { background: none; border: 0; padding: 0; }
 .doc blockquote { margin: 1em 0; padding: 8px 14px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 6px 6px 0; }
 .doc blockquote p { margin: 0.3em 0; }
 .doc ul, .doc ol { padding-left: 1.5em; }
@@ -1027,7 +1029,8 @@ html, body, #root {
   color: var(--text);
 }
 
-.mermaid-svg {
+.mermaid-svg,
+.mermaid-svg-print {
   display: flex;
   justify-content: center;
   overflow-x: auto;
@@ -1037,7 +1040,8 @@ html, body, #root {
   border: 1px solid var(--border);
   background: var(--code-bg);
 }
-.mermaid-svg svg {
+.mermaid-svg svg,
+.mermaid-svg-print svg {
   max-width: 100%;
   height: auto;
 }
@@ -1142,30 +1146,36 @@ html, body, #root {
   .doc blockquote,
   .doc tr,
   .doc img,
-  .mermaid-svg {
+  .mermaid-svg,
+  .mermaid-svg-print {
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
-  .mermaid-svg {
-    display: flex !important;
+  .mermaid-svg,
+  .mermaid-svg-print {
     justify-content: center;
     overflow: visible !important;
     background: #ffffff !important;
     border-color: #d1d5db !important;
   }
 
-  .mermaid-svg svg {
+  .mermaid-svg {
+    display: flex !important;
+  }
+
+  .mermaid-svg svg,
+  .mermaid-svg-print svg {
     max-width: 100% !important;
     max-height: 240mm !important;
     height: auto !important;
   }
 
-  [data-theme='dark'] .mermaid-svg:not(.mermaid-svg-print) {
+  [data-theme='dark'] .mermaid-svg {
     display: none !important;
   }
 
-  [data-theme='dark'] .mermaid-svg.mermaid-svg-print {
+  [data-theme='dark'] .mermaid-svg-print {
     display: flex !important;
   }
 

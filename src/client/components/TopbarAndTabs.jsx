@@ -113,7 +113,7 @@ export default function TopbarAndTabs({
           return (
             <button
               className={`icon-btn${isEditing ? ' active' : ''}`}
-              aria-label={isEditing ? 'Switch to preview' : 'Edit file'}
+              aria-label={isEditing ? 'Switch to preview' : isMd ? 'Edit note' : 'Edit file'}
               title={isEditing ? 'Preview (Cmd/Ctrl+E)' : 'Edit (Cmd/Ctrl+E)'}
               onClick={() => setViewMode(isEditing ? 'preview' : isMd ? 'edit' : 'raw')}
             >
