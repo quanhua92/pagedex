@@ -2,6 +2,16 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.11] - 2026-11-19
+
+### Documentation
+
+- add macOS launchd and Linux systemd service setup to README (a1309cf)
+
+### Other Changes
+
+- add backups to autoCollapsed defaults and add pnpm vault script (f9169b5)
+
 ## [0.1.10] - 2026-11-17
 
 ### Features
