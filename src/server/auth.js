@@ -120,17 +120,28 @@ function signSessionValue(token) {
   return `${nonce}.${sig}`;
 }
 
-function verifySessionValue(value, tokens = readAuthTokens()) {
-  if (typeof value !== 'string') return false;
-  const dot = value.indexOf('.');
+function verifySingleSession(entry, tokens) {
+  if (typeof entry !== 'string') return false;
+  const dot = entry.indexOf('.');
   if (dot <= 0) return false;
-  const nonce = value.slice(0, dot);
-  const sig = value.slice(dot + 1);
+  const nonce = entry.slice(0, dot);
+  const sig = entry.slice(dot + 1);
   if (!nonce || !sig) return false;
   let valid = false;
   for (const t of tokens) {
     const expected = createHmac('sha256', t).update(nonce).digest('hex');
     if (safeEqual(sig, expected)) {
+      valid = true;
+    }
+  }
+  return valid;
+}
+
+function verifySessionValue(value, tokens = readAuthTokens()) {
+  if (typeof value !== 'string' || !value) return false;
+  let valid = false;
+  for (const entry of value.split(',').filter(Boolean)) {
+    if (verifySingleSession(entry, tokens)) {
       valid = true;
     }
   }
@@ -198,19 +209,20 @@ export function registerAuthRoutes(app) {
       required: isVaultAuthEnabled(active),
       authenticated: isRequestAuthenticated(c, active)
     };
-    if (isMultiVault()) payload.activeVault = active.id;
+    if (isMultiVault()) {
+      payload.activeVault = active.id;
+      payload.vaults = listVaults().map((v) => ({ id: v.id, readOnly: isVaultReadOnly(v) }));
+    }
     return c.json(payload);
   });
 
   app.get('/api/v1/vaults', (c) => {
     const active = getActiveVault();
-    const accessible = listVaults()
-      .filter((v) => isRequestAuthenticated(c, v))
-      .map((v) => ({ id: v.id, readOnly: isVaultReadOnly(v) }));
+    const list = listVaults().map((v) => ({ id: v.id, readOnly: isVaultReadOnly(v) }));
     return c.json({
       activeVault: active.id,
       multiVault: isMultiVault(),
-      vaults: accessible
+      vaults: list
     });
   });
 
@@ -226,10 +238,10 @@ export function registerAuthRoutes(app) {
     if (!target) {
       return c.json({ error: 'Unknown vault' }, 404);
     }
-    if (!isRequestAuthenticated(c, target)) {
-      return c.json({ error: 'Unauthorized' }, 401);
-    }
     c.header('Set-Cookie', buildCookieHeader(target.id, COOKIE_MAX_AGE, isHttpsRequest(c), VAULT_COOKIE_NAME));
+    if (!isRequestAuthenticated(c, target)) {
+      return c.json({ error: 'Unauthorized', vault: target.id, required: true }, 401);
+    }
     return c.json({ ok: true, vault: target.id, readOnly: isVaultReadOnly(target) });
   });
 
@@ -287,7 +299,10 @@ export function registerAuthRoutes(app) {
     }
     resetAuthRateLimit();
     const secure = isHttpsRequest(c);
-    const sessionVal = signSessionValue(matched);
+    const newEntry = signSessionValue(matched);
+    const existingRaw = isMultiVault() ? parseCookie(c.req.header('cookie') || '', COOKIE_NAME) : '';
+    const existingEntries = existingRaw ? existingRaw.split(',').filter(Boolean).slice(-9) : [];
+    const sessionVal = existingEntries.length > 0 ? `${existingEntries.join(',')},${newEntry}` : newEntry;
     c.header('Set-Cookie', buildCookieHeader(sessionVal, COOKIE_MAX_AGE, secure, COOKIE_NAME));
     if (isMultiVault()) {
       c.header('Set-Cookie', buildCookieHeader(matchedVault.id, COOKIE_MAX_AGE, secure, VAULT_COOKIE_NAME), {

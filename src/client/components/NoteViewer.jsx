@@ -5,9 +5,23 @@ import { isTextEditablePath } from '../lib/paths.js';
 import TiptapEditor from '../TiptapEditor.jsx';
 import RawEditor from './RawEditor.jsx';
 
+const WELCOME_PREFIXES = [
+  'Welcome to',
+  'Back in',
+  'Exploring',
+  'Notes in',
+  'Ready in',
+  'Opening',
+  'Inside',
+  'Workspace:',
+  'Knowledge base:',
+  'Writing in'
+];
+
 export default function NoteViewer({
   scrollRef,
   activePath,
+  vaultName = '',
   openNewNoteDialog,
   openFile,
   openSwitcher,
@@ -42,6 +56,10 @@ export default function NoteViewer({
 }) {
   const editorValue = dirty ? draftContent : content;
   const docRef = useRef(null);
+  const welcomePrefix = useMemo(
+    () => WELCOME_PREFIXES[Math.floor(Math.random() * WELCOME_PREFIXES.length)],
+    [vaultName, activePath]
+  );
 
   useEffect(() => {
     if (viewMode !== 'preview' || !isMarkdown || !docRef.current) return;
@@ -126,6 +144,11 @@ export default function NoteViewer({
     <div ref={scrollRef} className="content-scroll">
       {!activePath ? (
         <div className="new-tab-view">
+          {settings.showNewTabTitle !== false && vaultName && (
+            <h1 className="new-tab-title">
+              {welcomePrefix} <span className="new-tab-vault">{vaultName}</span>
+            </h1>
+          )}
           {!readOnly && (
             <button className="new-tab-btn" onClick={() => openNewNoteDialog('')}>
               <Plus size={16} strokeWidth={1.9} />

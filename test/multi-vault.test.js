@@ -107,7 +107,7 @@ test('PAGEDEX_ROOT_CONFIG supports multi-vault, allowGlobalAuth, per-vault token
   const vaultsData = await vaultsRes.json();
   assert.deepEqual(
     vaultsData.vaults.map((v) => v.id),
-    ['personal', 'docs']
+    ['personal', 'work', 'docs']
   );
 
   // Global token cannot access isolated work vault
@@ -130,6 +130,14 @@ test('PAGEDEX_ROOT_CONFIG supports multi-vault, allowGlobalAuth, per-vault token
     body: JSON.stringify({ path: 'blocked.md', content: 'nope' })
   });
   assert.equal(writeDocs.status, 403);
+
+  // Switching out of a readOnly vault via POST /api/v1/vault/select must still work
+  const switchFromDocs = await fetch(`${BASE_URL}/api/v1/vault/select`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: `${globalAuthCookie}; pagedex_vault=docs` },
+    body: JSON.stringify({ vault: 'personal' })
+  });
+  assert.equal(switchFromDocs.status, 200);
 
   const writePersonal = await fetch(`${BASE_URL}/api/v1/file?vault=personal`, {
     method: 'PUT',

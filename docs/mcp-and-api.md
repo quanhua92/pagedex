@@ -56,6 +56,8 @@ See the full **[MCP Server Guide](./MCP.md)** for CLI access control (`--mcp`, `
 | `GET /api/v1/auth/status` | Check whether token auth is enabled and session is authenticated |
 | `POST /api/v1/auth/login` | Validate token and set `pagedex_auth` session cookie |
 | `POST /api/v1/auth/logout` | Clear `pagedex_auth` session cookie |
+| `GET /api/v1/vaults` | List configured vaults and active vault ID (in multi-vault mode) |
+| `POST /api/v1/vault/select` | Switch active vault (`{ vault }`, sets `pagedex_vault` cookie) |
 
 ## Static / Raw Route (`/raw/*`)
 

@@ -63,7 +63,10 @@ app.use('/api/v1/*', authMiddleware);
 app.use('/api/v1/*', async (c, next) => {
   const method = c.req.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
-    if (isVaultReadOnly(getActiveVault())) {
+    const reqPath = c.req.path;
+    const isSessionRoute =
+      reqPath === '/api/v1/auth/login' || reqPath === '/api/v1/auth/logout' || reqPath === '/api/v1/vault/select';
+    if (!isSessionRoute && isVaultReadOnly(getActiveVault())) {
       return c.json({ error: 'Server is running in read-only mode' }, 403);
     }
     if (c.req.header('origin') === 'null') {

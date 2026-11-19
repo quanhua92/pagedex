@@ -21,6 +21,7 @@ pagedex/
 │   │   ├── dev.js                  # Concurrent API (:4321) + Vite (:5173) dev launcher
 │   │   ├── paths.js                # VAULT_ROOT, IGNORED, MIME_TYPES, resolveSafe, isProtectedPath
 │   │   ├── vault-cache.js          # In-memory tree, fileStats, backlinks cache
+│   │   ├── vault-manager.js        # Multi-vault context, PAGEDEX_ROOT_CONFIG, auto-reload
 │   │   ├── fs-ops.js               # Note CRUD, rename, upload
 │   │   ├── git.js                  # Git status, diff, line/file discard, commit & push
 │   │   ├── vault.js                # Barrel re-export
@@ -49,6 +50,7 @@ pagedex/
 │   ├── api-mcp.test.js             # Unit/integration tests (node --test)
 │   ├── auth.test.js                # Auth token-file, cookie rotation, rate-limit tests
 │   ├── mcp-modes.test.js           # --mcp read/write/full/off and --read-only tests
+│   ├── multi-vault.test.js         # PAGEDEX_ROOT_CONFIG, allowGlobalAuth, and auto-reload tests
 │   ├── playwright/                 # Playwright E2E specs
 │   └── smoke.js                    # REST + MCP v2 (2026-07-28, 2025-11-25, 2024-11-05 SSE) smoke suite
 ├── dist/                           # Prebuilt Vite client bundle (gitignored, published to npm)

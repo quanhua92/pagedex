@@ -90,6 +90,14 @@ export default function SettingsModal({
                   />
                 </div>
               )}
+              <label className="toggle-row">
+                <span>Show vault title on New tab</span>
+                <input
+                  type="checkbox"
+                  checked={settings.showNewTabTitle !== false}
+                  onChange={(e) => setSettings((s) => ({ ...s, showNewTabTitle: e.target.checked }))}
+                />
+              </label>
             </>
           )}
 

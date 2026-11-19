@@ -82,11 +82,10 @@ html, body, #root {
 .brand-logo { display: block; flex-shrink: 0; border-radius: 5px; }
 .pill { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--green); font-weight: 600; }
 .pill.off { color: var(--amber); }
-.vault-switcher-bar { padding: 8px 12px 0; }
 .vault-select {
-  width: 100%; padding: 6px 9px; border-radius: 7px;
+  max-width: 120px; padding: 3px 6px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
-  font-size: 12.5px; font-weight: 600; font-family: inherit; outline: none; cursor: pointer;
+  font-size: 13px; font-weight: 700; font-family: inherit; outline: none; cursor: pointer;
 }
 .vault-select:focus { border-color: var(--accent); }
 
@@ -525,6 +524,12 @@ html, body, #root {
 
 .new-tab-view {
   min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.new-tab-title {
+  margin: 0 0 8px; font-size: 22px; font-weight: 600; text-align: center; color: var(--muted);
+}
+.new-tab-vault {
+  color: var(--text); font-weight: 700;
 }
 .new-tab-btn {
   width: 210px; padding: 12px 18px; border-radius: 999px;
@@ -969,6 +974,32 @@ html, body, #root {
   color: #f87171;
   font-size: 13px;
   margin-top: 8px;
+}
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-input-wrap input {
+  padding-right: 38px;
+}
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.password-toggle-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
 }
 
 .raw-editor-wrap {

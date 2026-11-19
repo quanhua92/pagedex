@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { LogOut, Moon, Pin, Plus, Sun } from 'lucide-react';
+import { Eye, LogOut, Moon, Pin, Plus, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -236,12 +236,34 @@ export default function Sidebar({
   };
   const pinnedNodes = pinned.map((item) => findTreeNode(tree, item.path)).filter(Boolean);
 
+  const activeVaultInfo = vaults.find((v) => v.id === activeVault);
+
   return (
     <aside className={`sidebar${drawerOpen ? ' open' : ''}`}>
       <div className="brand">
         <div className="brand-title">
-          <img src="/pagedex-logo.svg" alt="" width="20" height="20" className="brand-logo" />
-          <span>PageDex</span>
+          <img src="/pagedex-logo.svg" alt="PageDex" width="20" height="20" className="brand-logo" />
+          {vaults.length > 1 && onSelectVault ? (
+            <select
+              className="vault-select"
+              aria-label="Active vault"
+              value={activeVault}
+              onChange={(e) => onSelectVault(e.target.value)}
+            >
+              {vaults.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.id}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span>PageDex</span>
+          )}
+          {activeVaultInfo?.readOnly && (
+            <span className="pill off" title="Read-only vault" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+              <Eye size={11} strokeWidth={2.2} aria-hidden="true" />
+            </span>
+          )}
           <span className={`pill${live ? '' : ' off'}`}>{live ? 'Live' : 'Reconnecting'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -267,23 +289,6 @@ export default function Sidebar({
           </button>
         </div>
       </div>
-      {vaults.length > 1 && onSelectVault && (
-        <div className="vault-switcher-bar">
-          <select
-            className="vault-select"
-            aria-label="Active vault"
-            value={activeVault}
-            onChange={(e) => onSelectVault(e.target.value)}
-          >
-            {vaults.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.id}
-                {v.readOnly ? ' (read-only)' : ''}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       <div className="sidebar-tabs">
         <button
           className={`sidebar-tab${sidebarTab === 'files' ? ' active' : ''}`}

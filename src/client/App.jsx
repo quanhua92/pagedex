@@ -96,8 +96,15 @@ export default function App() {
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [authState, setAuthState] = useState({ checked: false, required: false, authenticated: false });
+  const [authState, setAuthState] = useState({
+    checked: false,
+    required: false,
+    authenticated: false,
+    vaults: [],
+    activeVault: ''
+  });
   const [vaultsInfo, setVaultsInfo] = useState({ activeVault: 'default', vaults: [] });
+  const [vaultRootName, setVaultRootName] = useState('');
   const [vaultTick, setVaultTick] = useState(0);
   const [switcherTab, setSwitcherTab] = useState('recent'); // 'recent' | 'alpha'
   const [switcherQuery, setSwitcherQuery] = useState('');
@@ -939,7 +946,9 @@ export default function App() {
         setAuthState({
           checked: true,
           required: Boolean(d?.required),
-          authenticated: Boolean(d?.authenticated)
+          authenticated: Boolean(d?.authenticated),
+          vaults: Array.isArray(d?.vaults) ? d.vaults : [],
+          activeVault: d?.activeVault || ''
         });
       })
       .catch(() => {
@@ -961,6 +970,9 @@ export default function App() {
       })
       .then((d) => {
         if (d && typeof d.readOnly === 'boolean') setReadOnly(d.readOnly);
+        if (d && typeof d.root === 'string') {
+          setVaultRootName(d.root.split(/[/\\]/).filter(Boolean).pop() || '');
+        }
       })
       .catch(() => {});
     fetch('/api/v1/vaults')
@@ -981,9 +993,6 @@ export default function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ vault: vaultId })
     });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (typeof data.readOnly === 'boolean') setReadOnly(data.readOnly);
     const nextPath = resolveStartupPath(settings);
     const freshId = `tab-${Date.now()}`;
     setTabs([{ id: freshId, path: nextPath, title: baseTitle(nextPath), preview: '' }]);
@@ -994,13 +1003,26 @@ export default function App() {
     setDraftContent('');
     setDirty(false);
     setFilter('');
-    setVaultsInfo((prev) => ({ ...prev, activeVault: data.vault || vaultId }));
+    setVaultsInfo((prev) => ({ ...prev, activeVault: vaultId }));
+    if (res.status === 401) {
+      setAuthState((prev) => ({
+        ...prev,
+        checked: true,
+        required: true,
+        authenticated: false,
+        activeVault: vaultId
+      }));
+      return;
+    }
+    if (!res.ok) return;
+    const data = await res.json();
+    if (typeof data.readOnly === 'boolean') setReadOnly(data.readOnly);
     setVaultTick((t) => t + 1);
   }
 
   async function handleLogout() {
     await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
-    setAuthState({ checked: true, required: true, authenticated: false });
+    setAuthState((prev) => ({ ...prev, checked: true, required: true, authenticated: false }));
   }
 
   useEffect(() => {
@@ -1210,7 +1232,11 @@ export default function App() {
   if (authState.required && !authState.authenticated) {
     return (
       <LoginScreen
-        onAuthenticated={() => setAuthState({ checked: true, required: true, authenticated: true })}
+        vaults={authState.vaults}
+        defaultVault={authState.activeVault}
+        onAuthenticated={() =>
+          setAuthState((prev) => ({ ...prev, checked: true, required: true, authenticated: true }))
+        }
       />
     );
   }
@@ -1308,6 +1334,7 @@ export default function App() {
               <NoteViewer
                 scrollRef={scrollRef}
                 activePath={activePath}
+                vaultName={vaultsInfo.vaults.length > 1 ? vaultsInfo.activeVault : vaultRootName || 'PageDex'}
                 openNewNoteDialog={openNewNoteDialog}
                 openFile={openFile}
                 openSwitcher={openSwitcher}

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 
-export default function LoginScreen({ onAuthenticated }) {
+export default function LoginScreen({ vaults = [], defaultVault = '', onAuthenticated }) {
   const [token, setToken] = useState('');
+  const [showToken, setShowToken] = useState(false);
+  const [selectedVault, setSelectedVault] = useState(() => defaultVault || vaults[0]?.id || '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  const effectiveVault = selectedVault || defaultVault || vaults[0]?.id || '';
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -16,10 +20,12 @@ export default function LoginScreen({ onAuthenticated }) {
     setBusy(true);
     setError('');
     try {
+      const payload = { token: clean };
+      if (effectiveVault) payload.vault = effectiveVault;
       const res = await fetch('/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: clean })
+        body: JSON.stringify(payload)
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -45,18 +51,47 @@ export default function LoginScreen({ onAuthenticated }) {
             <p className="modal-note">Enter your access token to unlock this vault.</p>
           </div>
         </div>
+        {vaults.length > 1 && (
+          <div className="field">
+            <label htmlFor="pagedex-auth-vault">Vault</label>
+            <select
+              id="pagedex-auth-vault"
+              value={effectiveVault}
+              onChange={(e) => setSelectedVault(e.target.value)}
+              disabled={busy}
+            >
+              {vaults.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="field">
           <label htmlFor="pagedex-auth-token">Access token</label>
-          <input
-            id="pagedex-auth-token"
-            type="password"
-            autoFocus
-            autoComplete="current-password"
-            placeholder="Paste token..."
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            disabled={busy}
-          />
+          <div className="password-input-wrap">
+            <input
+              id="pagedex-auth-token"
+              type={showToken ? 'text' : 'password'}
+              autoFocus
+              autoComplete="current-password"
+              placeholder="Paste token..."
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              disabled={busy}
+            />
+            <button
+              type="button"
+              className="password-toggle-btn"
+              aria-label={showToken ? 'Hide token' : 'Show token'}
+              title={showToken ? 'Hide token' : 'Show token'}
+              onClick={() => setShowToken((s) => !s)}
+              disabled={busy}
+            >
+              {showToken ? <EyeOff size={15} strokeWidth={1.9} /> : <Eye size={15} strokeWidth={1.9} />}
+            </button>
+          </div>
         </div>
         {error && <div className="login-error" role="alert">{error}</div>}
         <div className="modal-actions">

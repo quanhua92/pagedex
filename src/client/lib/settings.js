@@ -6,6 +6,7 @@ export const DEFAULT_SETTINGS = {
   outlinePosition: 'right', // 'right' | 'bottom' | 'hidden'
   startupMode: 'newtab', // 'newtab' | 'readme' | 'last' | 'custom'
   startupPath: 'README.md',
+  showNewTabTitle: true,
   autoCollapsed: ['apps', 'backups'],
   hiddenFolders: []
 };
@@ -23,6 +24,7 @@ export function loadSettings() {
       lineHeight: Number(p.lineHeight) >= 1.3 && Number(p.lineHeight) <= 2.1 ? Number(p.lineHeight) : 1.65,
       maxWidth: Number(p.maxWidth) >= 560 && Number(p.maxWidth) <= 1040 ? Number(p.maxWidth) : 780,
       outlinePosition: ['right', 'bottom', 'hidden'].includes(p.outlinePosition) ? p.outlinePosition : 'right',
+      showNewTabTitle: typeof p.showNewTabTitle === 'boolean' ? p.showNewTabTitle : true,
       autoCollapsed: Array.isArray(p.autoCollapsed) ? p.autoCollapsed : DEFAULT_SETTINGS.autoCollapsed,
       hiddenFolders: Array.isArray(p.hiddenFolders) ? p.hiddenFolders : []
     };
