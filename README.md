@@ -35,7 +35,7 @@
 | **Sync** | Built-in Git commit & push + SSE live reload (works alongside Obsidian Sync / iCloud / Syncthing) | Paid Obsidian Sync, iCloud, or community Git plugins | Automatic cloud sync |
 | **REST API & MCP** | Native `/api/v1/*` + multi-era `/mcp` (`read` / `write` / `full`, token-scoped) | Via community plugins (Local REST API / MCP) | Cloud REST API & remote OAuth MCP |
 | **Git Diff & Commit UI** | Built-in line/hunk diff, discard, commit & push | Via community plugin (e.g. Obsidian Git) | Proprietary page history (no Git) |
-| **Strengths** | Sandboxed `/raw/*` HTML, CSV, PDF, Range media, A4 Mermaid print | Graph view, Canvas, 1,000+ plugins | Relational databases, Kanban, real-time team collab |
+| **Strengths** | Zero-lock-in (`npx`), multi-vault + per-vault auth, FTS5 trigram search, `[[wikilinks]]`, sandboxed HTML/media, A4 print | Graph view, Canvas, 1,000+ plugins | Relational databases, Kanban, real-time team collab |
 
 ## Screenshots
 
@@ -130,6 +130,7 @@ The SQLite FTS5 trigram index is stored outside your target folder at `~/.cache/
 ## Documentation
 
 - [Getting Started](./docs/getting-started.md) — CLI flags, UI features, wikilinks, Git sync, and mobile gestures
+- [Multi-Vault Guide](./docs/multi-vault.md) — Multiple vaults via `--config` / `PAGEDEX_ROOT_CONFIG`, per-vault auth, `allowGlobalAuth`, and live reload
 - [Supported File Types](./docs/supported-files.md) — Markdown, sandboxed HTML, PDF, audio/video, CSV/TSV, SVG, and code
 - [MCP Server Guide](./docs/MCP.md) — Scoped MCP modes, `--mcp-token-file`, and all 12 tools
 - [MCP & REST API](./docs/mcp-and-api.md) — REST endpoints, `/raw/*`, and SSE live reload
