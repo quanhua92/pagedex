@@ -194,6 +194,7 @@ export default function SettingsModal({
                 {[
                   ['Open Quick Switcher', ['Cmd/Ctrl + K', 'Cmd/Ctrl + O', '/']],
                   ['Previous / next tab', ['[', ']', 'Alt + [ / ]']],
+                  ['Open file in new tab (sidebar)', ['Cmd/Ctrl + Click', 'Middle-click']],
                   ['Toggle left files sidebar', ['Cmd/Ctrl + \\']],
                   ['Toggle Preview / Edit', ['Cmd/Ctrl + E']],
                   ['Save note (in Editor / Raw)', ['Cmd/Ctrl + S']]

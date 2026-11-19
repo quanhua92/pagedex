@@ -1178,6 +1178,7 @@ export default function App() {
           toggleDir={toggleDir}
           setViewMode={setViewMode}
           openFile={openFile}
+          openInNewTab={openInNewTab}
           openRowMenu={openRowMenu}
           changesSort={changesSort}
           setChangesSort={setChangesSort}

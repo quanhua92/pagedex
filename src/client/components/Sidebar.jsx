@@ -141,10 +141,23 @@ function TreeNode({ node, activePath, filter, collapsed, hiddenSet, onToggleDir,
         onTouchMove={fileLongPress.onTouchMove}
         onTouchEnd={fileLongPress.onTouchEnd}
         onTouchCancel={fileLongPress.onTouchCancel}
-        onContextMenu={fileLongPress.onContextMenu}
+        onContextMenu={(e) => {
+          if (e.ctrlKey) {
+            e.preventDefault();
+            onSelectFile(node.path, e);
+            return;
+          }
+          fileLongPress.onContextMenu(e);
+        }}
+        onAuxClick={(e) => {
+          if (e.button === 1) {
+            e.preventDefault();
+            onSelectFile(node.path, e);
+          }
+        }}
         onClick={(e) => {
           if (fileLongPress.consumeClick(e)) return;
-          onSelectFile(node.path);
+          onSelectFile(node.path, e);
         }}
       >
         {node.name}
@@ -182,6 +195,7 @@ export default function Sidebar({
   toggleDir,
   setViewMode,
   openFile,
+  openInNewTab,
   openRowMenu,
   changesSort,
   setChangesSort,
@@ -199,6 +213,16 @@ export default function Sidebar({
   const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
   const [dragFromPath, setDragFromPath] = useState(null);
   const [dragOverPath, setDragOverPath] = useState(null);
+  const handleSelectFile = (p, e) => {
+    const newTab = Boolean(e && (e.metaKey || e.ctrlKey || e.button === 1));
+    if (newTab && openInNewTab) {
+      openInNewTab(p, 'preview');
+      return;
+    }
+    setViewMode('preview');
+    openFile(p);
+  };
+
   const togglePinnedDir = (dirPath) => {
     setPinnedCollapsed((prev) => {
       const next = new Set(prev);
@@ -331,10 +355,7 @@ export default function Sidebar({
                             collapsed={pinnedCollapsed}
                             hiddenSet={hiddenSet}
                             onToggleDir={togglePinnedDir}
-                            onSelectFile={(p) => {
-                              setViewMode('preview');
-                              openFile(p);
-                            }}
+                            onSelectFile={handleSelectFile}
                             onOpenMenu={openRowMenu}
                           />
                         </div>
@@ -356,10 +377,7 @@ export default function Sidebar({
                 collapsed={collapsed}
                 hiddenSet={hiddenSet}
                 onToggleDir={toggleDir}
-                onSelectFile={(p) => {
-                  setViewMode('preview');
-                  openFile(p);
-                }}
+                onSelectFile={handleSelectFile}
                 onOpenMenu={openRowMenu}
               />
             ))}
