@@ -14,6 +14,8 @@ export default function QuickSwitcherModal({
   switcherData,
   openFile,
   openInNewTab,
+  switchTab,
+  tabCount = 0,
   isLargeVault,
   pagedFiles,
   loadMorePagedFiles,
@@ -27,26 +29,23 @@ export default function QuickSwitcherModal({
       <div className="switcher" onClick={(e) => e.stopPropagation()}>
         <div className="switcher-head">
           <div className="switcher-tabs">
-            <button
-              className={`switcher-tab${switcherTab === 'recent' ? ' active' : ''}`}
-              onClick={() => {
-                setSwitcherTab('recent');
-                setSwitcherIdx(0);
-                switcherInputRef.current?.focus();
-              }}
-            >
-              Recent
-            </button>
-            <button
-              className={`switcher-tab${switcherTab === 'alpha' ? ' active' : ''}`}
-              onClick={() => {
-                setSwitcherTab('alpha');
-                setSwitcherIdx(0);
-                switcherInputRef.current?.focus();
-              }}
-            >
-              A–Z
-            </button>
+            {[
+              ['recent', 'Recent'],
+              ['alpha', 'A–Z'],
+              ['tabs', `Open Tabs (${tabCount})`]
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                className={`switcher-tab${switcherTab === id ? ' active' : ''}`}
+                onClick={() => {
+                  setSwitcherTab(id);
+                  setSwitcherIdx(0);
+                  switcherInputRef.current?.focus();
+                }}
+              >
+                {label}
+              </button>
+            ))}
           </div>
           {totalFiles > fileStats.length && (
             <span className="switcher-cap">
@@ -76,11 +75,12 @@ export default function QuickSwitcherModal({
                   const idx = flatIndex++;
                   return (
                     <button
-                      key={item.path}
+                      key={item.tabId || item.path}
                       className={`switcher-item${idx === switcherIdx ? ' selected' : ''}`}
                       onClick={() => {
                         setSwitcherOpen(false);
-                        (openInNewTab || openFile)(item.path);
+                        if (item.tab && switchTab) switchTab(item.tab);
+                        else (openInNewTab || openFile)(item.path);
                       }}
                     >
                       <div className="switcher-row-top">
@@ -94,7 +94,7 @@ export default function QuickSwitcherModal({
               </React.Fragment>
             ));
           })()}
-          {isLargeVault && pagedFiles.hasMore && (
+          {switcherTab !== 'tabs' && isLargeVault && pagedFiles.hasMore && (
             <button className="btn" style={{ margin: '8px auto', display: 'block' }} onClick={loadMorePagedFiles}>
               Load more
             </button>
@@ -121,7 +121,9 @@ export default function QuickSwitcherModal({
               } else if (e.key === 'Enter' && switcherItems[switcherIdx]) {
                 e.preventDefault();
                 setSwitcherOpen(false);
-                (openInNewTab || openFile)(switcherItems[switcherIdx].path);
+                const selected = switcherItems[switcherIdx];
+                if (selected.tab && switchTab) switchTab(selected.tab);
+                else (openInNewTab || openFile)(selected.path);
               }
             }}
           />

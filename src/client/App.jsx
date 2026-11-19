@@ -140,6 +140,7 @@ export default function App() {
   const activeTabIdRef = useRef(activeTab?.id || activeTabId);
   const tabsRef = useRef(tabs);
   const switchTabRef = useRef(null);
+  const toggleOutlineRef = useRef(null);
   activePathRef.current = activePath;
   activeTabIdRef.current = activeTab?.id || activeTabId;
   tabsRef.current = tabs;
@@ -251,6 +252,11 @@ export default function App() {
         setSidebarCollapsed((v) => !v);
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        toggleOutlineRef.current?.();
+        return;
+      }
       if ((e.metaKey || e.ctrlKey) && key === 'e') {
         if (!readOnly && activePathRef.current && isMarkdownPath(activePathRef.current)) {
           e.preventDefault();
@@ -336,7 +342,7 @@ export default function App() {
   const isLargeVault = totalFiles > fileStats.length;
 
   useEffect(() => {
-    if (!switcherOpen || !isLargeVault) {
+    if (!switcherOpen || !isLargeVault || switcherTab === 'tabs') {
       setPagedFiles({ items: [], hasMore: false });
       return;
     }
@@ -368,6 +374,22 @@ export default function App() {
 
   const switcherData = useMemo(() => {
     const q = switcherQuery.trim().toLowerCase();
+    if (switcherTab === 'tabs') {
+      const tabItems = tabs
+        .filter((t) => {
+          if (!q) return true;
+          const haystack = `${t.path || ''} ${t.title || ''}`.toLowerCase();
+          return haystack.includes(q);
+        })
+        .map((t) => ({
+          tabId: t.id,
+          tab: t,
+          path: t.path || 'New tab',
+          mtimeMs: 0,
+          snippet: t.id === activeTabId ? 'Active tab' : ''
+        }));
+      return { groups: [{ label: null, items: tabItems }], items: tabItems };
+    }
     const isExcluded = (p) => {
       const lower = p.toLowerCase();
       return settings.hiddenFolders.some((dir) => lower.startsWith(dir.toLowerCase() + '/'));
@@ -454,7 +476,9 @@ export default function App() {
     fileStats,
     flatFiles,
     contentHits,
-    settings.hiddenFolders
+    settings.hiddenFolders,
+    tabs,
+    activeTabId
   ]);
 
   const switcherItems = switcherData.items;
@@ -1112,6 +1136,7 @@ export default function App() {
       setOutlinePosition(outlinePosition === 'hidden' ? 'right' : 'hidden');
     }
   };
+  toggleOutlineRef.current = handleToggleOutline;
 
   useEdgeSwipe({
     drawerOpen,
@@ -1328,6 +1353,8 @@ export default function App() {
         switcherData={switcherData}
         openFile={openFile}
         openInNewTab={openInNewTab}
+        switchTab={switchTab}
+        tabCount={tabs.length}
         isLargeVault={isLargeVault}
         pagedFiles={pagedFiles}
         loadMorePagedFiles={loadMorePagedFiles}
