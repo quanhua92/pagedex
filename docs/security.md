@@ -33,3 +33,19 @@ Pass `--auth-token-file <path>` (or `PAGEDEX_AUTH_TOKEN_FILE`) to lock the Web U
 ## Notes on LAN / Tailscale Hosting
 
 Without `--auth-token-file`, `pagedex` has no user authentication. Bind to `127.0.0.1` (default) for local-only use, or pass `--auth-token-file` / `--read-only` when exposing via `--host 0.0.0.0` or Tailscale.
+
+## Reverse Proxy & `X-Frame-Options`
+
+PageDex renders `.html` / `.htm` previews inside `<iframe src="/raw/..." sandbox="allow-scripts">` (without `allow-same-origin` — adding `allow-same-origin` alongside `allow-scripts` on a same-origin iframe would let vault HTML escape the sandbox, access `window.parent` / cookies, and call `/api/v1/*` directly). Because of the opaque (`null`) origin, any reverse proxy or CDN in front of PageDex that injects `X-Frame-Options: DENY` or `SAMEORIGIN` will block HTML previews.
+
+Exclude `/raw/*` from `X-Frame-Options` on your proxy:
+
+- **Caddy:**
+  ```caddy
+  vault.example.com {
+      header /raw/* -X-Frame-Options
+      reverse_proxy 127.0.0.1:4321
+  }
+  ```
+- **Nginx:** In a `location ^~ /raw/` block, omit `add_header X-Frame-Options` (or use `proxy_hide_header X-Frame-Options;`).
+- **Cloudflare:** Exclude `/raw/*` from any Transform Rule or security header policy that sets `X-Frame-Options`.

@@ -227,3 +227,13 @@ journalctl --user -u pagedex-vault.service -f
 ```
 
 > **Tip:** To keep the service running after you log out (e.g., on a headless server), run `sudo loginctl enable-linger $USER`.
+
+## Reverse Proxy & HTML Previews (`X-Frame-Options`)
+
+HTML previews render inside `<iframe src="/raw/..." sandbox="allow-scripts">` (`allow-same-origin` is intentionally omitted so untrusted vault HTML cannot escape the sandbox or call `/api/v1/*`). If your reverse proxy or CDN injects `X-Frame-Options: DENY` (or `SAMEORIGIN`), HTML previews will be blocked. Exclude `/raw/*` from `X-Frame-Options` (for example in Caddy):
+
+```caddy
+header /raw/* -X-Frame-Options
+```
+
+See **[docs/security.md](./docs/security.md#reverse-proxy--x-frame-options)** for Nginx and Cloudflare notes.
