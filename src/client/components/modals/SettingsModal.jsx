@@ -198,6 +198,7 @@ export default function SettingsModal({
                   ['Toggle left files sidebar', ['Cmd/Ctrl + \\']],
                   ['Toggle right outline sidebar', ['Cmd/Ctrl + /']],
                   ['Toggle Preview / Edit', ['Cmd/Ctrl + E']],
+                  ['Toggle Raw mode', ['Cmd/Ctrl + Shift + E']],
                   ['Save note (in Editor / Raw)', ['Cmd/Ctrl + S']]
                 ].map(([desc, keys]) => (
                   <div className="shortcut-row" key={desc}>

@@ -260,7 +260,15 @@ export default function App() {
       }
       if ((e.metaKey || e.ctrlKey) && key === 'e') {
         const path = activePathRef.current;
-        if (!readOnly && path && isTextEditablePath(path)) {
+        if (!path) return;
+        if (e.shiftKey) {
+          if (isTextEditablePath(path)) {
+            e.preventDefault();
+            setViewMode((m) => (m === 'raw' ? (isMarkdownPath(path) && !readOnly ? 'edit' : 'preview') : 'raw'));
+          }
+          return;
+        }
+        if (!readOnly && isTextEditablePath(path)) {
           e.preventDefault();
           const isMd = isMarkdownPath(path);
           setViewMode((m) => (m === 'edit' || (!isMd && m === 'raw') ? 'preview' : isMd ? 'edit' : 'raw'));
