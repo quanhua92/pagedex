@@ -2,6 +2,16 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.12] - 2026-11-19
+
+### Bug Fixes
+
+- **ui,sw:** bypass SSE/API in service worker, enable desktop left sidebar toggle, and align tab bar height (dd61458)
+
+### Documentation
+
+- document reverse proxy X-Frame-Options exclusion for /raw/* (58dc10c)
+
 ## [0.1.11] - 2026-11-19
 
 ### Documentation
