@@ -43,7 +43,9 @@ function openBrowser(url) {
 
 const args = process.argv.slice(2);
 let targetDir = null;
-let port = process.env.PORT || '4321';
+const hasEnvPort = process.env.PORT !== undefined && process.env.PORT !== '';
+let hasExplicitPort = hasEnvPort;
+let port = hasEnvPort ? process.env.PORT : '4321';
 let host = process.env.HOST || '127.0.0.1';
 let shouldOpen = false;
 let mcpMode = process.env.PAGEDEX_MCP_MODE || 'full';
@@ -131,10 +133,16 @@ for (let i = 0; i < args.length; i++) {
       console.error('Missing value for --port');
       process.exit(1);
     }
+    hasExplicitPort = true;
     continue;
   }
   if (arg.startsWith('--port=')) {
     port = arg.slice('--port='.length);
+    if (!port) {
+      console.error('Missing value for --port');
+      process.exit(1);
+    }
+    hasExplicitPort = true;
     continue;
   }
   if (arg === '-c' || arg === '--config') {
@@ -223,10 +231,11 @@ if (mcpTokenFile) process.env.PAGEDEX_MCP_TOKEN_FILE = mcpTokenFile;
 if (authTokenFile) process.env.PAGEDEX_AUTH_TOKEN_FILE = authTokenFile;
 if (configFile) process.env.PAGEDEX_ROOT_CONFIG = configFile;
 if (readOnly) process.env.PAGEDEX_READ_ONLY = '1';
+if (!hasExplicitPort) process.env.PAGEDEX_PORT_FALLBACK = '1';
 
-await import('../src/server/index.js');
+const { actualPort } = await import('../src/server/index.js');
 
 if (shouldOpen) {
   const openHost = host === '0.0.0.0' || host === '::' ? '127.0.0.1' : host;
-  openBrowser(`http://${openHost}:${port}`);
+  openBrowser(`http://${openHost}:${actualPort}`);
 }

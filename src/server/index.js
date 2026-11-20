@@ -22,9 +22,14 @@ import {
 } from './vault-manager.js';
 
 const HOST = process.env.HOST || '127.0.0.1';
-const PORT = Number(process.env.PORT || 4321);
+const hasEnvPort = process.env.PORT !== undefined && process.env.PORT !== '';
+const PORT = hasEnvPort ? Number(process.env.PORT) : 4321;
+const ALLOW_PORT_FALLBACK = process.env.PAGEDEX_PORT_FALLBACK === '1' || !hasEnvPort;
 
-function initVaultRuntime(vault) {
+let serverStarted = false;
+const pendingWarmups = [];
+
+function runVaultWarmup(vault) {
   try {
     vaultStorage.run(vault, () => {
       syncIndex();
@@ -36,12 +41,18 @@ function initVaultRuntime(vault) {
   startVaultWatcher(vault);
 }
 
+function initVaultRuntime(vault) {
+  if (serverStarted) {
+    setImmediate(() => runVaultWarmup(vault));
+  } else {
+    pendingWarmups.push(vault);
+  }
+}
+
 initVaultManager({
   onVaultAdded: initVaultRuntime,
   onVaultRemoved: (vault) => closeVaultSearchIndex(vault)
 });
-
-startAllVaultWatchers();
 
 const app = new Hono();
 
@@ -95,9 +106,46 @@ if (fs.existsSync(distDir)) {
   app.use('/*', serveStatic({ root: relDist }));
 }
 
-serve({ fetch: app.fetch, hostname: HOST, port: PORT }, () => {
-  const summary = isMultiVault()
-    ? `${listVaults().length} vaults: ${listVaults().map((v) => v.id).join(', ')}`
-    : `root: ${getDefaultVault()?.root || process.cwd()}`;
-  console.log(`Pagedex listening on http://${HOST}:${PORT} (${summary})`);
+function listenOnPort(port) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const onError = (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    };
+    const server = serve({ fetch: app.fetch, hostname: HOST, port }, (info) => {
+      settled = true;
+      server.off('error', onError);
+      const summary = isMultiVault()
+        ? `${listVaults().length} vaults: ${listVaults().map((v) => v.id).join(', ')}`
+        : `root: ${getDefaultVault()?.root || process.cwd()}`;
+      console.log(`Pagedex listening on http://${HOST}:${info.port} (${summary})`);
+      resolve(info.port);
+    });
+    server.once('error', onError);
+  });
+}
+
+async function startServer() {
+  try {
+    return await listenOnPort(PORT);
+  } catch (err) {
+    if (err?.code === 'EADDRINUSE' && ALLOW_PORT_FALLBACK && PORT !== 0) {
+      console.warn(`Port ${PORT} is in use, falling back to a random available port...`);
+      return await listenOnPort(0);
+    }
+    throw err;
+  }
+}
+
+export const actualPort = await startServer();
+
+serverStarted = true;
+setImmediate(() => {
+  for (const vault of pendingWarmups.splice(0)) {
+    runVaultWarmup(vault);
+  }
+  startAllVaultWatchers();
 });
