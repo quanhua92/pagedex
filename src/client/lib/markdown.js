@@ -1,4 +1,5 @@
-import { marked } from 'marked';
+import { Marked } from 'marked';
+import katex from 'katex';
 import hljs from 'highlight.js/lib/common';
 import dockerfile from 'highlight.js/lib/languages/dockerfile';
 import { resolveRelative, resolveWikiTarget } from './paths.js';
@@ -48,6 +49,61 @@ export function highlightCode(code, lang) {
   return escapeHtml(text);
 }
 
+const blockMathExtension = {
+  name: 'blockMath',
+  level: 'block',
+  start(src) {
+    const idx = src.indexOf('$$');
+    return idx >= 0 ? idx : undefined;
+  },
+  tokenizer(src) {
+    const match = src.match(/^[ \t]*\$\$([\s\S]+?)\$\$[ \t]*(?:\n|$)/);
+    if (!match) return undefined;
+    return {
+      type: 'blockMath',
+      raw: match[0],
+      text: match[1].trim()
+    };
+  },
+  renderer(token) {
+    return katex.renderToString(token.text, { displayMode: true, throwOnError: false });
+  }
+};
+
+const inlineMathExtension = {
+  name: 'inlineMath',
+  level: 'inline',
+  start(src) {
+    const idx = src.indexOf('$');
+    return idx >= 0 ? idx : undefined;
+  },
+  tokenizer(src) {
+    const displayMatch = src.match(/^\$\$([\s\S]+?)\$\$/);
+    if (displayMatch) {
+      return {
+        type: 'inlineMath',
+        raw: displayMatch[0],
+        text: displayMatch[1].trim(),
+        displayMode: true
+      };
+    }
+    const inlineMatch = src.match(/^\$(?!\$)(?!\s)((?:\\.|[^$\n])*?(?:[^\s$\\]|\\.))\$(?!\d)/);
+    if (!inlineMatch) return undefined;
+    return {
+      type: 'inlineMath',
+      raw: inlineMatch[0],
+      text: inlineMatch[1],
+      displayMode: false
+    };
+  },
+  renderer(token) {
+    return katex.renderToString(token.text, { displayMode: token.displayMode, throwOnError: false });
+  }
+};
+
+const mdParser = new Marked({ gfm: true, breaks: false });
+mdParser.use({ extensions: [blockMathExtension, inlineMathExtension] });
+
 export function renderMarkdownWithLinks(content, activePath, flatFiles) {
   const foundHeadings = [];
   // Pre-process [[wikilinks]] outside fenced code blocks
@@ -67,7 +123,7 @@ export function renderMarkdownWithLinks(content, activePath, flatFiles) {
     })
     .join('');
 
-  const renderer = new marked.Renderer();
+  const renderer = new mdParser.Renderer();
   renderer.heading = ({ tokens, depth }) => {
     const text = renderer.parser.parseInline(tokens);
     const plain = text.replace(/<[^>]+>/g, '');
@@ -99,7 +155,7 @@ export function renderMarkdownWithLinks(content, activePath, flatFiles) {
     return `<pre><code class="${cls}">${highlighted}</code></pre>`;
   };
 
-  const html = marked.parse(transformed, { renderer, gfm: true, breaks: false });
+  const html = mdParser.parse(transformed, { renderer });
   return { renderedHtml: html, headings: foundHeadings };
 }
 
