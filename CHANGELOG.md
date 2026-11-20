@@ -2,6 +2,17 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.14] - 2026-11-20
+
+### Features
+
+- **markdown:** render inline and block LaTeX math with KaTeX (523a9cf)
+- **server:** fall back to random port on EADDRINUSE and defer startup indexing (bfbbab3)
+
+### Tests
+
+- use ephemeral port 0 and fail-fast startup checks (4c6a1af)
+
 ## [0.1.13] - 2026-11-19
 
 ### Features
