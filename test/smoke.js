@@ -41,26 +41,38 @@ async function detectOrSpawnServer() {
   fs.writeFileSync(path.join(tmpVault, 'README.md'), '# Smoke Test Vault\nHome note.\n', 'utf8');
   fs.writeFileSync(path.join(tmpVault, 'core/a.md'), '# Note A\nLinks to [[README]].\n', 'utf8');
 
-  const port = 4595 + Math.floor(Math.random() * 200);
-  const baseUrl = `http://127.0.0.1:${port}`;
   const proc = spawn('node', ['--no-warnings', SERVER_ENTRY], {
-    env: { ...process.env, VAULT_ROOT: tmpVault, HOST: '127.0.0.1', PORT: String(port) },
+    env: { ...process.env, VAULT_ROOT: tmpVault, HOST: '127.0.0.1', PORT: '0' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Server start timeout')), 5000);
+  const port = await new Promise((resolve, reject) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    };
+    const timer = setTimeout(
+      () => finish(reject, new Error(`Server start timeout${stderr ? `: ${stderr.trim()}` : ''}`)),
+      5000
+    );
     proc.stdout.on('data', (chunk) => {
-      if (chunk.toString().includes('listening')) {
-        clearTimeout(timer);
-        resolve();
-      }
+      stdout += chunk.toString();
+      const match = stdout.match(/Pagedex listening on http:\/\/[^:\s]+:(\d+)/);
+      if (match) finish(resolve, Number(match[1]));
     });
     proc.stderr.on('data', (chunk) => {
-      clearTimeout(timer);
-      reject(new Error(chunk.toString()));
+      stderr += chunk.toString();
+    });
+    proc.once('exit', (code) => {
+      finish(reject, new Error(`Server exited early (${code}): ${stderr.trim() || stdout.trim()}`));
     });
   });
+  const baseUrl = `http://127.0.0.1:${port}`;
 
   return {
     baseUrl,

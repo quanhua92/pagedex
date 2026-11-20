@@ -5,24 +5,40 @@ import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 
-const PORT = 4597;
-const BASE = `http://127.0.0.1:${PORT}`;
+let BASE = '';
 
 let tmpVault;
 let authTokenFile;
 let mcpTokenFile;
 let serverProc;
 
-async function waitForServer(url, timeoutMs = 8000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(`${url}/api/v1/auth/status`);
-      if (res.ok) return;
-    } catch {}
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error('Timed out waiting for server');
+function waitForListeningPort(proc, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    };
+    const timer = setTimeout(
+      () => finish(reject, new Error(`Timed out waiting for server${stderr ? `: ${stderr.trim()}` : ''}`)),
+      timeoutMs
+    );
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+      const match = stdout.match(/Pagedex listening on http:\/\/[^:\s]+:(\d+)/);
+      if (match) finish(resolve, Number(match[1]));
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    proc.once('exit', (code) => {
+      finish(reject, new Error(`Server exited early (${code}): ${stderr.trim() || stdout.trim()}`));
+    });
+  });
 }
 
 before(async () => {
@@ -39,7 +55,7 @@ before(async () => {
       'bin/pagedex.js',
       tmpVault,
       '--port',
-      String(PORT),
+      '0',
       '--host',
       '127.0.0.1',
       '--auth-token-file',
@@ -49,10 +65,11 @@ before(async () => {
     ],
     {
       cwd: path.resolve(import.meta.dirname, '..'),
-      stdio: 'ignore'
+      stdio: ['ignore', 'pipe', 'pipe']
     }
   );
-  await waitForServer(BASE);
+  const port = await waitForListeningPort(serverProc);
+  BASE = `http://127.0.0.1:${port}`;
 });
 
 after(() => {

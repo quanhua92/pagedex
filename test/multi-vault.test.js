@@ -5,22 +5,35 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-const PORT = 4596;
-const BASE_URL = `http://127.0.0.1:${PORT}`;
 const CLI_PATH = path.resolve(import.meta.dirname, '../bin/pagedex.js');
 
-async function waitForServer(url, timeoutMs = 8000) {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(`${url}/api/v1/auth/status`);
-      if (res.ok) return;
-    } catch {
-      // retry
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error('Timed out waiting for multi-vault server');
+function waitForListeningPort(proc, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    };
+    const timer = setTimeout(
+      () => finish(reject, new Error(`Timed out waiting for multi-vault server${stderr ? `: ${stderr.trim()}` : ''}`)),
+      timeoutMs
+    );
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+      const match = stdout.match(/Pagedex listening on http:\/\/[^:\s]+:(\d+)/);
+      if (match) finish(resolve, Number(match[1]));
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    proc.once('exit', (code) => {
+      finish(reject, new Error(`Multi-vault server exited early (${code}): ${stderr.trim() || stdout.trim()}`));
+    });
+  });
 }
 
 function extractCookie(setCookieHeaders, name) {
@@ -66,7 +79,7 @@ test('PAGEDEX_ROOT_CONFIG supports multi-vault, allowGlobalAuth, per-vault token
 
   const proc = spawn(
     process.execPath,
-    [CLI_PATH, '--port', String(PORT), '--config', configFile, '--auth-token-file', globalAuthFile],
+    [CLI_PATH, '--port', '0', '--config', configFile, '--auth-token-file', globalAuthFile],
     {
       env: {
         ...process.env,
@@ -81,7 +94,8 @@ test('PAGEDEX_ROOT_CONFIG supports multi-vault, allowGlobalAuth, per-vault token
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  await waitForServer(BASE_URL);
+  const port = await waitForListeningPort(proc);
+  const BASE_URL = `http://127.0.0.1:${port}`;
 
   // 1. Unauthenticated access is blocked
   const unauthRes = await fetch(`${BASE_URL}/api/v1/tree`);

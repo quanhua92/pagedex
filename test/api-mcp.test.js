@@ -6,8 +6,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 
 const SERVER_ENTRY = path.resolve(import.meta.dirname, '../src/server/index.js');
-const PORT = 4591;
-const BASE = `http://127.0.0.1:${PORT}`;
+let BASE = '';
 
 let tmpVault;
 let serverProc;
@@ -35,6 +34,35 @@ async function mcpCall(method, params = {}, id = 1) {
   return JSON.parse(dataLine ? dataLine.slice(6) : raw);
 }
 
+function waitForListeningPort(proc, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    };
+    const timer = setTimeout(
+      () => finish(reject, new Error(`Server start timeout${stderr ? `: ${stderr.trim()}` : ''}`)),
+      timeoutMs
+    );
+    proc.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+      const match = stdout.match(/Pagedex listening on http:\/\/[^:\s]+:(\d+)/);
+      if (match) finish(resolve, Number(match[1]));
+    });
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    proc.once('exit', (code) => {
+      finish(reject, new Error(`Server exited early (${code}): ${stderr.trim() || stdout.trim()}`));
+    });
+  });
+}
+
 test.before(async () => {
   tmpVault = fs.mkdtempSync(path.join(os.tmpdir(), 'vault-test-'));
   fs.mkdirSync(path.join(tmpVault, 'core'), { recursive: true });
@@ -42,23 +70,12 @@ test.before(async () => {
   fs.writeFileSync(path.join(tmpVault, 'core/a.md'), '# Note A\nLinks to [[README]].\n', 'utf8');
 
   serverProc = spawn('node', ['--no-warnings', SERVER_ENTRY], {
-    env: { ...process.env, VAULT_ROOT: tmpVault, HOST: '127.0.0.1', PORT: String(PORT) },
+    env: { ...process.env, VAULT_ROOT: tmpVault, HOST: '127.0.0.1', PORT: '0' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Server start timeout')), 5000);
-    serverProc.stdout.on('data', (chunk) => {
-      if (chunk.toString().includes('listening')) {
-        clearTimeout(timer);
-        resolve();
-      }
-    });
-    serverProc.stderr.on('data', (chunk) => {
-      clearTimeout(timer);
-      reject(new Error(chunk.toString()));
-    });
-  });
+  const port = await waitForListeningPort(serverProc);
+  BASE = `http://127.0.0.1:${port}`;
 });
 
 test.after(() => {
@@ -253,17 +270,12 @@ test('Git diff and single-line / file discard', async () => {
   execFileSync('git', ['commit', '-m', 'init'], { cwd: gitVault });
   fs.writeFileSync(path.join(gitVault, 'note.md'), 'alpha\nbeta-edited\ngamma\ndelta', 'utf8');
 
-  const gPort = 4592;
-  const gBase = `http://127.0.0.1:${gPort}`;
   const proc = spawn('node', [SERVER_ENTRY], {
-    env: { ...process.env, VAULT_ROOT: gitVault, HOST: '127.0.0.1', PORT: String(gPort) },
+    env: { ...process.env, VAULT_ROOT: gitVault, HOST: '127.0.0.1', PORT: '0' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
-  await new Promise((resolve) => {
-    proc.stdout.on('data', (c) => {
-      if (c.toString().includes('listening')) resolve();
-    });
-  });
+  const gPort = await waitForListeningPort(proc);
+  const gBase = `http://127.0.0.1:${gPort}`;
 
   try {
     const diff = await (await fetch(`${gBase}/api/v1/git/diff?path=note.md`)).json();
@@ -304,7 +316,10 @@ test('Raw route, CSP/CORS, Origin: null guard, and Range requests', async () => 
   assert.equal(htmlRes.status, 200);
   assert.match(htmlRes.headers.get('content-type') || '', /text\/html/);
   assert.equal(htmlRes.headers.get('access-control-allow-origin'), '*');
-  assert.match(htmlRes.headers.get('content-security-policy') || '', /default-src http:\/\/127\.0\.0\.1:4591/);
+  assert.match(
+    htmlRes.headers.get('content-security-policy') || '',
+    new RegExp(`default-src ${BASE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`)
+  );
 
   const dataRes = await fetch(`${BASE}/raw/viz/data.json`);
   assert.equal(dataRes.status, 200);

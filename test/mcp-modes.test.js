@@ -7,34 +7,40 @@ import { execFileSync, spawn } from 'node:child_process';
 
 const BIN_ENTRY = path.resolve(import.meta.dirname, '../bin/pagedex.js');
 
-async function startCliServer(vaultDir, cliArgs, port) {
-  const proc = spawn('node', ['--no-warnings', BIN_ENTRY, vaultDir, '--port', String(port), ...cliArgs], {
+async function startCliServer(vaultDir, cliArgs) {
+  const proc = spawn('node', ['--no-warnings', BIN_ENTRY, vaultDir, '--port', '0', ...cliArgs], {
     env: { ...process.env, PAGEDEX_INDEX_PATH: `${vaultDir}.db` },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('CLI server start timeout')), 5000);
+  const port = await new Promise((resolve, reject) => {
+    let settled = false;
+    let stdout = '';
+    let stderr = '';
+    const finish = (fn, val) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      fn(val);
+    };
+    const timer = setTimeout(
+      () => finish(reject, new Error(`CLI server start timeout${stderr ? `: ${stderr.trim()}` : ''}`)),
+      5000
+    );
     proc.stdout.on('data', (chunk) => {
-      if (chunk.toString().includes('listening')) {
-        clearTimeout(timer);
-        resolve();
-      }
+      stdout += chunk.toString();
+      const match = stdout.match(/Pagedex listening on http:\/\/[^:\s]+:(\d+)/);
+      if (match) finish(resolve, Number(match[1]));
     });
     proc.stderr.on('data', (chunk) => {
-      const msg = chunk.toString();
-      if (msg.toLowerCase().includes('error')) {
-        clearTimeout(timer);
-        reject(new Error(msg));
-      }
+      stderr += chunk.toString();
     });
-    proc.on('exit', (code) => {
-      clearTimeout(timer);
-      reject(new Error(`CLI exited early with code ${code}`));
+    proc.once('exit', (code) => {
+      finish(reject, new Error(`CLI exited early with code ${code}: ${stderr.trim() || stdout.trim()}`));
     });
   });
 
-  return proc;
+  return { proc, baseUrl: `http://127.0.0.1:${port}` };
 }
 
 async function mcpPost(baseUrl, method, params = {}, token = null, id = 1) {
@@ -68,9 +74,7 @@ test('CLI --mcp read + --mcp-token-file enforces Bearer auth and exposes read to
   const vaultDir = makeTempVault();
   const tokenFile = path.join(os.tmpdir(), `pagedex-tok-${Date.now()}.txt`);
   fs.writeFileSync(tokenFile, 'secret-token-123\n', 'utf8');
-  const port = 4592;
-  const baseUrl = `http://127.0.0.1:${port}`;
-  const proc = await startCliServer(vaultDir, ['--mcp', 'read', '--mcp-token-file', tokenFile], port);
+  const { proc, baseUrl } = await startCliServer(vaultDir, ['--mcp', 'read', '--mcp-token-file', tokenFile]);
 
   try {
     const unauth = await mcpPost(baseUrl, 'tools/list', {});
@@ -126,9 +130,7 @@ test('CLI --mcp write --mcp-git allows move_path and git tools without exposing 
   execFileSync('git', ['add', '-A'], { cwd: vaultDir });
   execFileSync('git', ['commit', '-m', 'init'], { cwd: vaultDir });
 
-  const port = 4593;
-  const baseUrl = `http://127.0.0.1:${port}`;
-  const proc = await startCliServer(vaultDir, ['--mcp', 'write', '--mcp-git'], port);
+  const { proc, baseUrl } = await startCliServer(vaultDir, ['--mcp', 'write', '--mcp-git']);
 
   try {
     const listRes = await mcpPost(baseUrl, 'tools/list', {});
@@ -184,9 +186,7 @@ test('CLI --mcp write --mcp-git allows move_path and git tools without exposing 
 
 test('CLI --read-only blocks REST writes and restricts MCP to read tools; --mcp off returns 404', async () => {
   const vaultDir = makeTempVault();
-  const roPort = 4594;
-  const roBase = `http://127.0.0.1:${roPort}`;
-  const roProc = await startCliServer(vaultDir, ['--read-only'], roPort);
+  const { proc: roProc, baseUrl: roBase } = await startCliServer(vaultDir, ['--read-only']);
 
   try {
     const putRes = await fetch(`${roBase}/api/v1/file`, {
@@ -205,9 +205,7 @@ test('CLI --read-only blocks REST writes and restricts MCP to read tools; --mcp 
     roProc.kill();
   }
 
-  const offPort = 4595;
-  const offBase = `http://127.0.0.1:${offPort}`;
-  const offProc = await startCliServer(vaultDir, ['--mcp', 'off'], offPort);
+  const { proc: offProc, baseUrl: offBase } = await startCliServer(vaultDir, ['--mcp', 'off']);
 
   try {
     const offRes = await mcpPost(offBase, 'tools/list', {});
