@@ -82,10 +82,26 @@ html, body, #root {
 .brand-logo { display: block; flex-shrink: 0; border-radius: 5px; }
 .pill { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--green); font-weight: 600; }
 .pill.off { color: var(--amber); }
+.sidebar-footer {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sidebar-footer-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
 .vault-select {
-  max-width: 120px; padding: 3px 6px; border-radius: 6px;
+  flex: 1; min-width: 0; padding: 5px 8px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
-  font-size: 13px; font-weight: 700; font-family: inherit; outline: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; font-family: inherit; outline: none; cursor: pointer;
 }
 .vault-select:focus { border-color: var(--accent); }
 

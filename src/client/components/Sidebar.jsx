@@ -245,22 +245,7 @@ export default function Sidebar({
       <div className="brand">
         <div className="brand-title">
           <img src="/pagedex-logo.svg" alt="PageDex" width="20" height="20" className="brand-logo" />
-          {vaults.length > 1 && onSelectVault ? (
-            <select
-              className="vault-select"
-              aria-label="Active vault"
-              value={activeVault}
-              onChange={(e) => onSelectVault(e.target.value)}
-            >
-              {vaults.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.id}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span>PageDex</span>
-          )}
+          <span>PageDex</span>
           {activeVaultInfo?.readOnly && (
             <span className="pill off" title="Read-only vault" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
               <Eye size={11} strokeWidth={2.2} aria-hidden="true" />
@@ -486,6 +471,23 @@ export default function Sidebar({
           </>
         )}
       </div>
+      {vaults.length > 1 && onSelectVault && (
+        <div className="sidebar-footer">
+          <span className="sidebar-footer-label">Vault</span>
+          <select
+            className="vault-select"
+            aria-label="Active vault"
+            value={activeVault}
+            onChange={(e) => onSelectVault(e.target.value)}
+          >
+            {vaults.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.id}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {onStartResizeSidebar && (
         <div
           className="resize-handle resize-handle-right"
