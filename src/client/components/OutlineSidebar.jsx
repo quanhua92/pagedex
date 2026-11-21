@@ -7,6 +7,7 @@ export default function OutlineSidebar({
   isBinaryDownload,
   viewMode,
   currentBacklinks,
+  currentLinks = [],
   openFile,
   position = 'right',
   onChangePosition,
@@ -103,6 +104,26 @@ export default function OutlineSidebar({
                 }}
               >
                 {h.text}
+              </a>
+            ))
+          )}
+        </div>
+
+        <div className="rightbar-sec">
+          <div className="panel-title backlinks-title">Links</div>
+          {currentLinks.length === 0 ? (
+            <div className="empty-note">No outgoing links</div>
+          ) : (
+            currentLinks.map((target) => (
+              <a
+                key={target}
+                className="backlink-item"
+                onClick={() => {
+                  openFile(target);
+                  onCloseMobile?.();
+                }}
+              >
+                {target}
               </a>
             ))
           )}

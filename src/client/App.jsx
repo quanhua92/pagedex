@@ -1205,6 +1205,15 @@ export default function App() {
   }
 
   const currentBacklinks = backlinks[activePath] || [];
+  const currentLinks = useMemo(
+    () =>
+      activePath
+        ? Object.keys(backlinks)
+            .filter((target) => backlinks[target]?.includes(activePath))
+            .sort((a, b) => a.localeCompare(b))
+        : [],
+    [backlinks, activePath]
+  );
   const isImg = isImagePath(activePath);
   const isSvg = isSvgPath(activePath);
   const isMarkdown = isMarkdownPath(activePath);
@@ -1423,6 +1432,7 @@ export default function App() {
               isBinaryDownload={isBinaryDownload}
               viewMode={viewMode}
               currentBacklinks={currentBacklinks}
+              currentLinks={currentLinks}
               openFile={openFile}
               position={outlinePosition}
               onChangePosition={setOutlinePosition}
