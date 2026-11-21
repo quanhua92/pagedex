@@ -105,6 +105,18 @@ const CodeBlockStarterKit = StarterKit.extend({
   }
 });
 
+const SLASH_COMMANDS = [
+  { id: 'h1', label: 'Heading 1', desc: '/h1', run: (c) => c.toggleHeading({ level: 1 }) },
+  { id: 'h2', label: 'Heading 2', desc: '/h2', run: (c) => c.toggleHeading({ level: 2 }) },
+  { id: 'h3', label: 'Heading 3', desc: '/h3', run: (c) => c.toggleHeading({ level: 3 }) },
+  { id: 'list', label: 'Bullet List', desc: '/list', run: (c) => c.toggleBulletList() },
+  { id: 'ordered', label: 'Numbered List', desc: '/ordered', run: (c) => c.toggleOrderedList() },
+  { id: 'quote', label: 'Blockquote', desc: '/quote', run: (c) => c.toggleBlockquote() },
+  { id: 'code', label: 'Code Block', desc: '/code', run: (c) => c.toggleCodeBlock() },
+  { id: 'mermaid', label: 'Mermaid Diagram', desc: '/mermaid', run: (c) => c.setCodeBlock({ language: 'mermaid' }) },
+  { id: 'hr', label: 'Divider', desc: '/hr', run: (c) => c.setHorizontalRule() }
+];
+
 export default function TiptapEditor({
   content,
   fileKey,
@@ -122,6 +134,9 @@ export default function TiptapEditor({
   const [wikiSuggest, setWikiSuggest] = useState(null); // { query, from, to, left, top }
   const [wikiIdx, setWikiIdx] = useState(0);
   const wikiStateRef = useRef({ suggest: null, matches: [], idx: 0 });
+  const [slashSuggest, setSlashSuggest] = useState(null); // { query, from, to, left, top }
+  const [slashIdx, setSlashIdx] = useState(0);
+  const slashStateRef = useRef({ suggest: null, matches: [], idx: 0 });
   const contextRef = useRef({ fileKey, imageUploadDir });
   contextRef.current = { fileKey, imageUploadDir };
 
@@ -209,35 +224,78 @@ export default function TiptapEditor({
         return false;
       },
       handleKeyDown: (_view, event) => {
-        const { suggest, matches, idx } = wikiStateRef.current;
-        if (!suggest || matches.length === 0) return false;
-        if (event.key === 'ArrowDown') {
-          event.preventDefault();
-          setWikiIdx((i) => (i + 1) % matches.length);
-          return true;
+        const wiki = wikiStateRef.current;
+        if (wiki.suggest && wiki.matches.length > 0) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setWikiIdx((i) => (i + 1) % wiki.matches.length);
+            return true;
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setWikiIdx((i) => (i - 1 + wiki.matches.length) % wiki.matches.length);
+            return true;
+          }
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            event.preventDefault();
+            const chosen = wiki.matches[wiki.idx] || wiki.matches[0];
+            if (chosen) insertWikiLink(chosen);
+            return true;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setWikiSuggest(null);
+            return true;
+          }
         }
-        if (event.key === 'ArrowUp') {
-          event.preventDefault();
-          setWikiIdx((i) => (i - 1 + matches.length) % matches.length);
-          return true;
-        }
-        if (event.key === 'Enter' || event.key === 'Tab') {
-          event.preventDefault();
-          const chosen = matches[idx] || matches[0];
-          if (chosen) insertWikiLink(chosen);
-          return true;
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setWikiSuggest(null);
-          return true;
+        const slash = slashStateRef.current;
+        if (slash.suggest && slash.matches.length > 0) {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setSlashIdx((i) => (i + 1) % slash.matches.length);
+            return true;
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setSlashIdx((i) => (i - 1 + slash.matches.length) % slash.matches.length);
+            return true;
+          }
+          if (event.key === 'Enter' || event.key === 'Tab') {
+            event.preventDefault();
+            const chosen = slash.matches[slash.idx] || slash.matches[0];
+            if (chosen) runSlashCommand(chosen);
+            return true;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setSlashSuggest(null);
+            return true;
+          }
         }
         return false;
       }
     }
   });
 
+  const slashMatches = useMemo(() => {
+    if (!slashSuggest) return [];
+    const q = slashSuggest.query.toLowerCase();
+    return SLASH_COMMANDS.filter(
+      (cmd) => !q || cmd.id.includes(q) || cmd.label.toLowerCase().includes(q)
+    );
+  }, [slashSuggest]);
+
   wikiStateRef.current = { suggest: wikiSuggest, matches: wikiMatches, idx: wikiIdx };
+  slashStateRef.current = { suggest: slashSuggest, matches: slashMatches, idx: slashIdx };
+
+  function runSlashCommand(cmd) {
+    const suggest = slashStateRef.current.suggest;
+    if (!editor || !suggest) return;
+    const chain = editor.chain().focus().deleteRange({ from: suggest.from, to: suggest.to });
+    cmd.run(chain).run();
+    setSlashSuggest(null);
+    setSlashIdx(0);
+  }
 
   function insertWikiLink(targetPath) {
     const suggest = wikiStateRef.current.suggest;
@@ -268,26 +326,43 @@ export default function TiptapEditor({
       const { selection } = editor.state;
       if (!selection.empty || selection.$from.parent.type.name === 'codeBlock') {
         setWikiSuggest(null);
+        setSlashSuggest(null);
         return;
       }
       const { $from } = selection;
       const textBefore = $from.parent.textBetween(0, $from.parentOffset, '\n', '\ufffc');
-      const match = textBefore.match(/\[\[([^\]\n]*)$/);
-      if (!match) {
-        setWikiSuggest(null);
-        return;
-      }
       const coords = editor.view.coordsAtPos($from.pos);
       const left = Math.max(8, Math.min(coords.left, window.innerWidth - 290));
-      const top = Math.min(coords.bottom + 6, window.innerHeight - 240);
-      setWikiSuggest({
-        query: match[1],
-        from: $from.pos - match[0].length,
-        to: $from.pos,
-        left,
-        top
-      });
-      setWikiIdx(0);
+      const top = Math.max(8, Math.min(coords.bottom + 6, window.innerHeight - 330));
+
+      const wikiMatch = textBefore.match(/\[\[([^\]\n]*)$/);
+      if (wikiMatch) {
+        setSlashSuggest(null);
+        setWikiSuggest({
+          query: wikiMatch[1],
+          from: $from.pos - wikiMatch[0].length,
+          to: $from.pos,
+          left,
+          top
+        });
+        setWikiIdx(0);
+        return;
+      }
+      setWikiSuggest(null);
+
+      const slashMatch = textBefore.match(/(?:^|\s)(\/[a-z0-9-]*)$/i);
+      if (slashMatch) {
+        setSlashSuggest({
+          query: slashMatch[1].slice(1),
+          from: $from.pos - slashMatch[1].length,
+          to: $from.pos,
+          left,
+          top
+        });
+        setSlashIdx(0);
+      } else {
+        setSlashSuggest(null);
+      }
     };
 
     const onUpdate = () => {
@@ -315,6 +390,10 @@ export default function TiptapEditor({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [editor, onSave, saving]);
+
+  useEffect(() => {
+    document.querySelector('.tiptap-wiki-item.active')?.scrollIntoView({ block: 'nearest' });
+  }, [wikiIdx, slashIdx]);
 
   if (!editor) return null;
 
@@ -401,6 +480,25 @@ export default function TiptapEditor({
               </button>
             );
           })}
+        </div>
+      )}
+      {slashSuggest && slashMatches.length > 0 && (
+        <div
+          className="tiptap-wiki-menu"
+          style={{ left: slashSuggest.left, top: slashSuggest.top }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {slashMatches.map((cmd, idx) => (
+            <button
+              key={cmd.id}
+              type="button"
+              className={`tiptap-wiki-item${idx === slashIdx ? ' active' : ''}`}
+              onClick={() => runSlashCommand(cmd)}
+            >
+              <span className="tiptap-wiki-name">{cmd.label}</span>
+              <span className="tiptap-wiki-path">{cmd.desc}</span>
+            </button>
+          ))}
         </div>
       )}
     </div>

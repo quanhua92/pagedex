@@ -111,6 +111,7 @@ export default function App() {
   const [switcherTab, setSwitcherTab] = useState('recent'); // 'recent' | 'alpha'
   const [switcherQuery, setSwitcherQuery] = useState('');
   const [switcherIdx, setSwitcherIdx] = useState(0);
+  const [pendingJumpQuery, setPendingJumpQuery] = useState('');
   const [contentHits, setContentHits] = useState([]);
   const [pagedFiles, setPagedFiles] = useState({ items: [], hasMore: false });
   const [reloadTick, setReloadTick] = useState(0);
@@ -1126,6 +1127,28 @@ export default function App() {
   }, [content, activePath, viewMode]);
 
   useEffect(() => {
+    if (!activePath || !activePath.includes('/')) return;
+    const parts = activePath.split('/');
+    parts.pop();
+    const ancestors = [];
+    for (let i = 0; i < parts.length; i++) {
+      ancestors.push(parts.slice(0, i + 1).join('/'));
+    }
+    setCollapsed((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const dir of ancestors) {
+        if (next.delete(dir)) changed = true;
+      }
+      return changed ? next : prev;
+    });
+    const raf = requestAnimationFrame(() => {
+      document.querySelector('.sidebar .tree-file-row.active')?.scrollIntoView({ block: 'nearest' });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [activePath]);
+
+  useEffect(() => {
     if (!dirty) return;
     const onBeforeUnload = (e) => {
       e.preventDefault();
@@ -1439,6 +1462,8 @@ export default function App() {
                 highlightedRawHtml={highlightedRawHtml}
                 handleDocClick={handleDocClick}
                 renderedHtml={renderedHtml}
+                pendingJumpQuery={pendingJumpQuery}
+                onClearJumpQuery={() => setPendingJumpQuery('')}
                 readOnly={readOnly}
               />
             </div>
@@ -1511,6 +1536,7 @@ export default function App() {
         loadMorePagedFiles={loadMorePagedFiles}
         switcherQuery={switcherQuery}
         setSwitcherQuery={setSwitcherQuery}
+        onJumpToMatch={(q) => setPendingJumpQuery(q)}
         commands={[
           ...(!readOnly
             ? [

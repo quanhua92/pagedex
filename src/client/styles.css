@@ -1311,11 +1311,39 @@ html, body, #root {
   margin: 10px 0;
   display: block;
 }
+.doc img {
+  cursor: zoom-in;
+}
+.lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.84);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.lightbox-img {
+  max-width: 95vw;
+  max-height: 92vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+mark.search-jump-hit {
+  background: rgba(251, 191, 36, 0.38);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
 .tiptap-wiki-menu {
   position: fixed;
   z-index: 60;
   width: 280px;
-  max-height: 220px;
+  max-height: 320px;
   overflow-y: auto;
   background: var(--bg-alt);
   border: 1px solid var(--border);
@@ -1324,7 +1352,7 @@ html, body, #root {
   padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .tiptap-wiki-item {
   width: 100%;
@@ -1332,7 +1360,7 @@ html, body, #root {
   background: none;
   border: 0;
   color: var(--text);
-  padding: 6px 8px;
+  padding: 5px 8px;
   border-radius: 6px;
   cursor: pointer;
   display: flex;

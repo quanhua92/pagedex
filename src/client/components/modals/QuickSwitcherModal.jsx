@@ -21,6 +21,7 @@ export default function QuickSwitcherModal({
   loadMorePagedFiles,
   switcherQuery,
   setSwitcherQuery,
+  onJumpToMatch,
   commands = []
 }) {
   const isCommandMode = switcherTab === 'commands' || switcherQuery.trimStart().startsWith('>');
@@ -124,6 +125,9 @@ export default function QuickSwitcherModal({
                       className={`switcher-item${idx === switcherIdx ? ' selected' : ''}`}
                       onClick={() => {
                         setSwitcherOpen(false);
+                        if (item.snippet && switcherQuery.trim()) {
+                          onJumpToMatch?.(switcherQuery.trim());
+                        }
                         if (item.tab && switchTab) switchTab(item.tab);
                         else (openInNewTab || openFile)(item.path);
                       }}
@@ -171,6 +175,9 @@ export default function QuickSwitcherModal({
                   e.preventDefault();
                   setSwitcherOpen(false);
                   const selected = switcherItems[switcherIdx];
+                  if (selected.snippet && switcherQuery.trim()) {
+                    onJumpToMatch?.(switcherQuery.trim());
+                  }
                   if (selected.tab && switchTab) switchTab(selected.tab);
                   else (openInNewTab || openFile)(selected.path);
                 }

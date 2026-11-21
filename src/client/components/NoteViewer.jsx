@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Folder, Home, Plus, Search, Settings } from 'lucide-react';
 import { parseDelimitedText } from '../lib/csv.js';
 import { isTextEditablePath } from '../lib/paths.js';
@@ -55,10 +55,13 @@ export default function NoteViewer({
   highlightedRawHtml,
   handleDocClick,
   renderedHtml,
+  pendingJumpQuery = '',
+  onClearJumpQuery,
   readOnly = false
 }) {
   const editorValue = dirty ? draftContent : content;
   const docRef = useRef(null);
+  const [lightbox, setLightbox] = useState(null); // { src, alt }
   const welcomePrefix = useMemo(
     () => WELCOME_PREFIXES[Math.floor(Math.random() * WELCOME_PREFIXES.length)],
     [vaultName, activePath]
@@ -128,6 +131,57 @@ export default function NoteViewer({
     };
   }, [renderedHtml, viewMode, isMarkdown, settings.theme]);
 
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setLightbox(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox]);
+
+  useEffect(() => {
+    if (!pendingJumpQuery || viewMode !== 'preview' || !isMarkdown || !docRef.current) return;
+    const q = pendingJumpQuery.trim().toLowerCase();
+    if (!q) {
+      onClearJumpQuery?.();
+      return;
+    }
+    const walker = document.createTreeWalker(docRef.current, NodeFilter.SHOW_TEXT);
+    let node;
+    let foundMark = null;
+    while ((node = walker.nextNode())) {
+      const val = node.nodeValue || '';
+      const idx = val.toLowerCase().indexOf(q);
+      if (idx !== -1 && node.parentElement && !node.parentElement.closest('button')) {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + q.length);
+        const mark = document.createElement('mark');
+        mark.className = 'search-jump-hit';
+        try {
+          range.surroundContents(mark);
+          foundMark = mark;
+        } catch {
+          node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        break;
+      }
+    }
+    if (foundMark) {
+      foundMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const timer = setTimeout(() => {
+        if (foundMark.parentNode) {
+          const text = document.createTextNode(foundMark.textContent || '');
+          foundMark.parentNode.replaceChild(text, foundMark);
+        }
+      }, 2500);
+      onClearJumpQuery?.();
+      return () => clearTimeout(timer);
+    }
+    onClearJumpQuery?.();
+  }, [pendingJumpQuery, renderedHtml, viewMode, isMarkdown, onClearJumpQuery]);
+
   const csvRows = useMemo(() => {
     if (!isCsv || viewMode !== 'preview' || !content) return [];
     const delimiter = activePath.toLowerCase().endsWith('.tsv') ? '\t' : ',';
@@ -177,7 +231,11 @@ export default function NoteViewer({
         </div>
       ) : isImg && !(isSvg && viewMode === 'raw') ? (
         <div className="doc img-wrap">
-          <img src={fileUrl} alt={activePath} />
+          <img
+            src={fileUrl}
+            alt={activePath}
+            onClick={() => setLightbox({ src: fileUrl, alt: activePath })}
+          />
         </div>
       ) : isPdf ? (
         <div className="media-viewer pdf-viewer">
@@ -378,9 +436,26 @@ export default function NoteViewer({
             lineHeight: settings.lineHeight,
             maxWidth: `${settings.maxWidth}px`
           }}
-          onClick={handleDocClick}
+          onClick={(e) => {
+            const img = e.target.closest('img');
+            if (img && !e.target.closest('a')) {
+              setLightbox({ src: img.src, alt: img.alt || '' });
+              return;
+            }
+            handleDocClick(e);
+          }}
           dangerouslySetInnerHTML={{ __html: renderedHtml }}
         />
+      )}
+      {lightbox && (
+        <div className="lightbox-backdrop" onClick={() => setLightbox(null)}>
+          <img
+            className="lightbox-img"
+            src={lightbox.src}
+            alt={lightbox.alt}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   );
