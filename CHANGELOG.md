@@ -2,6 +2,17 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.15] - 2026-11-21
+
+### Features
+
+- **files:** add folder deletion with non-empty warning (bc214ba)
+- **viewer:** add read-only ipynb notebook rendering (28774ad)
+
+### Bug Fixes
+
+- **files:** return JSON error and status on folder delete (9ab8f12)
+
 ## [0.1.14] - 2026-11-20
 
 ### Features
