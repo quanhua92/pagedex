@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Eye, LogOut, Moon, Pin, Plus, RefreshCw, Sun } from 'lucide-react';
+import { Eye, LogOut, Moon, MoreVertical, Pin, Plus, RefreshCw, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -218,6 +218,7 @@ export default function Sidebar({
   const [dragFromPath, setDragFromPath] = useState(null);
   const [dragOverPath, setDragOverPath] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const handleSelectFile = (p, e) => {
     const newTab = Boolean(e && (e.metaKey || e.ctrlKey || e.button === 1));
     if (newTab && openInNewTab) {
@@ -251,9 +252,13 @@ export default function Sidebar({
               <Eye size={11} strokeWidth={2.2} aria-hidden="true" />
             </span>
           )}
-          <span className={`pill${live ? '' : ' off'}`}>{live ? 'Live' : 'Reconnecting'}</span>
+          <span
+            className={`live-dot${live ? '' : ' off'}`}
+            data-tooltip={live ? 'Live' : 'Reconnecting'}
+            aria-label={live ? 'Live' : 'Reconnecting'}
+          />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 4 }}>
           {onRefreshTree && (
             <button
               className="icon-btn"
@@ -276,26 +281,50 @@ export default function Sidebar({
               />
             </button>
           )}
-          {authRequired && onLogout && (
-            <button
-              className="icon-btn"
-              aria-label="Sign out"
-              title="Sign out"
-              onClick={onLogout}
-            >
-              <LogOut size={15} strokeWidth={1.9} />
-            </button>
-          )}
           <button
             className="icon-btn"
-            aria-label={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            title={settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            onClick={() =>
-              setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
-            }
+            aria-label="Sidebar options"
+            title="Sidebar options"
+            onClick={() => setMenuOpen((o) => !o)}
           >
-            {settings.theme === 'dark' ? <Sun size={15} strokeWidth={1.9} /> : <Moon size={15} strokeWidth={1.9} />}
+            <MoreVertical size={16} strokeWidth={1.9} />
           </button>
+          {menuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 34 }}
+                onClick={() => setMenuOpen(false)}
+              />
+              <div className="more-menu" onClick={(e) => e.stopPropagation()}>
+                <button
+                  className="more-item"
+                  onClick={() => {
+                    setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }));
+                    setMenuOpen(false);
+                  }}
+                >
+                  {settings.theme === 'dark' ? (
+                    <Sun className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />
+                  ) : (
+                    <Moon className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />
+                  )}
+                  <span>{settings.theme === 'dark' ? 'Light theme' : 'Dark theme'}</span>
+                </button>
+                {authRequired && onLogout && (
+                  <button
+                    className="more-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onLogout();
+                    }}
+                  >
+                    <LogOut className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />
+                    <span>Sign out</span>
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <div className="sidebar-tabs">

@@ -82,6 +82,33 @@ html, body, #root {
 .brand-logo { display: block; flex-shrink: 0; border-radius: 5px; }
 .pill { font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--green); font-weight: 600; }
 .pill.off { color: var(--amber); }
+.live-dot {
+  position: relative;
+  width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0;
+  background: var(--green); box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18);
+  cursor: default;
+}
+.live-dot.off {
+  background: var(--amber); box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.18);
+}
+.live-dot:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
 .sidebar-footer {
   padding: 8px 12px;
   border-top: 1px solid var(--border);
