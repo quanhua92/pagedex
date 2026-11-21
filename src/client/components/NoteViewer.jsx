@@ -285,6 +285,7 @@ export default function NoteViewer({
         <TiptapEditor
           fileKey={activePath}
           content={editorValue}
+          flatFiles={flatFiles}
           fontSize={settings.fontSize}
           lineHeight={settings.lineHeight}
           maxWidth={settings.maxWidth}

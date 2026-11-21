@@ -254,19 +254,17 @@ export default function FileContextMenu({
               <MenuIcon icon={Copy} />
               <span>Copy path</span>
             </button>
-            {fileMenu.path.endsWith('.md') && (
-              <button
-                className="more-item"
-                onClick={() => {
-                  navigator.clipboard?.writeText(`[[${fileMenu.path.replace(/\.md$/i, '')}]]`);
-                  setFileMenu(null);
-                  showToast?.('Copied wikilink');
-                }}
-              >
-                <MenuIcon icon={Link2} />
-                <span>Copy [[wikilink]]</span>
-              </button>
-            )}
+            <button
+              className="more-item"
+              onClick={() => {
+                navigator.clipboard?.writeText(`[[${fileMenu.path}]]`);
+                setFileMenu(null);
+                showToast?.('Copied wikilink');
+              }}
+            >
+              <MenuIcon icon={Link2} />
+              <span>Copy [[wikilink]]</span>
+            </button>
             <a
               className="more-item"
               href={`/api/v1/file?path=${encodeURIComponent(fileMenu.path)}&download=1`}

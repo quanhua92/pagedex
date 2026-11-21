@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { resolveWikiTarget } from '../src/client/lib/paths.js';
+
+test('resolveWikiTarget resolves .md (with or without ext) and non-md files', () => {
+  const flatFiles = [
+    'README.md',
+    'labs/barellm/AGENTS.md',
+    'labs/barellm/src/main.py',
+    'labs/barellm/notebooks/01.ipynb'
+  ];
+
+  assert.equal(resolveWikiTarget('labs/barellm/AGENTS.md', flatFiles), 'labs/barellm/AGENTS.md');
+  assert.equal(resolveWikiTarget('labs/barellm/AGENTS', flatFiles), 'labs/barellm/AGENTS.md');
+  assert.equal(resolveWikiTarget('AGENTS', flatFiles), 'labs/barellm/AGENTS.md');
+  assert.equal(resolveWikiTarget('labs/barellm/src/main.py', flatFiles), 'labs/barellm/src/main.py');
+  assert.equal(resolveWikiTarget('main.py', flatFiles), 'labs/barellm/src/main.py');
+  assert.equal(resolveWikiTarget('01.ipynb', flatFiles), 'labs/barellm/notebooks/01.ipynb');
+  assert.equal(resolveWikiTarget('missing.py', flatFiles), null);
+});
+
+test('buildLinkIndex populates backlinks on .md and non-.md targets only from .md sources', async () => {
+  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pagedex-wiki-'));
+  process.env.PAGEDEX_ROOT = tmpRoot;
+
+  try {
+    const { writeNote } = await import('../src/server/fs-ops.js');
+    const { buildLinkIndex } = await import('../src/server/vault-cache.js');
+
+    writeNote(
+      'README.md',
+      'See [[labs/barellm/AGENTS.md]], [[labs/barellm/src/main.py]], and [[01.ipynb]].'
+    );
+    writeNote('labs/barellm/AGENTS.md', '# Agents');
+    writeNote('labs/barellm/src/main.py', '# [[README.md]] should not create backlinks from .py\n');
+    writeNote('labs/barellm/notebooks/01.ipynb', '{"cells": []}');
+
+    const flatFiles = [
+      'README.md',
+      'labs/barellm/AGENTS.md',
+      'labs/barellm/src/main.py',
+      'labs/barellm/notebooks/01.ipynb'
+    ];
+    const { backlinks } = buildLinkIndex(flatFiles);
+
+    assert.deepEqual(backlinks['labs/barellm/AGENTS.md'], ['README.md']);
+    assert.deepEqual(backlinks['labs/barellm/src/main.py'], ['README.md']);
+    assert.deepEqual(backlinks['labs/barellm/notebooks/01.ipynb'], ['README.md']);
+    assert.deepEqual(backlinks['README.md'], []);
+  } finally {
+    fs.rmSync(tmpRoot, { recursive: true, force: true });
+  }
+});

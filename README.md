@@ -18,9 +18,9 @@
 
 | Who | Why PageDex |
 |---|---|
-| **Obsidian users** | Browse, search, and edit your Obsidian notes from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]`, backlinks, and SSE live reload alongside Obsidian Sync—no extra clutter |
+| **Obsidian users** | Browse, search, and edit your Obsidian notes from any browser or phone (over LAN/Tailscale) with `[[wikilinks]]` (including WYSIWYG `[[` autocomplete and links/backlinks to **any** file—`.md`, `.py`, `.ipynb`, media), and SSE live reload—no extra clutter |
 | **Git-backed notes & repos** | Live-reloads on external edits via SSE and lets you inspect diffs, discard changes, commit, and push directly from the UI |
-| **Developers & tech writers** | Explore repo `docs/`, preview sandboxed HTML, CSV, PDF, and media files, and review/commit changes with the built-in Git diff UI |
+| **Developers & tech writers** | Explore repo `docs/`, link directly to code or `.ipynb` notebooks via `[[path/to/file.ext]]` with automatic backlinks, preview sandboxed HTML/CSV/PDF/notebooks/media, and review/commit changes with the built-in Git diff UI |
 | **AI & agent builders** | Connect Claude Code, Codex, Cursor, or custom agents to `/mcp` (`2026-07-28`, `2025-11-25`, `2024-11-05`) with `--mcp read\|write\|full`, `--mcp-git`, and `--mcp-token-file` |
 | **Mobile / multi-device readers** | Read and pin folders/notes on the go with a responsive touch UI (edge-swipe drawers, bottom quick bar) without installing a native app |
 | **Multi-vault & shared hosts** | Serve multiple folders (`personal`, `work`, `docs`) on one port via `--config` / `PAGEDEX_ROOT_CONFIG` with per-vault passwords (`allowGlobalAuth`), read-only vaults, and live config auto-reload |
@@ -35,7 +35,7 @@
 | **Sync** | Built-in Git commit & push + SSE live reload (works alongside Obsidian Sync / iCloud / Syncthing) | Paid Obsidian Sync, iCloud, or community Git plugins | Automatic cloud sync |
 | **REST API & MCP** | Native `/api/v1/*` + multi-era `/mcp` (`read` / `write` / `full`, token-scoped) | Via community plugins (Local REST API / MCP) | Cloud REST API & remote OAuth MCP |
 | **Git Diff & Commit UI** | Built-in line/hunk diff, discard, commit & push | Via community plugin (e.g. Obsidian Git) | Proprietary page history (no Git) |
-| **Strengths** | Zero-lock-in (`npx`), multi-vault + per-vault auth, FTS5 trigram search, `[[wikilinks]]`, sandboxed HTML/media, A4 print | Graph view, Canvas, 1,000+ plugins | Relational databases, Kanban, real-time team collab |
+| **Strengths** | Zero-lock-in (`npx`), multi-vault + per-vault auth, FTS5 trigram search, universal `[[wikilinks]]` & backlinks to any file (with WYSIWYG `[[` autocomplete), `.ipynb`/HTML/media previews, A4 print | Graph view, Canvas, 1,000+ plugins | Relational databases, Kanban, real-time team collab |
 
 ## Screenshots
 

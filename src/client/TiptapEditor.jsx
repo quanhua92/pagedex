@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown } from 'tiptap-markdown';
@@ -18,6 +18,11 @@ const CODE_LANGUAGES = [
   'rust',
   'markdown'
 ];
+
+function getCleanMarkdown(editor) {
+  const raw = editor?.storage?.markdown?.getMarkdown?.() ?? '';
+  return raw.replace(/\\\[\\\[([^\]\n]+)\\\]\\\]/g, '[[$1]]');
+}
 
 function CodeBlockNodeView({ node, updateAttributes }) {
   const currentLang = node.attrs.language || '';
@@ -91,6 +96,7 @@ const CodeBlockStarterKit = StarterKit.extend({
 export default function TiptapEditor({
   content,
   fileKey,
+  flatFiles = [],
   fontSize,
   lineHeight,
   maxWidth,
@@ -100,27 +106,124 @@ export default function TiptapEditor({
   onSave,
   onSwitchToRaw
 }) {
+  const [wikiSuggest, setWikiSuggest] = useState(null); // { query, from, to, left, top }
+  const [wikiIdx, setWikiIdx] = useState(0);
+  const wikiStateRef = useRef({ suggest: null, matches: [], idx: 0 });
+
+  const wikiMatches = useMemo(() => {
+    if (!wikiSuggest) return [];
+    const q = wikiSuggest.query.trim().toLowerCase();
+    const scored = flatFiles
+      .filter((f) => !q || f.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const aBase = a.split('/').pop().toLowerCase();
+        const bBase = b.split('/').pop().toLowerCase();
+        const aStarts = q && aBase.startsWith(q) ? 0 : 1;
+        const bStarts = q && bBase.startsWith(q) ? 0 : 1;
+        if (aStarts !== bStarts) return aStarts - bStarts;
+        const aMd = /\.md$/i.test(a) ? 0 : 1;
+        const bMd = /\.md$/i.test(b) ? 0 : 1;
+        return aMd - bMd || a.localeCompare(b);
+      });
+    return scored.slice(0, 12);
+  }, [wikiSuggest, flatFiles]);
+
   const editor = useEditor({
     extensions: [CodeBlockStarterKit, Markdown],
-    content
+    content,
+    editorProps: {
+      handleKeyDown: (_view, event) => {
+        const { suggest, matches, idx } = wikiStateRef.current;
+        if (!suggest || matches.length === 0) return false;
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setWikiIdx((i) => (i + 1) % matches.length);
+          return true;
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setWikiIdx((i) => (i - 1 + matches.length) % matches.length);
+          return true;
+        }
+        if (event.key === 'Enter' || event.key === 'Tab') {
+          event.preventDefault();
+          const chosen = matches[idx] || matches[0];
+          if (chosen) insertWikiLink(chosen);
+          return true;
+        }
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          setWikiSuggest(null);
+          return true;
+        }
+        return false;
+      }
+    }
   });
+
+  wikiStateRef.current = { suggest: wikiSuggest, matches: wikiMatches, idx: wikiIdx };
+
+  function insertWikiLink(targetPath) {
+    const suggest = wikiStateRef.current.suggest;
+    if (!editor || !suggest) return;
+    const after = editor.state.doc.textBetween(suggest.to, Math.min(editor.state.doc.content.size, suggest.to + 2), '');
+    const replaceTo = after === ']]' ? suggest.to + 2 : suggest.to;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt({ from: suggest.from, to: replaceTo }, `[[${targetPath}]]`)
+      .run();
+    setWikiSuggest(null);
+    setWikiIdx(0);
+  }
 
   useEffect(() => {
     if (!editor) return;
-    const current = editor.storage.markdown?.getMarkdown?.() ?? '';
+    const current = getCleanMarkdown(editor);
     if (current !== content && !dirty) {
       editor.commands.setContent(content);
+      setWikiSuggest(null);
     }
   }, [fileKey, content, editor, dirty]);
 
   useEffect(() => {
     if (!editor) return;
-    const handler = () => {
-      const md = editor.storage.markdown?.getMarkdown?.() ?? '';
-      onChange(md);
+    const updateSuggest = () => {
+      const { selection } = editor.state;
+      if (!selection.empty || selection.$from.parent.type.name === 'codeBlock') {
+        setWikiSuggest(null);
+        return;
+      }
+      const { $from } = selection;
+      const textBefore = $from.parent.textBetween(0, $from.parentOffset, '\n', '\ufffc');
+      const match = textBefore.match(/\[\[([^\]\n]*)$/);
+      if (!match) {
+        setWikiSuggest(null);
+        return;
+      }
+      const coords = editor.view.coordsAtPos($from.pos);
+      const left = Math.max(8, Math.min(coords.left, window.innerWidth - 290));
+      const top = Math.min(coords.bottom + 6, window.innerHeight - 240);
+      setWikiSuggest({
+        query: match[1],
+        from: $from.pos - match[0].length,
+        to: $from.pos,
+        left,
+        top
+      });
+      setWikiIdx(0);
     };
-    editor.on('update', handler);
-    return () => editor.off('update', handler);
+
+    const onUpdate = () => {
+      onChange(getCleanMarkdown(editor));
+      updateSuggest();
+    };
+    editor.on('update', onUpdate);
+    editor.on('selectionUpdate', updateSuggest);
+    return () => {
+      editor.off('update', onUpdate);
+      editor.off('selectionUpdate', updateSuggest);
+    };
   }, [editor, onChange]);
 
   useEffect(() => {
@@ -129,7 +232,7 @@ export default function TiptapEditor({
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         if (!saving) {
-          onSave(editor.storage.markdown?.getMarkdown?.() ?? '');
+          onSave(getCleanMarkdown(editor));
         }
       }
     };
@@ -193,7 +296,7 @@ export default function TiptapEditor({
           className={`btn${dirty ? ' primary' : ''}`}
           style={onSwitchToRaw ? undefined : { marginLeft: 'auto' }}
           disabled={saving}
-          onClick={() => onSave(editor.storage.markdown?.getMarkdown?.() ?? '')}
+          onClick={() => onSave(getCleanMarkdown(editor))}
         >
           {saving ? 'Saving...' : dirty ? 'Save *' : 'Saved'}
         </button>
@@ -201,6 +304,29 @@ export default function TiptapEditor({
       <div className="doc tiptap-body" style={{ fontSize: `${fontSize}px`, lineHeight }}>
         <EditorContent editor={editor} />
       </div>
+      {wikiSuggest && wikiMatches.length > 0 && (
+        <div
+          className="tiptap-wiki-menu"
+          style={{ left: wikiSuggest.left, top: wikiSuggest.top }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {wikiMatches.map((filePath, idx) => {
+            const name = filePath.split('/').pop();
+            const dir = filePath.includes('/') ? filePath.split('/').slice(0, -1).join('/') : '';
+            return (
+              <button
+                key={filePath}
+                type="button"
+                className={`tiptap-wiki-item${idx === wikiIdx ? ' active' : ''}`}
+                onClick={() => insertWikiLink(filePath)}
+              >
+                <span className="tiptap-wiki-name">{name}</span>
+                {dir && <span className="tiptap-wiki-path">{dir}</span>}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

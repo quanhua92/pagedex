@@ -1229,6 +1229,53 @@ html, body, #root {
   font-size: 13px;
   margin-bottom: 12px;
 }
+.tiptap-wiki-menu {
+  position: fixed;
+  z-index: 60;
+  width: 280px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tiptap-wiki-item {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-family: inherit;
+}
+.tiptap-wiki-item:hover,
+.tiptap-wiki-item.active {
+  background: var(--accent-soft);
+}
+.tiptap-wiki-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tiptap-wiki-path {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 @keyframes spin {
   to {

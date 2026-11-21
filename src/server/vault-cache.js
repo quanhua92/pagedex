@@ -59,24 +59,34 @@ function removeTreeFile(nodes, relPath) {
 }
 
 function createWikiResolver(flatFiles) {
-  const mdFiles = flatFiles.filter((p) => p.endsWith('.md'));
-  const byName = new Map();
-  const byNoExt = new Map();
+  const byExact = new Map();
+  const byBase = new Map();
+  const byMdNoExt = new Map();
+  const byMdBase = new Map();
 
-  for (const p of mdFiles) {
-    const noExt = p.slice(0, -3);
-    const base = path.basename(noExt).toLowerCase();
-    byNoExt.set(noExt.toLowerCase(), p);
-    if (!byName.has(base)) byName.set(base, p);
+  for (const p of flatFiles) {
+    const lower = p.toLowerCase();
+    const base = path.basename(lower);
+    byExact.set(lower, p);
+    if (!byBase.has(base)) byBase.set(base, p);
+    if (lower.endsWith('.md')) {
+      const noExt = lower.slice(0, -3);
+      const mdBase = path.basename(noExt);
+      byMdNoExt.set(noExt, p);
+      if (!byMdBase.has(mdBase)) byMdBase.set(mdBase, p);
+    }
   }
 
   return function resolveWiki(rawTarget) {
-    const clean = rawTarget.split('|')[0].split('#')[0].trim().replace(/\.md$/i, '').replace(/^\/+/, '');
+    const clean = rawTarget.split('|')[0].split('#')[0].trim().replace(/^\/+/, '').toLowerCase();
     if (!clean) return null;
-    const lower = clean.toLowerCase();
-    if (byNoExt.has(lower)) return byNoExt.get(lower);
-    const base = path.basename(lower);
-    return byName.get(base) || null;
+    if (byExact.has(clean)) return byExact.get(clean);
+    const cleanNoMd = clean.replace(/\.md$/i, '');
+    if (byMdNoExt.has(cleanNoMd)) return byMdNoExt.get(cleanNoMd);
+    const base = path.basename(clean);
+    if (byBase.has(base)) return byBase.get(base);
+    const baseNoMd = path.basename(cleanNoMd);
+    return byMdBase.get(baseNoMd) || null;
   };
 }
 
@@ -223,7 +233,8 @@ export function buildLinkIndex(flatFiles) {
     }
     for (const target of extractWikiTargets(text, resolveWiki)) {
       if (target !== src) {
-        backlinks[target]?.push(src);
+        if (!backlinks[target]) backlinks[target] = [];
+        backlinks[target].push(src);
       }
     }
   }

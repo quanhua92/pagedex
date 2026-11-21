@@ -69,13 +69,21 @@ export function resolveRelative(basePath, href) {
 }
 
 export function resolveWikiTarget(raw, flatFiles) {
-  const clean = raw.split('|')[0].split('#')[0].trim().replace(/\.md$/i, '').replace(/^\/+/, '').toLowerCase();
+  const clean = raw.split('|')[0].split('#')[0].trim().replace(/^\/+/, '').toLowerCase();
   if (!clean) return null;
-  const mdFiles = flatFiles.filter((f) => f.endsWith('.md'));
-  const exact = mdFiles.find((f) => f.slice(0, -3).toLowerCase() === clean);
-  if (exact) return exact;
+  const cleanNoMd = clean.replace(/\.md$/i, '');
+  const mdFiles = flatFiles.filter((f) => /\.md$/i.test(f));
+
+  const exactAll = flatFiles.find((f) => f.toLowerCase() === clean);
+  if (exactAll) return exactAll;
+  const exactMd = mdFiles.find((f) => f.slice(0, -3).toLowerCase() === cleanNoMd);
+  if (exactMd) return exactMd;
+
   const base = clean.split('/').pop();
-  return mdFiles.find((f) => f.slice(0, -3).split('/').pop().toLowerCase() === base) || null;
+  const baseNoMd = cleanNoMd.split('/').pop();
+  const baseAll = flatFiles.find((f) => f.split('/').pop().toLowerCase() === base);
+  if (baseAll) return baseAll;
+  return mdFiles.find((f) => f.slice(0, -3).split('/').pop().toLowerCase() === baseNoMd) || null;
 }
 
 export function buildNewNotePath(title, folder) {
