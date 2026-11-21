@@ -2,6 +2,13 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.17] - 2026-11-21
+
+### Features
+
+- **ui:** add outgoing Links section to right panel (e573f17)
+- **links:** add WYSIWYG wikilink autocomplete and universal file backlinks (adc5b4a)
+
 ## [0.1.16] - 2026-11-21
 
 ### Features
