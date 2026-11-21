@@ -7,7 +7,7 @@ export const DEFAULT_SETTINGS = {
   startupMode: 'newtab', // 'newtab' | 'readme' | 'last' | 'custom'
   startupPath: 'README.md',
   showNewTabTitle: true,
-  autoCollapsed: ['apps', 'backups'],
+  autoCollapsed: ['apps', 'backups', '.ipynb_checkpoints'],
   hiddenFolders: []
 };
 

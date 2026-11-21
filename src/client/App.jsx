@@ -91,6 +91,7 @@ export default function App() {
   const [commitStatus, setCommitStatus] = useState(null);
   const [filter, setFilter] = useState('');
   const [collapsed, setCollapsed] = useState(() => new Set(settings.autoCollapsed));
+  const seededAutoCollapseRef = useRef(false);
   const [live, setLive] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [outlineDrawerOpen, setOutlineDrawerOpen] = useState(false);
@@ -512,6 +513,23 @@ export default function App() {
     ]);
     const data = await treeRes.json();
     setTree(data.tree);
+    if (!seededAutoCollapseRef.current && Array.isArray(data.tree)) {
+      seededAutoCollapseRef.current = true;
+      const autoSet = new Set(settings.autoCollapsed);
+      const matched = [];
+      const walk = (nodes) => {
+        for (const n of nodes) {
+          if (n.type === 'dir') {
+            if (autoSet.has(n.path) || autoSet.has(n.name)) matched.push(n.path);
+            if (n.children?.length) walk(n.children);
+          }
+        }
+      };
+      walk(data.tree);
+      if (matched.length > 0) {
+        setCollapsed((prev) => new Set([...prev, ...matched]));
+      }
+    }
     setFlatFiles(data.flatFiles);
     setFileStats(data.fileStats || []);
     setTotalFiles(data.totalFiles ?? data.flatFiles?.length ?? 0);
