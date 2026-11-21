@@ -38,7 +38,8 @@ test('auth-token-file locks Web UI until login, persists via cookie, and signs o
     await page.reload({ waitUntil: 'networkidle' });
     await page.locator('.doc').getByText('Top secret content.').waitFor();
 
-    // Sign out re-locks the UI
+    // Sign out re-locks the UI (under Sidebar options menu)
+    await page.getByRole('button', { name: 'Sidebar options' }).click();
     await page.getByRole('button', { name: 'Sign out' }).click();
     await page.getByLabel('Access token').waitFor();
 

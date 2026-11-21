@@ -22,8 +22,9 @@ test('CSV table, sandboxed HTML iframe, Outline & Backlinks, and Settings API & 
     await page.locator('.modal').getByRole('button', { name: 'Done' }).click();
     await page.waitForFunction(() => !document.querySelector('.modal'));
 
-    // Toggle theme via sidebar theme button
-    await page.getByRole('button', { name: /Switch to light theme/i }).click();
+    // Toggle theme via sidebar options menu
+    await page.getByRole('button', { name: 'Sidebar options' }).click();
+    await page.getByRole('button', { name: /Light theme/i }).click();
     assert.equal(await page.evaluate(() => document.documentElement.getAttribute('data-theme')), 'light');
 
     // 2. CSV viewer renders HTML table
