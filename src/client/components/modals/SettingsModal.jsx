@@ -196,6 +196,17 @@ export default function SettingsModal({
                 />
               </div>
               <div className="field">
+                <label>Pasted / dropped image folder</label>
+                <select
+                  value={settings.imageUploadDir}
+                  onChange={(e) => setSettings((s) => ({ ...s, imageUploadDir: e.target.value }))}
+                >
+                  <option value="same">Same folder as note</option>
+                  <option value="assets">assets/ subfolder next to note</option>
+                  <option value="vault-assets">Vault root assets/</option>
+                </select>
+              </div>
+              <div className="field">
                 <label>Hidden folders (hide from sidebar & search)</label>
                 <input
                   type="text"

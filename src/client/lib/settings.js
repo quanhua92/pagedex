@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS = {
   showNewTabTitle: true,
   autoCollapsed: ['apps', 'backups', '.ipynb_checkpoints'],
   autoExpandDepth: 2,
+  imageUploadDir: 'same',
   hiddenFolders: []
 };
 
@@ -49,6 +50,9 @@ export function loadSettings() {
         Number.isInteger(Number(p.autoExpandDepth)) && Number(p.autoExpandDepth) >= 0 && Number(p.autoExpandDepth) <= 10
           ? Number(p.autoExpandDepth)
           : DEFAULT_SETTINGS.autoExpandDepth,
+      imageUploadDir: ['same', 'assets', 'vault-assets'].includes(p.imageUploadDir)
+        ? p.imageUploadDir
+        : DEFAULT_SETTINGS.imageUploadDir,
       hiddenFolders: Array.isArray(p.hiddenFolders) ? p.hiddenFolders : []
     };
   } catch {

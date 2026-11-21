@@ -112,3 +112,25 @@ export function buildMoveTarget(targetPath, type = 'file') {
   const name = parts.pop() || '';
   return { type, oldPath: targetPath, name, destFolder: parts.join('/') };
 }
+
+export function resolveImageUploadTarget(activePath, fileName, mode = 'same') {
+  const noteDir = activePath && activePath.includes('/') ? activePath.split('/').slice(0, -1).join('/') : '';
+  if (mode === 'assets') {
+    return {
+      uploadDir: noteDir ? `${noteDir}/assets` : 'assets',
+      markdownHref: `assets/${fileName}`
+    };
+  }
+  if (mode === 'vault-assets') {
+    const depth = noteDir ? noteDir.split('/').length : 0;
+    const prefix = depth > 0 ? '../'.repeat(depth) : '';
+    return {
+      uploadDir: 'assets',
+      markdownHref: `${prefix}assets/${fileName}`
+    };
+  }
+  return {
+    uploadDir: noteDir,
+    markdownHref: fileName
+  };
+}

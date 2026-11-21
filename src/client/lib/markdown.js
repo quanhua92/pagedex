@@ -2,7 +2,7 @@ import { Marked } from 'marked';
 import katex from 'katex';
 import hljs from 'highlight.js/lib/common';
 import dockerfile from 'highlight.js/lib/languages/dockerfile';
-import { resolveRelative, resolveWikiTarget } from './paths.js';
+import { isImagePath, resolveRelative, resolveWikiTarget } from './paths.js';
 
 hljs.registerLanguage('dockerfile', dockerfile);
 
@@ -106,12 +106,24 @@ mdParser.use({ extensions: [blockMathExtension, inlineMathExtension] });
 
 export function renderMarkdownWithLinks(content, activePath, flatFiles) {
   const foundHeadings = [];
-  // Pre-process [[wikilinks]] outside fenced code blocks
+  // Pre-process ![[embeds]] and [[wikilinks]] outside fenced code blocks
   const parts = content.split(/(```[\s\S]*?```)/g);
   const transformed = parts
     .map((part, idx) => {
       if (idx % 2 === 1) return part;
-      return part.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => {
+      const withEmbeds = part.replace(/!\[\[([^\]]+)\]\]/g, (_, inner) => {
+        const [targetRaw, alias] = inner.split('|');
+        const label = (alias || targetRaw).trim();
+        const target = resolveWikiTarget(inner, flatFiles);
+        if (target && isImagePath(target)) {
+          return `<img src="/api/v1/file?path=${encodeURIComponent(target)}" alt="${escapeHtml(label)}" />`;
+        }
+        if (target) {
+          return `<a class="wikilink" data-path="${target.replace(/"/g, '&quot;')}">${label}</a>`;
+        }
+        return `<span class="wikilink broken" title="Note not created yet">${label}</span>`;
+      });
+      return withEmbeds.replace(/\[\[([^\]]+)\]\]/g, (_, inner) => {
         const [targetRaw, alias] = inner.split('|');
         const label = (alias || targetRaw).trim();
         const target = resolveWikiTarget(inner, flatFiles);

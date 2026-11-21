@@ -1304,6 +1304,13 @@ html, body, #root {
   color: var(--accent);
   font-weight: 600;
 }
+.tiptap-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 10px 0;
+  display: block;
+}
 .tiptap-wiki-menu {
   position: fixed;
   z-index: 60;

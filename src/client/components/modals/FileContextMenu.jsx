@@ -15,7 +15,7 @@ import {
   Trash2,
   Upload
 } from 'lucide-react';
-import { buildMoveTarget, buildRenameTarget } from '../../lib/paths.js';
+import { buildMoveTarget, buildRenameTarget, isImagePath } from '../../lib/paths.js';
 
 function MenuIcon({ icon: Icon }) {
   return <Icon className="menu-item-icon" size={14} strokeWidth={1.9} aria-hidden="true" />;
@@ -265,6 +265,20 @@ export default function FileContextMenu({
               <MenuIcon icon={Link2} />
               <span>Copy [[wikilink]]</span>
             </button>
+            {isImagePath(fileMenu.path) && (
+              <button
+                className="more-item"
+                onClick={() => {
+                  const name = fileMenu.path.split('/').pop();
+                  navigator.clipboard?.writeText(`![${name}](${fileMenu.path})`);
+                  setFileMenu(null);
+                  showToast?.('Copied image embed');
+                }}
+              >
+                <MenuIcon icon={Copy} />
+                <span>Copy ![image]</span>
+              </button>
+            )}
             <a
               className="more-item"
               href={`/api/v1/file?path=${encodeURIComponent(fileMenu.path)}&download=1`}

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { resolveWikiTarget } from '../src/client/lib/paths.js';
+import { resolveImageUploadTarget, resolveWikiTarget } from '../src/client/lib/paths.js';
+import { renderMarkdownWithLinks } from '../src/client/lib/markdown.js';
 
 test('resolveWikiTarget resolves .md (with or without ext) and non-md files', () => {
   const flatFiles = [
@@ -53,4 +54,32 @@ test('buildLinkIndex populates backlinks on .md and non-.md targets only from .m
   } finally {
     fs.rmSync(tmpRoot, { recursive: true, force: true });
   }
+});
+
+test('resolveImageUploadTarget computes uploadDir and relative markdownHref for each mode', () => {
+  assert.deepEqual(resolveImageUploadTarget('labs/barellm/README.md', 'shot.png', 'same'), {
+    uploadDir: 'labs/barellm',
+    markdownHref: 'shot.png'
+  });
+  assert.deepEqual(resolveImageUploadTarget('labs/barellm/README.md', 'shot.png', 'assets'), {
+    uploadDir: 'labs/barellm/assets',
+    markdownHref: 'assets/shot.png'
+  });
+  assert.deepEqual(resolveImageUploadTarget('labs/barellm/README.md', 'shot.png', 'vault-assets'), {
+    uploadDir: 'assets',
+    markdownHref: '../../assets/shot.png'
+  });
+  assert.deepEqual(resolveImageUploadTarget('README.md', 'shot.png', 'vault-assets'), {
+    uploadDir: 'assets',
+    markdownHref: 'assets/shot.png'
+  });
+});
+
+test('renderMarkdownWithLinks renders ![[image]] embeds as <img>', () => {
+  const { renderedHtml } = renderMarkdownWithLinks(
+    '![[labs/barellm/diagram.png]]',
+    'README.md',
+    ['README.md', 'labs/barellm/diagram.png']
+  );
+  assert.match(renderedHtml, /<img src="\/api\/v1\/file\?path=labs%2Fbarellm%2Fdiagram\.png"/);
 });

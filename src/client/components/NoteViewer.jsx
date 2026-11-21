@@ -286,6 +286,7 @@ export default function NoteViewer({
           fileKey={activePath}
           content={editorValue}
           flatFiles={flatFiles}
+          imageUploadDir={settings.imageUploadDir}
           fontSize={settings.fontSize}
           lineHeight={settings.lineHeight}
           maxWidth={settings.maxWidth}

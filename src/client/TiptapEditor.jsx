@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { EditorContent, NodeViewContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
 import { Markdown } from 'tiptap-markdown';
+import { resolveImageUploadTarget, resolveRelative } from './lib/paths.js';
 
 const CODE_LANGUAGES = [
   'mermaid',
@@ -22,6 +24,16 @@ const CODE_LANGUAGES = [
 function getCleanMarkdown(editor) {
   const raw = editor?.storage?.markdown?.getMarkdown?.() ?? '';
   return raw.replace(/\\\[\\\[([^\]\n]+)\\\]\\\]/g, '[[$1]]');
+}
+
+function makeUploadFilename(file) {
+  const rawName = (file?.name || '').trim();
+  const extMatch = rawName.match(/\.([a-z0-9]+)$/i);
+  const ext = extMatch ? extMatch[1].toLowerCase() : (file?.type?.split('/')[1] || 'png').replace('jpeg', 'jpg');
+  if (!rawName || /^image\.[a-z0-9]+$/i.test(rawName) || /^blob/i.test(rawName)) {
+    return `pasted-${Date.now()}.${ext}`;
+  }
+  return rawName;
 }
 
 function CodeBlockNodeView({ node, updateAttributes }) {
@@ -97,6 +109,7 @@ export default function TiptapEditor({
   content,
   fileKey,
   flatFiles = [],
+  imageUploadDir = 'same',
   fontSize,
   lineHeight,
   maxWidth,
@@ -109,6 +122,23 @@ export default function TiptapEditor({
   const [wikiSuggest, setWikiSuggest] = useState(null); // { query, from, to, left, top }
   const [wikiIdx, setWikiIdx] = useState(0);
   const wikiStateRef = useRef({ suggest: null, matches: [], idx: 0 });
+  const contextRef = useRef({ fileKey, imageUploadDir });
+  contextRef.current = { fileKey, imageUploadDir };
+
+  const VaultImage = useMemo(
+    () =>
+      Image.extend({
+        renderHTML({ HTMLAttributes }) {
+          const rawSrc = HTMLAttributes.src || '';
+          const isExternal = /^(https?:\/\/|data:|\/api\/v1\/)/i.test(rawSrc);
+          const resolvedSrc = isExternal
+            ? rawSrc
+            : `/api/v1/file?path=${encodeURIComponent(resolveRelative(contextRef.current.fileKey || '', rawSrc))}`;
+          return ['img', { ...HTMLAttributes, src: resolvedSrc }];
+        }
+      }),
+    []
+  );
 
   const wikiMatches = useMemo(() => {
     if (!wikiSuggest) return [];
@@ -128,10 +158,56 @@ export default function TiptapEditor({
     return scored.slice(0, 12);
   }, [wikiSuggest, flatFiles]);
 
+  async function uploadAndInsertImages(files, view, insertPos = null) {
+    const images = Array.from(files || []).filter((f) => f.type?.startsWith('image/'));
+    if (images.length === 0) return;
+
+    for (const file of images) {
+      const fileName = makeUploadFilename(file);
+      const { uploadDir, markdownHref } = resolveImageUploadTarget(
+        contextRef.current.fileKey || '',
+        fileName,
+        contextRef.current.imageUploadDir || 'same'
+      );
+      const form = new FormData();
+      form.append('dir', uploadDir);
+      form.append('files', new File([file], fileName, { type: file.type }));
+      try {
+        const res = await fetch('/api/v1/file/upload', { method: 'POST', body: form });
+        if (!res.ok) continue;
+        const node = view.state.schema.nodes.image?.create({ src: markdownHref, alt: fileName });
+        if (!node) continue;
+        const pos = insertPos ?? view.state.selection.from;
+        view.dispatch(view.state.tr.insert(pos, node));
+      } catch {
+        // Ignore transient upload error
+      }
+    }
+  }
+
   const editor = useEditor({
-    extensions: [CodeBlockStarterKit, Markdown],
+    extensions: [CodeBlockStarterKit, VaultImage, Markdown],
     content,
     editorProps: {
+      handlePaste: (view, event) => {
+        const files = event.clipboardData?.files;
+        if (files && Array.from(files).some((f) => f.type?.startsWith('image/'))) {
+          event.preventDefault();
+          uploadAndInsertImages(files, view);
+          return true;
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (files && Array.from(files).some((f) => f.type?.startsWith('image/'))) {
+          event.preventDefault();
+          const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+          uploadAndInsertImages(files, view, coords?.pos ?? null);
+          return true;
+        }
+        return false;
+      },
       handleKeyDown: (_view, event) => {
         const { suggest, matches, idx } = wikiStateRef.current;
         if (!suggest || matches.length === 0) return false;

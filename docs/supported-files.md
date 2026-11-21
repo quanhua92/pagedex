@@ -4,7 +4,7 @@
 
 | Type | Extensions | Preview Mode | Raw / Edit | Search Indexed |
 |---|---|---|---|---|
-| **Markdown** | `.md`, `.markdown`, `.mdx` | Rendered HTML, wikilinks, backlinks, outline | WYSIWYG (`TiptapEditor`), Raw (`RawEditor`), Diff | Yes (FTS5) |
+| **Markdown** | `.md`, `.markdown`, `.mdx` | Rendered HTML, `[[wikilinks]]`, `![[image]]` embeds, backlinks, outline | WYSIWYG (`TiptapEditor` w/ inline & pasted images), Raw (`RawEditor`), Diff | Yes (FTS5) |
 | **HTML** | `.html`, `.htm` | Sandboxed `<iframe src="/raw/...">` | Editable (`RawEditor`), Diff | Yes |
 | **PDF** | `.pdf` | Built-in browser PDF `<iframe>` + Download | — | No |
 | **Audio** | `.mp3`, `.wav`, `.m4a`, `.ogg` | `<audio controls>` with HTTP `Range` seeking | — | No |
