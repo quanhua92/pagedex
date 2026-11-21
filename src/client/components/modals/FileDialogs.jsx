@@ -256,19 +256,37 @@ export function DeleteConfirmModal({
 }) {
   if (!deleteTarget) return null;
 
+  const isDir = typeof deleteTarget === 'object' && deleteTarget.type === 'dir';
+  const targetPath = typeof deleteTarget === 'string' ? deleteTarget : deleteTarget.path;
+  const itemCount = isDir ? Number(deleteTarget.itemCount || 0) : 0;
+
   return (
     <div className="modal-backdrop" onClick={() => setDeleteTarget(null)}>
       <div className="modal" style={{ height: 'auto', maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>Delete file?</h2>
+          <h2>{isDir ? 'Delete folder?' : 'Delete file?'}</h2>
           <button className="btn" onClick={() => setDeleteTarget(null)}>
             Close
           </button>
         </div>
         <div className="modal-body">
           <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            This will permanently remove <strong style={{ color: 'var(--text)' }}>{deleteTarget}</strong> from disk.
+            This will permanently remove <strong style={{ color: 'var(--text)' }}>{targetPath}</strong> from disk.
           </div>
+          {isDir && itemCount > 0 && (
+            <div
+              style={{
+                fontSize: 13,
+                color: '#fbbf24',
+                background: 'rgba(251, 191, 36, 0.1)',
+                border: '1px solid rgba(251, 191, 36, 0.3)',
+                borderRadius: 6,
+                padding: '8px 10px'
+              }}
+            >
+              Warning: this folder is not empty ({itemCount} file{itemCount === 1 ? '' : 's'} inside). All contents will be deleted.
+            </div>
+          )}
           {deleteError && (
             <div className="git-output" style={{ color: '#f87171' }}>
               {deleteError}

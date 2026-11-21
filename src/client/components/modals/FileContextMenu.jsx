@@ -42,6 +42,7 @@ export default function FileContextMenu({
   setDeleteTarget,
   isPinned,
   togglePin,
+  flatFiles = [],
   readOnly = false,
   showToast
 }) {
@@ -143,6 +144,23 @@ export default function FileContextMenu({
               <MenuIcon icon={Copy} />
               <span>Copy path</span>
             </button>
+            {!readOnly && (
+              <button
+                className="more-item"
+                style={{ color: '#f87171', borderTop: '1px solid var(--border)', marginTop: 2, paddingTop: 8 }}
+                onClick={() => {
+                  const target = fileMenu.path;
+                  const prefix = `${target}/`;
+                  const itemCount = flatFiles.filter((f) => f.startsWith(prefix)).length;
+                  setFileMenu(null);
+                  setDeleteError('');
+                  setDeleteTarget({ path: target, type: 'dir', itemCount });
+                }}
+              >
+                <MenuIcon icon={Trash2} />
+                <span>Delete</span>
+              </button>
+            )}
           </>
         ) : (
           <>

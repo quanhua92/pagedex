@@ -55,6 +55,19 @@ export function deleteNote(relPath) {
   return { deleted: true, path: clean };
 }
 
+export function deleteDir(relPath) {
+  if (!relPath || isProtectedPath(relPath)) return null;
+  const clean = String(relPath).replace(/^\/+|\/+$/g, '');
+  if (!clean) return null;
+  const full = resolveSafe(clean);
+  if (!full || full === getVaultRoot() || !fs.existsSync(full) || !fs.statSync(full).isDirectory()) {
+    return null;
+  }
+  fs.rmSync(full, { recursive: true, force: false });
+  invalidateVaultCache();
+  return { deleted: true, path: clean };
+}
+
 export function renameNote(oldPath, newPath) {
   if (!oldPath || !newPath || isProtectedPath(oldPath) || isProtectedPath(newPath)) {
     return { error: 'Invalid or protected path' };

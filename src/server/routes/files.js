@@ -4,6 +4,7 @@ import {
   MIME_TYPES,
   getVaultRoot,
   createDir,
+  deleteDir,
   deleteNote,
   editNote,
   getCachedVault,
@@ -222,6 +223,14 @@ function serveFileResponse(c, full, contentType, { isDownload = false, extraHead
     if (result.error) return c.json(result, 400);
     removeFileFromIndex(result.oldPath);
     upsertFileInIndex(result.newPath);
+    return c.json(result);
+  });
+
+  app.delete('/api/v1/dir', (c) => {
+    const rel = c.req.query('path') || '';
+    const result = deleteDir(rel);
+    if (!result) return c.json({ error: 'Not found or protected path' }, 404);
+    syncIndex();
     return c.json(result);
   });
 

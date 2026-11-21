@@ -706,29 +706,34 @@ export default function App() {
   async function confirmDeleteFile() {
     if (!deleteTarget) return;
     setDeleteError('');
-    const res = await fetch(`/api/v1/file?path=${encodeURIComponent(deleteTarget)}`, {
+    const isDir = typeof deleteTarget === 'object' && deleteTarget.type === 'dir';
+    const targetPath = typeof deleteTarget === 'string' ? deleteTarget : deleteTarget.path;
+    const endpoint = isDir ? '/api/v1/dir' : '/api/v1/file';
+    const res = await fetch(`${endpoint}?path=${encodeURIComponent(targetPath)}`, {
       method: 'DELETE'
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      const deleted = deleteTarget;
+      const deleted = targetPath;
+      const matchesDeleted = (p) =>
+        Boolean(p) && (p === deleted || (isDir && p.startsWith(`${deleted}/`)));
       setDeleteTarget(null);
-      if (localStorage.getItem('vault-last-path') === deleted) {
+      if (matchesDeleted(localStorage.getItem('vault-last-path'))) {
         localStorage.removeItem('vault-last-path');
       }
       const pruneNodes = (nodes) =>
         nodes
-          .filter((n) => !(n.type === 'file' && n.path === deleted))
+          .filter((n) => !matchesDeleted(n.path))
           .map((n) => (n.type === 'dir' ? { ...n, children: pruneNodes(n.children || []) } : n));
       setTree((prev) => pruneNodes(prev));
-      setFlatFiles((prev) => prev.filter((f) => f !== deleted));
-      setFileStats((prev) => prev.filter((f) => f.path !== deleted));
-      setGitChanges((prev) => prev.filter((c) => c.path !== deleted));
-      setPinned((prev) => prev.filter((p) => p.path !== deleted && !p.path.startsWith(`${deleted}/`)));
+      setFlatFiles((prev) => prev.filter((f) => !matchesDeleted(f)));
+      setFileStats((prev) => prev.filter((f) => !matchesDeleted(f.path)));
+      setGitChanges((prev) => prev.filter((c) => !matchesDeleted(c.path)));
+      setPinned((prev) => prev.filter((p) => !matchesDeleted(p.path)));
 
-      if (deleted === activePath) {
+      if (matchesDeleted(activePath)) {
         setViewMode('preview');
-        const remaining = tabs.filter((t) => t.path !== deleted);
+        const remaining = tabs.filter((t) => !matchesDeleted(t.path));
         if (remaining.length > 0) {
           const nextTab = remaining[remaining.length - 1];
           setTabs(remaining);
@@ -748,11 +753,11 @@ export default function App() {
           location.hash = '';
         }
       } else {
-        setTabs((prev) => prev.filter((t) => t.path !== deleted));
+        setTabs((prev) => prev.filter((t) => !matchesDeleted(t.path)));
       }
       await fetchTree();
     } else {
-      setDeleteError(data.error || 'Failed to delete file');
+      setDeleteError(data.error || `Failed to delete ${isDir ? 'folder' : 'file'}`);
     }
   }
 
@@ -1493,6 +1498,7 @@ export default function App() {
         setDeleteTarget={setDeleteTarget}
         isPinned={isPinned}
         togglePin={togglePin}
+        flatFiles={flatFiles}
         readOnly={readOnly}
         showToast={showToast}
       />
