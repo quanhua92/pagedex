@@ -49,15 +49,15 @@ Override the cache location with:
 ![Desktop Preview](./images/desktop-preview.png)
 
 - **View Modes (top-right `⋮` menu):**
-  - **Preview** — rendered Markdown (with Mermaid diagrams, KaTeX math, code-block copy buttons, and `![[image]]` embeds), read-only `.ipynb` notebooks, sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
-  - **Edit** — lazy-loaded Tiptap WYSIWYG editor for Markdown (`.md`, `.markdown`, `.mdx`) with `[[` wikilink autocomplete, inline images, and paste/drop image upload
+  - **Preview** — rendered Markdown (with Mermaid diagrams, KaTeX math, code-block copy buttons, `![[image]]` embeds, and click-to-zoom image lightbox), read-only `.ipynb` notebooks, sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
+  - **Edit** — lazy-loaded Tiptap WYSIWYG editor for Markdown (`.md`, `.markdown`, `.mdx`) with `/` slash commands, `[[` wikilink autocomplete, inline images, and paste/drop image upload
   - **Raw** — editable source (`RawEditor`) for Markdown and all non-binary text/code files (`.txt`, `.json`, `.js`, `.html`, `.csv`, `.svg`, etc.); read-only JSON view for `.ipynb`
   - **Diff** — line-by-line Git diff with per-line, per-hunk, and per-file discard
   - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
   - **Print** — triggers `window.print()` with an A4 multi-page stylesheet (hides UI chrome and renders Mermaid in light theme; uncheck **Headers and footers** in the browser print dialog to hide the page title/URL)
 - **Wikilinks, Links & Backlinks:** `[[...]]` links from Markdown notes resolve to **any** file type (`.md`, `.py`, `.ipynb`, media, etc.), and the right panel tracks the active heading as you scroll alongside outgoing **Links** and incoming **Backlinks**.
-- **Command Palette (`Cmd/Ctrl+K`):** Search files/tabs or switch to **Commands** (or type `>`) for quick actions (`New note`, `Toggle theme`, `Commit changes`, `Switch vault`, etc.).
-- **Sidebar & Settings:** Supports folder deletion (with non-empty folder warning), manual refresh (`?refresh=1`), **Auto-expand folder levels** (default `2`), **Pasted / dropped image folder** (`same`, `assets/`, or vault root `assets/`), and auto-collapsed/hidden folder lists.
+- **Command Palette (`Cmd/Ctrl+K`):** Search files/tabs (with jump-to-match highlighting on open) or switch to **Commands** (or type `>`) for quick actions (`New note`, `Toggle theme`, `Commit changes`, `Switch vault`, etc.).
+- **Sidebar & Settings:** Auto-reveals the active file’s parent folders, supports folder deletion (with non-empty folder warning), manual refresh (`?refresh=1`), **Auto-expand folder levels** (default `2`), **Pasted / dropped image folder** (`same`, `assets/`, or vault root `assets/`), and auto-collapsed/hidden folder lists.
 - **Git Integration:** Browse changed files in the Changes tab, inspect hunks, discard changes, or commit & push directly from the UI.
 - **Live Reload (SSE):** External edits on disk (e.g. from your editor or an AI agent via MCP) refresh open files and the sidebar tree automatically via `/api/v1/events`.
 - **Mobile Friendly:** Edge-swipe gestures open the left file drawer and right outline drawer, with long-press context actions in the tree.
