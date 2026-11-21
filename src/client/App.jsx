@@ -13,12 +13,14 @@ import {
   isPdfPath,
   isSvgPath,
   isVideoPath,
-  resolveRelative,
-  buildNewFolderPath,
-  buildNewNotePath
+  resolveRelative
 } from './lib/paths.js';
 import { renderMarkdownWithLinks, highlightRawFile } from './lib/markdown.js';
 import { useEdgeSwipe } from './lib/useEdgeSwipe.js';
+import { useGitOps } from './hooks/useGitOps.js';
+import { useLayoutState } from './hooks/useLayoutState.js';
+import { useQuickSwitcher } from './hooks/useQuickSwitcher.js';
+import { useFileCrud } from './hooks/useFileCrud.js';
 import Sidebar from './components/Sidebar.jsx';
 import TopbarAndTabs, { DesktopTabs } from './components/TopbarAndTabs.jsx';
 import NoteViewer from './components/NoteViewer.jsx';
@@ -56,40 +58,39 @@ export default function App() {
   const [tabsOpen, setTabsOpen] = useState(false);
   const [content, setContent] = useState('');
   const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'edit' | 'diff' | 'raw'
-  const [diffData, setDiffData] = useState(null);
-  const [discardTarget, setDiscardTarget] = useState(null);
-  const [discardError, setDiscardError] = useState('');
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleteError, setDeleteError] = useState('');
-  const [fileMenu, setFileMenu] = useState(null); // { type, path, x, y }
-  const [renameTarget, setRenameTarget] = useState(null); // { type, oldPath, parentDir, newName }
-  const [renameError, setRenameError] = useState('');
-  const [moveTarget, setMoveTarget] = useState(null); // { type, oldPath, name, destFolder }
-  const [moveError, setMoveError] = useState('');
-  const [newNoteOpen, setNewNoteOpen] = useState(false);
-  const [newNoteTitle, setNewNoteTitle] = useState('');
-  const [newNoteFolder, setNewNoteFolder] = useState('');
-  const [newNoteError, setNewNoteError] = useState('');
-  const [newFolderOpen, setNewFolderOpen] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [newFolderParent, setNewFolderParent] = useState('');
-  const [newFolderError, setNewFolderError] = useState('');
-  const uploadInputRef = useRef(null);
-  const uploadDirRef = useRef('');
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [draftContent, setDraftContent] = useState('');
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('files'); // 'files' | 'changes'
-  const [gitChanges, setGitChanges] = useState([]);
-  const [changesSort, setChangesSort] = useState('path'); // 'path' | 'recent' | 'status'
-  const [commitOpen, setCommitOpen] = useState(false);
-  const [commitMessage, setCommitMessage] = useState('');
-  const [commitPush, setCommitPush] = useState(false);
-  const [commitSelected, setCommitSelected] = useState(() => new Set());
-  const [commitBusy, setCommitBusy] = useState(false);
-  const [commitStatus, setCommitStatus] = useState(null);
   const [filter, setFilter] = useState('');
+  const {
+    diffData,
+    setDiffData,
+    discardTarget,
+    setDiscardTarget,
+    discardError,
+    gitChanges,
+    setGitChanges,
+    changesSort,
+    setChangesSort,
+    sortedChanges,
+    commitOpen,
+    setCommitOpen,
+    commitMessage,
+    setCommitMessage,
+    commitPush,
+    setCommitPush,
+    commitSelected,
+    setCommitSelected,
+    commitBusy,
+    commitStatus,
+    loadDiff,
+    requestDiscard,
+    confirmDiscard,
+    openCommitDialog,
+    handleCommitSubmit
+  } = useGitOps({ activePath, filter, fetchTree, openFile });
   const [collapsed, setCollapsed] = useState(() => new Set(settings.autoCollapsed));
   const seededAutoCollapseRef = useRef(false);
   const [live, setLive] = useState(true);
@@ -97,7 +98,6 @@ export default function App() {
   const [outlineDrawerOpen, setOutlineDrawerOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const [authState, setAuthState] = useState({
     checked: false,
     required: false,
@@ -108,46 +108,49 @@ export default function App() {
   const [vaultsInfo, setVaultsInfo] = useState({ activeVault: 'default', vaults: [] });
   const [vaultRootName, setVaultRootName] = useState('');
   const [vaultTick, setVaultTick] = useState(0);
-  const [switcherTab, setSwitcherTab] = useState('recent'); // 'recent' | 'alpha'
-  const [switcherQuery, setSwitcherQuery] = useState('');
-  const [switcherIdx, setSwitcherIdx] = useState(0);
   const [pendingJumpQuery, setPendingJumpQuery] = useState('');
-  const [contentHits, setContentHits] = useState([]);
-  const [pagedFiles, setPagedFiles] = useState({ items: [], hasMore: false });
   const [reloadTick, setReloadTick] = useState(0);
   const [readOnly, setReadOnly] = useState(false);
-  const [toast, setToast] = useState(null);
-  const toastTimerRef = useRef(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    try {
-      const v = Number(localStorage.getItem('pagedex-sidebar-width'));
-      return Number.isFinite(v) && v >= 200 && v <= 480 ? v : 270;
-    } catch {
-      return 270;
-    }
+  const {
+    switcherOpen,
+    setSwitcherOpen,
+    switcherTab,
+    setSwitcherTab,
+    switcherQuery,
+    setSwitcherQuery,
+    switcherIdx,
+    setSwitcherIdx,
+    switcherInputRef,
+    isLargeVault,
+    pagedFiles,
+    loadMorePagedFiles,
+    switcherData,
+    switcherItems,
+    openSwitcher
+  } = useQuickSwitcher({
+    totalFiles,
+    fileStats,
+    flatFiles,
+    hiddenFolders: settings.hiddenFolders,
+    tabs,
+    activeTabId
   });
-  const [outlineWidth, setOutlineWidth] = useState(() => {
-    try {
-      const v = Number(localStorage.getItem('pagedex-outline-width'));
-      return Number.isFinite(v) && v >= 200 && v <= 440 ? v : 240;
-    } catch {
-      return 240;
-    }
-  });
-  const [pinned, setPinned] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('pagedex-pinned') || '[]');
-      return Array.isArray(saved)
-        ? saved.filter((item) => item && typeof item.path === 'string' && (item.type === 'file' || item.type === 'dir'))
-        : [];
-    } catch {
-      return [];
-    }
-  });
+  const {
+    toast,
+    showToast,
+    sidebarWidth,
+    outlineWidth,
+    pinned,
+    setPinned,
+    isPinned,
+    togglePin,
+    reorderPinned,
+    startResizeSidebar,
+    startResizeOutline
+  } = useLayoutState();
 
   const searchRef = useRef(null);
-  const switcherInputRef = useRef(null);
   const scrollRef = useRef(null);
   const activePathRef = useRef(activePath);
   const activeTabIdRef = useRef(activeTab?.id || activeTabId);
@@ -162,88 +165,6 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', settings.theme);
     localStorage.setItem('vault-settings', JSON.stringify(settings));
   }, [settings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('pagedex-pinned', JSON.stringify(pinned));
-    } catch {
-      // Ignore storage quota / restricted context errors
-    }
-  }, [pinned]);
-
-  function showToast(msg) {
-    setToast(msg);
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    toastTimerRef.current = setTimeout(() => setToast(null), 1800);
-  }
-
-  function isPinned(itemPath) {
-    return pinned.some((item) => item.path === itemPath);
-  }
-
-  function togglePin(itemPath, type) {
-    const already = pinned.some((item) => item.path === itemPath);
-    const label = itemPath.split('/').pop() || itemPath;
-    setPinned((prev) => {
-      if (prev.some((item) => item.path === itemPath)) {
-        return prev.filter((item) => item.path !== itemPath);
-      }
-      return [...prev, { path: itemPath, type }];
-    });
-    showToast(already ? `Unpinned ${label}` : `Pinned ${label}`);
-  }
-
-  function reorderPinned(fromPath, toPath) {
-    setPinned((prev) => {
-      const fromIdx = prev.findIndex((item) => item.path === fromPath);
-      const toIdx = prev.findIndex((item) => item.path === toPath);
-      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev;
-      const next = [...prev];
-      const [moved] = next.splice(fromIdx, 1);
-      next.splice(toIdx, 0, moved);
-      return next;
-    });
-  }
-
-  function startResizeSidebar(e) {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = sidebarWidth;
-    let latestW = startW;
-    const onMove = (ev) => {
-      latestW = Math.min(480, Math.max(200, Math.round(startW + (ev.clientX - startX))));
-      setSidebarWidth(latestW);
-    };
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        localStorage.setItem('pagedex-sidebar-width', String(latestW));
-      } catch {}
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }
-
-  function startResizeOutline(e) {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = outlineWidth;
-    let latestW = startW;
-    const onMove = (ev) => {
-      latestW = Math.min(440, Math.max(200, Math.round(startW - (ev.clientX - startX))));
-      setOutlineWidth(latestW);
-    };
-    const onUp = () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      try {
-        localStorage.setItem('pagedex-outline-width', String(latestW));
-      } catch {}
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-  }
 
   useEffect(() => {
     const cycleTab = (delta) => {
@@ -315,33 +236,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [switcherOpen, readOnly]);
 
-  function openSwitcher() {
-    setSwitcherQuery('');
-    setSwitcherIdx(0);
-    setContentHits([]);
-    setSwitcherOpen(true);
-    setTimeout(() => switcherInputRef.current?.focus(), 40);
-  }
-
-  useEffect(() => {
-    if (!switcherOpen) return;
-    const q = switcherQuery.trim();
-    if (!q) {
-      setContentHits([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        setContentHits(data.results || []);
-      } catch {
-        setContentHits([]);
-      }
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [switcherQuery, switcherOpen]);
-
   const hiddenSet = useMemo(
     () => new Set(settings.hiddenFolders.map((d) => d.toLowerCase())),
     [settings.hiddenFolders]
@@ -361,150 +255,6 @@ export default function App() {
     walk(tree);
     return out;
   }, [tree, hiddenSet]);
-
-  const isLargeVault = totalFiles > fileStats.length;
-
-  useEffect(() => {
-    if (!switcherOpen || !isLargeVault || switcherTab === 'tabs') {
-      setPagedFiles({ items: [], hasMore: false });
-      return;
-    }
-    const sort = switcherTab === 'alpha' ? 'name' : 'mtime';
-    const q = switcherQuery.trim();
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/v1/files?sort=${sort}&offset=0&limit=100&q=${encodeURIComponent(q)}`);
-        const data = await res.json();
-        setPagedFiles({ items: data.items || [], hasMore: Boolean(data.hasMore) });
-      } catch {
-        setPagedFiles({ items: [], hasMore: false });
-      }
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [switcherOpen, isLargeVault, switcherTab, switcherQuery]);
-
-  async function loadMorePagedFiles() {
-    const sort = switcherTab === 'alpha' ? 'name' : 'mtime';
-    const q = switcherQuery.trim();
-    const offset = pagedFiles.items.length;
-    const res = await fetch(`/api/v1/files?sort=${sort}&offset=${offset}&limit=100&q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    setPagedFiles((prev) => ({
-      items: [...prev.items, ...(data.items || [])],
-      hasMore: Boolean(data.hasMore)
-    }));
-  }
-
-  const switcherData = useMemo(() => {
-    const q = switcherQuery.trim().toLowerCase();
-    if (switcherTab === 'tabs') {
-      const tabItems = tabs
-        .filter((t) => {
-          if (!q) return true;
-          const haystack = `${t.path || ''} ${t.title || ''}`.toLowerCase();
-          return haystack.includes(q);
-        })
-        .map((t) => ({
-          tabId: t.id,
-          tab: t,
-          path: t.path || 'New tab',
-          mtimeMs: 0,
-          snippet: t.id === activeTabId ? 'Active tab' : ''
-        }));
-      return { groups: [{ label: null, items: tabItems }], items: tabItems };
-    }
-    const isExcluded = (p) => {
-      const lower = p.toLowerCase();
-      return settings.hiddenFolders.some((dir) => lower.startsWith(dir.toLowerCase() + '/'));
-    };
-
-    const baseList = isLargeVault
-      ? pagedFiles.items
-      : fileStats.length > 0
-        ? fileStats
-        : flatFiles.map((p) => ({ path: p, mtimeMs: 0 }));
-    const mtimeMap = new Map(baseList.map((f) => [f.path, f.mtimeMs || 0]));
-
-    let candidates;
-    if (!q) {
-      candidates = baseList
-        .filter((f) => !isExcluded(f.path))
-        .map((f) => ({ path: f.path, mtimeMs: f.mtimeMs || 0, snippet: '' }));
-    } else {
-      const pathMatches = baseList
-        .filter((f) => !isExcluded(f.path) && f.path.toLowerCase().includes(q))
-        .map((f) => ({ path: f.path, mtimeMs: f.mtimeMs || 0, snippet: '' }));
-      const seen = new Set(pathMatches.map((x) => x.path));
-      for (const hit of contentHits) {
-        if (!isExcluded(hit.path) && !seen.has(hit.path)) {
-          seen.add(hit.path);
-          pathMatches.push({
-            path: hit.path,
-            mtimeMs: hit.mtimeMs ?? mtimeMap.get(hit.path) ?? 0,
-            snippet: hit.snippet || ''
-          });
-        }
-      }
-      candidates = pathMatches;
-    }
-
-    const maxVisible = isLargeVault ? candidates.length : 100;
-    if (switcherTab === 'alpha') {
-      const sorted = [...candidates]
-        .sort((a, b) => {
-          const nameA = a.path.split('/').pop().toLowerCase();
-          const nameB = b.path.split('/').pop().toLowerCase();
-          return nameA.localeCompare(nameB) || a.path.localeCompare(b.path);
-        })
-        .slice(0, maxVisible);
-      return { groups: [{ label: null, items: sorted }], items: sorted };
-    }
-
-    const sorted = [...candidates].sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0)).slice(0, maxVisible);
-    const now = Date.now();
-    const startOfToday = new Date(now);
-    startOfToday.setHours(0, 0, 0, 0);
-    const todayMs = startOfToday.getTime();
-    const dayMs = 86400000;
-
-    const buckets = new Map([
-      ['Today', []],
-      ['Yesterday', []],
-      ['Last 7 days', []],
-      ['Last 30 days', []],
-      ['Older', []]
-    ]);
-    for (const item of sorted) {
-      const m = item.mtimeMs || 0;
-      if (m >= todayMs) buckets.get('Today').push(item);
-      else if (m >= todayMs - dayMs) buckets.get('Yesterday').push(item);
-      else if (m >= todayMs - 7 * dayMs) buckets.get('Last 7 days').push(item);
-      else if (m >= todayMs - 30 * dayMs) buckets.get('Last 30 days').push(item);
-      else buckets.get('Older').push(item);
-    }
-    const groups = [];
-    const flat = [];
-    for (const [label, list] of buckets) {
-      if (list.length > 0) {
-        groups.push({ label, items: list });
-        flat.push(...list);
-      }
-    }
-    return { groups, items: flat };
-  }, [
-    switcherQuery,
-    switcherTab,
-    isLargeVault,
-    pagedFiles.items,
-    fileStats,
-    flatFiles,
-    contentHits,
-    settings.hiddenFolders,
-    tabs,
-    activeTabId
-  ]);
-
-  const switcherItems = switcherData.items;
 
   async function fetchTree({ force = false } = {}) {
     const treeUrl = force ? '/api/v1/tree?limit=10000&refresh=1' : '/api/v1/tree?limit=10000';
@@ -677,286 +427,66 @@ export default function App() {
     if (viewMode === 'diff') loadDiff(relPath);
   }
 
-  async function loadDiff(relPath = activePath) {
-    if (!relPath) return;
-    const res = await fetch(`/api/v1/git/diff?path=${encodeURIComponent(relPath)}`);
-    if (res.ok) {
-      setDiffData(await res.json());
-    } else {
-      setDiffData(null);
-    }
-  }
-
-  function requestDiscard({ path: targetPath = activePath, hunkIndex, lineIndex, previewText } = {}) {
-    if (!targetPath) return;
-    setDiscardError('');
-    setDiscardTarget({ path: targetPath, hunkIndex, lineIndex, previewText });
-  }
-
-  async function confirmDiscard() {
-    if (!discardTarget?.path) return;
-    const { path: targetPath, hunkIndex, lineIndex } = discardTarget;
-    const res = await fetch('/api/v1/git/discard', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: targetPath, hunkIndex, lineIndex })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      setDiscardTarget(null);
-      setDiscardError('');
-      await fetchTree();
-      if (targetPath === activePath) {
-        await openFile(activePath, true);
-        await loadDiff(activePath);
-      }
-    } else {
-      setDiscardError(data.error || 'Failed to discard');
-    }
-  }
-
-  async function confirmDeleteFile() {
-    if (!deleteTarget) return;
-    setDeleteError('');
-    const isDir = typeof deleteTarget === 'object' && deleteTarget.type === 'dir';
-    const targetPath = typeof deleteTarget === 'string' ? deleteTarget : deleteTarget.path;
-    const endpoint = isDir ? '/api/v1/dir' : '/api/v1/file';
-    const res = await fetch(`${endpoint}?path=${encodeURIComponent(targetPath)}`, {
-      method: 'DELETE'
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      const deleted = targetPath;
-      const matchesDeleted = (p) =>
-        Boolean(p) && (p === deleted || (isDir && p.startsWith(`${deleted}/`)));
-      setDeleteTarget(null);
-      if (matchesDeleted(localStorage.getItem('vault-last-path'))) {
-        localStorage.removeItem('vault-last-path');
-      }
-      const pruneNodes = (nodes) =>
-        nodes
-          .filter((n) => !matchesDeleted(n.path))
-          .map((n) => (n.type === 'dir' ? { ...n, children: pruneNodes(n.children || []) } : n));
-      setTree((prev) => pruneNodes(prev));
-      setFlatFiles((prev) => prev.filter((f) => !matchesDeleted(f)));
-      setFileStats((prev) => prev.filter((f) => !matchesDeleted(f.path)));
-      setGitChanges((prev) => prev.filter((c) => !matchesDeleted(c.path)));
-      setPinned((prev) => prev.filter((p) => !matchesDeleted(p.path)));
-
-      if (matchesDeleted(activePath)) {
-        setViewMode('preview');
-        const remaining = tabs.filter((t) => !matchesDeleted(t.path));
-        if (remaining.length > 0) {
-          const nextTab = remaining[remaining.length - 1];
-          setTabs(remaining);
-          setActiveTabId(nextTab.id);
-          if (nextTab.path) {
-            await openFile(nextTab.path, false, nextTab.id);
-          } else {
-            setContent('');
-            location.hash = '';
-          }
-        } else {
-          const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
-          setTabs([fresh]);
-          setActiveTabId(fresh.id);
-          setContent('');
-          setDirty(false);
-          location.hash = '';
-        }
-      } else {
-        setTabs((prev) => prev.filter((t) => !matchesDeleted(t.path)));
-      }
-      await fetchTree();
-    } else {
-      setDeleteError(data.error || `Failed to delete ${isDir ? 'folder' : 'file'} (${res.status})`);
-    }
-  }
-
-  async function handleUploadToDir(fileList) {
-    const files = Array.from(fileList || []);
-    if (!files.length) return;
-    const dir = uploadDirRef.current || '';
-    const form = new FormData();
-    form.append('dir', dir);
-    for (const f of files) form.append('files', f);
-    const res = await fetch('/api/v1/file/upload', { method: 'POST', body: form });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) {
-      await fetchTree();
-      if (data.uploaded?.length === 1) {
-        const p = data.uploaded[0].path;
-        if (/\.(md|markdown|txt|png|jpe?g|gif|webp|svg|ico)$/i.test(p)) {
-          openFile(p);
-        }
-      }
-    }
-  }
-
-  async function performRenameOrMove(type, oldPath, cleanNew, onError) {
-    const isDir = type === 'dir';
-    const endpoint = isDir ? '/api/v1/dir/rename' : '/api/v1/file/rename';
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ oldPath, newPath: cleanNew })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      onError(data.error || 'Operation failed');
-      return false;
-    }
-    await fetchTree();
-    setTabs((prev) =>
-      prev.map((t) => {
-        if (!t.path) return t;
-        if (isDir && t.path.startsWith(`${oldPath}/`)) {
-          const nextPath = `${cleanNew}${t.path.slice(oldPath.length)}`;
-          return { ...t, path: nextPath, title: baseTitle(nextPath) };
-        }
-        if (!isDir && t.path === oldPath) {
-          return { ...t, path: cleanNew, title: baseTitle(cleanNew) };
-        }
-        return t;
-      })
-    );
-    setPinned((prev) =>
-      prev.map((item) => {
-        if (isDir) {
-          if (item.path === oldPath) return { ...item, path: cleanNew };
-          if (item.path.startsWith(`${oldPath}/`)) {
-            return { ...item, path: `${cleanNew}${item.path.slice(oldPath.length)}` };
-          }
-        } else if (item.path === oldPath) {
-          return { ...item, path: cleanNew };
-        }
-        return item;
-      })
-    );
-    if (isDir) {
-      if (activePath.startsWith(`${oldPath}/`)) {
-        openFile(`${cleanNew}${activePath.slice(oldPath.length)}`);
-      }
-    } else if (oldPath === activePath) {
-      openFile(cleanNew);
-    }
-    return true;
-  }
-
-  async function confirmRenameFile() {
-    if (!renameTarget?.oldPath) return;
-    const cleanName = renameTarget.newName.trim();
-    if (!cleanName) {
-      setRenameError('Please enter a name');
-      return;
-    }
-    if (cleanName.includes('/')) {
-      setRenameError('Name cannot contain / (use Move to change folder)');
-      return;
-    }
-    setRenameError('');
-    const cleanNew = renameTarget.parentDir ? `${renameTarget.parentDir}/${cleanName}` : cleanName;
-    if (cleanNew === renameTarget.oldPath) {
-      setRenameTarget(null);
-      return;
-    }
-    const ok = await performRenameOrMove(renameTarget.type, renameTarget.oldPath, cleanNew, setRenameError);
-    if (ok) setRenameTarget(null);
-  }
-
-  async function confirmMoveItem() {
-    if (!moveTarget?.oldPath) return;
-    setMoveError('');
-    const cleanDest = (moveTarget.destFolder || '').trim().replace(/^\/+|\/+$/g, '');
-    const cleanNew = cleanDest ? `${cleanDest}/${moveTarget.name}` : moveTarget.name;
-    if (cleanNew === moveTarget.oldPath) {
-      setMoveTarget(null);
-      return;
-    }
-    const ok = await performRenameOrMove(moveTarget.type, moveTarget.oldPath, cleanNew, setMoveError);
-    if (ok) setMoveTarget(null);
-  }
-
-  function openRowMenu(targetPath, rect, type = 'file') {
-    const menuW = window.innerWidth <= 768 ? 215 : 175;
-    const menuH = window.innerWidth <= 768 ? 360 : 300;
-    const x = Math.min(rect.right - menuW, window.innerWidth - (menuW + 12));
-    const y = Math.min(rect.bottom + 4, window.innerHeight - menuH);
-    setFileMenu({ type, path: targetPath, x: Math.max(8, x), y: Math.max(8, y) });
-  }
-
-  function openNewNoteDialog(defaultFolder = null) {
-    const fallbackFolder = activePath.includes('/') ? activePath.split('/').slice(0, -1).join('/') : '';
-    const resolved = typeof defaultFolder === 'string' ? defaultFolder : fallbackFolder;
-    setNewNoteTitle('');
-    setNewNoteFolder(resolved.replace(/^\/+|\/+$/g, ''));
-    setNewNoteError('');
-    setNewNoteOpen(true);
-  }
-
-  async function confirmNewNote() {
-    const relPath = buildNewNotePath(newNoteTitle, newNoteFolder);
-    if (!relPath) {
-      setNewNoteError('Please enter a note title');
-      return;
-    }
-    if (flatFiles.includes(relPath)) {
-      setNewNoteError(`Already exists: ${relPath}`);
-      return;
-    }
-    setNewNoteError('');
-    const heading = newNoteTitle.trim().replace(/\.md$/i, '');
-    const res = await fetch('/api/v1/file', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: relPath, content: `# ${heading}\n\n` })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.error) {
-      setNewNoteError(data.error || 'Failed to create note');
-      return;
-    }
-    setNewNoteOpen(false);
-    await fetchTree();
-    await openInNewTab(relPath, 'preview');
-  }
-
-  function openNewFolderDialog(defaultFolder = null) {
-    const fallbackFolder = activePath.includes('/') ? activePath.split('/').slice(0, -1).join('/') : '';
-    const resolved = typeof defaultFolder === 'string' ? defaultFolder : fallbackFolder;
-    setNewFolderName('');
-    setNewFolderParent(resolved.replace(/^\/+|\/+$/g, ''));
-    setNewFolderError('');
-    setNewFolderOpen(true);
-  }
-
-  async function confirmNewFolder() {
-    const relPath = buildNewFolderPath(newFolderName, newFolderParent);
-    if (!relPath) {
-      setNewFolderError('Please enter a folder name');
-      return;
-    }
-    setNewFolderError('');
-    const res = await fetch('/api/v1/dir', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: relPath })
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.error) {
-      setNewFolderError(data.error || 'Failed to create folder');
-      return;
-    }
-    setNewFolderOpen(false);
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      if (newFolderParent) next.delete(newFolderParent);
-      next.delete(relPath);
-      return next;
-    });
-    await fetchTree();
-    showToast(`Created folder ${relPath}`);
-  }
+  const {
+    deleteTarget,
+    setDeleteTarget,
+    deleteError,
+    setDeleteError,
+    fileMenu,
+    setFileMenu,
+    renameTarget,
+    setRenameTarget,
+    renameError,
+    setRenameError,
+    moveTarget,
+    setMoveTarget,
+    moveError,
+    setMoveError,
+    newNoteOpen,
+    setNewNoteOpen,
+    newNoteTitle,
+    setNewNoteTitle,
+    newNoteFolder,
+    setNewNoteFolder,
+    newNoteError,
+    newFolderOpen,
+    setNewFolderOpen,
+    newFolderName,
+    setNewFolderName,
+    newFolderParent,
+    setNewFolderParent,
+    newFolderError,
+    uploadInputRef,
+    uploadDirRef,
+    confirmDeleteFile,
+    handleUploadToDir,
+    confirmRenameFile,
+    confirmMoveItem,
+    openRowMenu,
+    openNewNoteDialog,
+    confirmNewNote,
+    openNewFolderDialog,
+    confirmNewFolder
+  } = useFileCrud({
+    activePath,
+    flatFiles,
+    tabs,
+    setTabs,
+    setActiveTabId,
+    setContent,
+    setDirty,
+    setViewMode,
+    setTree,
+    setFlatFiles,
+    setFileStats,
+    setGitChanges,
+    setPinned,
+    setCollapsed,
+    fetchTree,
+    openFile,
+    openInNewTab,
+    showToast
+  });
 
   useEffect(() => {
     fetch('/api/v1/auth/status')
@@ -1194,54 +724,6 @@ export default function App() {
       else next.add(dirPath);
       return next;
     });
-  }
-
-  const sortedChanges = useMemo(() => {
-    const filtered = gitChanges.filter((c) => !filter || c.path.toLowerCase().includes(filter));
-    const copy = [...filtered];
-    if (changesSort === 'recent') {
-      copy.sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0) || a.path.localeCompare(b.path));
-    } else if (changesSort === 'status') {
-      copy.sort((a, b) => a.status.localeCompare(b.status) || a.path.localeCompare(b.path));
-    } else {
-      copy.sort((a, b) => a.path.localeCompare(b.path));
-    }
-    return copy;
-  }, [gitChanges, filter, changesSort]);
-
-  function openCommitDialog() {
-    setCommitSelected(new Set(gitChanges.map((c) => c.path)));
-    setCommitMessage('');
-    setCommitStatus(null);
-    setCommitOpen(true);
-  }
-
-  async function handleCommitSubmit() {
-    if (!commitMessage.trim()) return;
-    setCommitBusy(true);
-    setCommitStatus(null);
-    try {
-      const res = await fetch('/api/v1/git/commit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: commitMessage.trim(),
-          files: Array.from(commitSelected),
-          push: commitPush
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setCommitStatus({ ok: false, text: data.error || 'Commit failed' });
-      } else {
-        setCommitStatus({ ok: true, text: data.output || 'Committed successfully' });
-        await fetchTree();
-      }
-    } catch (err) {
-      setCommitStatus({ ok: false, text: err.message });
-    } finally {
-      setCommitBusy(false);
-    }
   }
 
   const currentBacklinks = backlinks[activePath] || [];
