@@ -228,10 +228,14 @@ function serveFileResponse(c, full, contentType, { isDownload = false, extraHead
 
   app.delete('/api/v1/dir', (c) => {
     const rel = c.req.query('path') || '';
-    const result = deleteDir(rel);
-    if (!result) return c.json({ error: 'Not found or protected path' }, 404);
-    syncIndex();
-    return c.json(result);
+    try {
+      const result = deleteDir(rel);
+      if (!result) return c.json({ error: 'Not found or protected path' }, 404);
+      syncIndex();
+      return c.json(result);
+    } catch (err) {
+      return c.json({ error: err?.message || 'Failed to delete folder' }, 500);
+    }
   });
 
   app.post('/api/v1/dir', async (c) => {

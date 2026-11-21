@@ -757,7 +757,7 @@ export default function App() {
       }
       await fetchTree();
     } else {
-      setDeleteError(data.error || `Failed to delete ${isDir ? 'folder' : 'file'}`);
+      setDeleteError(data.error || `Failed to delete ${isDir ? 'folder' : 'file'} (${res.status})`);
     }
   }
 
