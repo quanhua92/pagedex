@@ -17,7 +17,7 @@ Run before committing:
 
 ```bash
 pnpm build   # Verifies Vite client bundle & dist/ output
-pnpm test    # Runs test/api-mcp.test.js (binds local ports 4591/4592)
+pnpm test    # Runs test/*.test.js (uses ephemeral local ports)
 pnpm smoke   # Optional: runs against live :4321 server
 ```
 

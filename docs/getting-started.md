@@ -49,13 +49,14 @@ Override the cache location with:
 ![Desktop Preview](./images/desktop-preview.png)
 
 - **View Modes (top-right `⋮` menu):**
-  - **Preview** — rendered Markdown (with Mermaid diagrams), sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
-  - **Edit** — lazy-loaded Tiptap WYSIWYG editor for Markdown (`.md`, `.markdown`, `.mdx`)
-  - **Raw** — editable source (`RawEditor`) for Markdown and all non-binary text/code files (`.txt`, `.json`, `.js`, `.html`, `.csv`, `.svg`, etc.)
+  - **Preview** — rendered Markdown (with Mermaid diagrams & KaTeX math), read-only `.ipynb` notebooks, sandboxed HTML, PDF, audio/video, CSV/TSV tables, or images
+  - **Edit** — lazy-loaded Tiptap WYSIWYG editor for Markdown (`.md`, `.markdown`, `.mdx`) with `[[` wikilink autocomplete
+  - **Raw** — editable source (`RawEditor`) for Markdown and all non-binary text/code files (`.txt`, `.json`, `.js`, `.html`, `.csv`, `.svg`, etc.); read-only JSON view for `.ipynb`
   - **Diff** — line-by-line Git diff with per-line, per-hunk, and per-file discard
   - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
   - **Print** — triggers `window.print()` with an A4 multi-page stylesheet (hides UI chrome and renders Mermaid in light theme; uncheck **Headers and footers** in the browser print dialog to hide the page title/URL)
-- **Wikilinks & Backlinks:** `[[note]]` and relative links resolve across the folder, and the outline panel lists incoming backlinks.
+- **Wikilinks, Links & Backlinks:** `[[...]]` links from Markdown notes resolve to **any** file type (`.md`, `.py`, `.ipynb`, media, etc.), and the right panel lists both outgoing **Links** and incoming **Backlinks**.
+- **Sidebar & Settings:** Supports folder deletion (with non-empty folder warning), manual refresh (`?refresh=1`), **Auto-expand folder levels** (default `2`), and auto-collapsed/hidden folder lists.
 - **Git Integration:** Browse changed files in the Changes tab, inspect hunks, discard changes, or commit & push directly from the UI.
 - **Live Reload (SSE):** External edits on disk (e.g. from your editor or an AI agent via MCP) refresh open files and the sidebar tree automatically via `/api/v1/events`.
 - **Mobile Friendly:** Edge-swipe gestures open the left file drawer and right outline drawer, with long-press context actions in the tree.

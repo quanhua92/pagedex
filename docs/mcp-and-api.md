@@ -39,7 +39,7 @@ See the full **[MCP Server Guide](./MCP.md)** for CLI access control (`--mcp`, `
 | Method & Path | Description |
 |---|---|
 | `GET /api/v1/health` | Health check and resolved `root` path |
-| `GET /api/v1/tree` | Full directory tree, `flatFiles`, `fileStats`, `backlinks` (`?sort=mtime\|name`, `?limit=`) |
+| `GET /api/v1/tree` | Full directory tree, `flatFiles`, `fileStats`, `backlinks` (`?sort=mtime\|name`, `?limit=`, `?refresh=1`) |
 | `GET /api/v1/files` | Paginated file listing (`?sort=`, `?offset=`, `?limit=`, `?q=`) |
 | `GET /api/v1/search` | Full-text search (`?q=`, `?limit=`) |
 | `GET /api/v1/file` | Read/stream a file (`?path=`, optional `?download=1`, supports HTTP `Range`) |
@@ -47,7 +47,9 @@ See the full **[MCP Server Guide](./MCP.md)** for CLI access control (`--mcp`, `
 | `DELETE /api/v1/file` | Delete file (`?path=`) |
 | `POST /api/v1/file/upload` | Multipart file upload into a target folder |
 | `POST /api/v1/file/rename` | Rename/move a file |
+| `POST /api/v1/dir` | Create a directory (`{ path }`) |
 | `POST /api/v1/dir/rename` | Rename/move a directory |
+| `DELETE /api/v1/dir` | Delete a directory recursively (`?path=`) |
 | `GET /api/v1/changes` | Git working-tree changes |
 | `GET /api/v1/git/diff` | Parsed diff hunks for a file (`?path=`) |
 | `POST /api/v1/git/discard` | Discard line, hunk, or entire file changes |

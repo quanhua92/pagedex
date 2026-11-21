@@ -10,6 +10,7 @@
 | **Audio** | `.mp3`, `.wav`, `.m4a`, `.ogg` | `<audio controls>` with HTTP `Range` seeking | — | No |
 | **Video** | `.mp4`, `.webm`, `.mov` | `<video controls>` with HTTP `Range` seeking | — | No |
 | **Tables** | `.csv`, `.tsv` | Styled HTML `<table>` | Editable (`RawEditor`), Diff | Yes |
+| **Notebooks** | `.ipynb` | Read-only Jupyter notebook (`@jupyter-kit/react`) | Read-only JSON (`Raw`), Diff | Yes |
 | **Images** | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.ico` | Inline `<img>` | — | No |
 | **SVG** | `.svg` | Inline `<img>` | Editable XML (`RawEditor`), Diff | No |
 | **Text / Code** | `.txt`, `.js`, `.ts`, `.py`, `.json`, `.yaml`, etc. | Syntax-highlighted raw view | Editable (`RawEditor`), Diff | Yes (≤ 2 MB) |
