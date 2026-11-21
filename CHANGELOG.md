@@ -2,6 +2,17 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.16] - 2026-11-21
+
+### Features
+
+- **ui:** auto-collapse .ipynb_checkpoints folders (dff5861)
+- **ui:** move vault switcher dropdown to sidebar footer (c94c1f4)
+
+### Bug Fixes
+
+- **ui:** truncate sidebar folder names with ellipsis (033a8ec)
+
 ## [0.1.15] - 2026-11-21
 
 ### Features
