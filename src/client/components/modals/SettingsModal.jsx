@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DEFAULT_SETTINGS } from '../../lib/settings.js';
+import { computeCollapsedDirs, DEFAULT_SETTINGS } from '../../lib/settings.js';
 
 function parseFolderList(raw) {
   return raw
@@ -15,7 +15,8 @@ export default function SettingsModal({
   setSettingsTab,
   settings,
   setSettings,
-  setCollapsed
+  setCollapsed,
+  tree = []
 }) {
   const [autoCollapsedText, setAutoCollapsedText] = useState(() =>
     settings.autoCollapsed.join(', ')
@@ -162,6 +163,23 @@ export default function SettingsModal({
           {settingsTab === 'files' && (
             <>
               <div className="field">
+                <label>Auto-expand folder levels</label>
+                <select
+                  value={settings.autoExpandDepth}
+                  onChange={(e) => {
+                    const depth = Number(e.target.value);
+                    setSettings((s) => ({ ...s, autoExpandDepth: depth }));
+                    setCollapsed(computeCollapsedDirs(tree, settings.autoCollapsed, depth));
+                  }}
+                >
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <option key={n} value={n}>
+                      {n === 0 ? '0 (collapse all)' : n === 10 ? '10 (all)' : `${n} level${n === 1 ? '' : 's'}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
                 <label>Auto-collapsed folders (comma-separated)</label>
                 <input
                   type="text"
@@ -172,7 +190,7 @@ export default function SettingsModal({
                     setAutoCollapsedText(raw);
                     const list = parseFolderList(raw);
                     setSettings((s) => ({ ...s, autoCollapsed: list }));
-                    setCollapsed(new Set(list));
+                    setCollapsed(computeCollapsedDirs(tree, list, settings.autoExpandDepth));
                   }}
                   onBlur={() => setAutoCollapsedText(settings.autoCollapsed.join(', '))}
                 />
@@ -275,7 +293,13 @@ export default function SettingsModal({
             className="btn"
             onClick={() => {
               setSettings(DEFAULT_SETTINGS);
-              setCollapsed(new Set(DEFAULT_SETTINGS.autoCollapsed));
+              setCollapsed(
+                computeCollapsedDirs(
+                  tree,
+                  DEFAULT_SETTINGS.autoCollapsed,
+                  DEFAULT_SETTINGS.autoExpandDepth
+                )
+              );
               setAutoCollapsedText(DEFAULT_SETTINGS.autoCollapsed.join(', '));
               setHiddenFoldersText(DEFAULT_SETTINGS.hiddenFolders.join(', '));
             }}

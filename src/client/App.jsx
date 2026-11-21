@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { loadSettings, resolveStartupPath } from './lib/settings.js';
+import { computeCollapsedDirs, loadSettings, resolveStartupPath } from './lib/settings.js';
 import {
   baseTitle,
   isAudioPath,
@@ -515,20 +515,7 @@ export default function App() {
     setTree(data.tree);
     if (!seededAutoCollapseRef.current && Array.isArray(data.tree)) {
       seededAutoCollapseRef.current = true;
-      const autoSet = new Set(settings.autoCollapsed);
-      const matched = [];
-      const walk = (nodes) => {
-        for (const n of nodes) {
-          if (n.type === 'dir') {
-            if (autoSet.has(n.path) || autoSet.has(n.name)) matched.push(n.path);
-            if (n.children?.length) walk(n.children);
-          }
-        }
-      };
-      walk(data.tree);
-      if (matched.length > 0) {
-        setCollapsed((prev) => new Set([...prev, ...matched]));
-      }
+      setCollapsed(computeCollapsedDirs(data.tree, settings.autoCollapsed, settings.autoExpandDepth));
     }
     setFlatFiles(data.flatFiles);
     setFileStats(data.fileStats || []);
@@ -1607,6 +1594,7 @@ export default function App() {
         settings={settings}
         setSettings={setSettings}
         setCollapsed={setCollapsed}
+        tree={tree}
       />
 
       {toast && (

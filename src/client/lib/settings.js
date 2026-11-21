@@ -8,8 +8,27 @@ export const DEFAULT_SETTINGS = {
   startupPath: 'README.md',
   showNewTabTitle: true,
   autoCollapsed: ['apps', 'backups', '.ipynb_checkpoints'],
+  autoExpandDepth: 2,
   hiddenFolders: []
 };
+
+export function computeCollapsedDirs(treeNodes, autoCollapsed = [], expandDepth = 2) {
+  const autoSet = new Set(autoCollapsed || []);
+  const maxDepth = Number.isInteger(expandDepth) && expandDepth >= 0 ? expandDepth : 2;
+  const out = new Set(autoCollapsed || []);
+  const walk = (nodes, depth) => {
+    for (const n of nodes || []) {
+      if (n.type === 'dir') {
+        if (autoSet.has(n.path) || autoSet.has(n.name) || depth >= maxDepth) {
+          out.add(n.path);
+        }
+        if (n.children?.length) walk(n.children, depth + 1);
+      }
+    }
+  };
+  walk(treeNodes, 1);
+  return out;
+}
 
 export function loadSettings() {
   try {
@@ -26,6 +45,10 @@ export function loadSettings() {
       outlinePosition: ['right', 'bottom', 'hidden'].includes(p.outlinePosition) ? p.outlinePosition : 'right',
       showNewTabTitle: typeof p.showNewTabTitle === 'boolean' ? p.showNewTabTitle : true,
       autoCollapsed: Array.isArray(p.autoCollapsed) ? p.autoCollapsed : DEFAULT_SETTINGS.autoCollapsed,
+      autoExpandDepth:
+        Number.isInteger(Number(p.autoExpandDepth)) && Number(p.autoExpandDepth) >= 0 && Number(p.autoExpandDepth) <= 10
+          ? Number(p.autoExpandDepth)
+          : DEFAULT_SETTINGS.autoExpandDepth,
       hiddenFolders: Array.isArray(p.hiddenFolders) ? p.hiddenFolders : []
     };
   } catch {
