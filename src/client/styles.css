@@ -191,6 +191,7 @@ html, body, #root {
   -webkit-touch-callout: none; user-select: none;
 }
 .tree-dir-btn { color: var(--muted); font-weight: 600; }
+.tree-label { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tree-dir-btn:hover, .tree-file-row:hover { background: var(--bg-hover); }
 .tree-file-row {
   display: flex; align-items: center; border-radius: 5px; gap: 2px;

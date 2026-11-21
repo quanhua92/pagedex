@@ -95,8 +95,8 @@ function TreeNode({ node, activePath, filter, collapsed, hiddenSet, onToggleDir,
               onToggleDir(node.path);
             }}
           >
-            {isCollapsed ? '▸ ' : '▾ '}
-            {node.name}
+            <span>{isCollapsed ? '▸' : '▾'}</span>
+            <span className="tree-label">{node.name}</span>
           </button>
           <button
             className="tree-row-more"
