@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Eye, LogOut, Moon, Pin, Plus, Sun } from 'lucide-react';
+import { Eye, LogOut, Moon, Pin, Plus, RefreshCw, Sun } from 'lucide-react';
 
 function findTreeNode(nodes, targetPath) {
   for (const node of nodes || []) {
@@ -210,12 +210,14 @@ export default function Sidebar({
   onLogout,
   vaults = [],
   activeVault = 'default',
-  onSelectVault
+  onSelectVault,
+  onRefreshTree
 }) {
   const [pinnedOpen, setPinnedOpen] = useState(true);
   const [pinnedCollapsed, setPinnedCollapsed] = useState(() => new Set());
   const [dragFromPath, setDragFromPath] = useState(null);
   const [dragOverPath, setDragOverPath] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   const handleSelectFile = (p, e) => {
     const newTab = Boolean(e && (e.metaKey || e.ctrlKey || e.button === 1));
     if (newTab && openInNewTab) {
@@ -267,6 +269,28 @@ export default function Sidebar({
           <span className={`pill${live ? '' : ' off'}`}>{live ? 'Live' : 'Reconnecting'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {onRefreshTree && (
+            <button
+              className="icon-btn"
+              aria-label="Refresh files"
+              title="Refresh files"
+              disabled={refreshing}
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  await onRefreshTree();
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+            >
+              <RefreshCw
+                size={14}
+                strokeWidth={1.9}
+                style={refreshing ? { animation: 'spin 0.8s linear infinite' } : undefined}
+              />
+            </button>
+          )}
           {authRequired && onLogout && (
             <button
               className="icon-btn"

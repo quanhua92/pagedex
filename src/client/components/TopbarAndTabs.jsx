@@ -155,7 +155,7 @@ export default function TopbarAndTabs({
                 <span>Preview</span>
                 {viewMode === 'preview' && <span className="more-item-check">✓</span>}
               </button>
-              {!readOnly && (
+              {!readOnly && isTextEditablePath(activePath) && (
                 <button
                   className={`more-item${viewMode === 'edit' ? ' active' : ''}`}
                   onClick={() => {

@@ -8,6 +8,7 @@ import {
   isHtmlPath,
   isImagePath,
   isMarkdownPath,
+  isNotebookPath,
   isTextEditablePath,
   isPdfPath,
   isSvgPath,
@@ -503,9 +504,10 @@ export default function App() {
 
   const switcherItems = switcherData.items;
 
-  async function fetchTree() {
+  async function fetchTree({ force = false } = {}) {
+    const treeUrl = force ? '/api/v1/tree?limit=10000&refresh=1' : '/api/v1/tree?limit=10000';
     const [treeRes, changesRes] = await Promise.all([
-      fetch('/api/v1/tree?limit=10000'),
+      fetch(treeUrl),
       fetch('/api/v1/changes')
     ]);
     const data = await treeRes.json();
@@ -1038,8 +1040,17 @@ export default function App() {
 
   useEffect(() => {
     if (!canAccessVault) return;
+    let openedOnce = false;
+    let lastFocusRefresh = Date.now();
     const es = new EventSource('/api/v1/events');
-    es.onopen = () => setLive(true);
+    es.onopen = () => {
+      setLive(true);
+      if (openedOnce) {
+        fetchTree({ force: true });
+      } else {
+        openedOnce = true;
+      }
+    };
     es.onmessage = async (ev) => {
       const msg = JSON.parse(ev.data);
       if (msg.type === 'reload') {
@@ -1052,7 +1063,17 @@ export default function App() {
       }
     };
     es.onerror = () => setLive(false);
-    return () => es.close();
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastFocusRefresh > 5000) {
+        lastFocusRefresh = Date.now();
+        fetchTree();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      es.close();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [canAccessVault, vaultTick]);
 
   async function saveActiveNote(markdown) {
@@ -1169,6 +1190,7 @@ export default function App() {
   const isVideo = isVideoPath(activePath);
   const isHtml = isHtmlPath(activePath);
   const isCsv = isCsvPath(activePath);
+  const isNotebook = isNotebookPath(activePath);
   const isBinaryDownload = isDownloadOnlyPath(activePath);
 
   const outlinePosition = settings.outlinePosition || 'right';
@@ -1289,6 +1311,7 @@ export default function App() {
           vaults={vaultsInfo.vaults}
           activeVault={vaultsInfo.activeVault}
           onSelectVault={selectVault}
+          onRefreshTree={() => fetchTree({ force: true })}
         />
 
         <main className="main">
@@ -1348,6 +1371,8 @@ export default function App() {
                 isVideo={isVideo}
                 isHtml={isHtml}
                 isCsv={isCsv}
+                isNotebook={isNotebook}
+                flatFiles={flatFiles}
                 reloadTick={reloadTick}
                 isBinaryDownload={isBinaryDownload}
                 viewMode={viewMode}

@@ -35,6 +35,10 @@ export function isCsvPath(p) {
   return /\.(csv|tsv)$/i.test(p);
 }
 
+export function isNotebookPath(p) {
+  return /\.ipynb$/i.test(p);
+}
+
 export function isDownloadOnlyPath(p) {
   return /\.(epub|zip|tar|gz|tgz|7z|rar|docx?|xlsx?|pptx?|odt|ods|odp|mkv|avi|dmg|exe|bin|whl|sqlite|db)$/i.test(p);
 }
@@ -46,6 +50,7 @@ export function isTextEditablePath(p) {
     !isPdfPath(p) &&
     !isAudioPath(p) &&
     !isVideoPath(p) &&
+    !isNotebookPath(p) &&
     !isDownloadOnlyPath(p)
   );
 }

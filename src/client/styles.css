@@ -1097,6 +1097,128 @@ html, body, #root {
   padding: 4px 0;
 }
 
+.nb-wrap {
+  width: 100%;
+  margin: 0 auto;
+}
+.nb-wrap .jknb-root {
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: inherit;
+  line-height: 1.6;
+  padding: 0;
+}
+.nb-wrap .jknb-root .cell {
+  margin: 14px 0;
+  border-left: 0;
+  padding-left: 0;
+}
+.nb-wrap .jknb-root .prompt {
+  width: 56px;
+  min-width: 56px;
+  padding: 8px 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.nb-wrap .jknb-root .input_prompt {
+  color: var(--accent);
+}
+.nb-wrap .jknb-root .output_prompt {
+  color: var(--amber);
+}
+.nb-wrap .jknb-root .input_area {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.nb-wrap .jknb-root pre,
+.nb-wrap .jknb-root code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  line-height: 1.5;
+}
+.nb-wrap .jknb-root .text_cell_render pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.nb-wrap .jknb-root .text_cell_render code {
+  background: var(--inline-code-bg);
+  border-radius: 4px;
+  padding: 2px 5px;
+}
+.nb-wrap .jknb-root .text_cell_render pre code {
+  background: transparent;
+  padding: 0;
+}
+.nb-wrap .jknb-root .text_cell_render blockquote {
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+.nb-wrap .jknb-root .text_cell_render a {
+  color: var(--accent);
+}
+.nb-wrap .jknb-root .output_wrapper .output .output_area {
+  margin-top: 6px;
+}
+.nb-wrap .jknb-root .output_wrapper .output .output_subarea {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.nb-wrap .jknb-root .output_wrapper .output .output_png img,
+.nb-wrap .jknb-root .output_wrapper .output .output_jpeg img,
+.nb-wrap .jknb-root .output_wrapper .output .output_gif img,
+.nb-wrap .jknb-root .output_wrapper .output .output_svg svg {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 6px;
+}
+.nb-wrap .jknb-root .output_wrapper .output .output_error,
+.nb-wrap .jknb-root .output_wrapper .output .output_stream.output_stderr {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+@media (max-width: 640px) {
+  .nb-wrap .jknb-root .input,
+  .nb-wrap .jknb-root .output_wrapper .output .output_area {
+    flex-direction: column;
+    gap: 4px;
+  }
+  .nb-wrap .jknb-root .prompt {
+    width: auto;
+    min-width: 0;
+    padding: 0;
+    text-align: left;
+    font-size: 11px;
+  }
+  .nb-wrap .jknb-root .input_area {
+    padding: 4px 6px;
+  }
+  .nb-wrap .jknb-root .output_wrapper .output .output_subarea {
+    padding: 6px 8px;
+  }
+}
+.nb-error-banner {
+  padding: 10px 14px;
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media print {
   @page {
     size: A4;

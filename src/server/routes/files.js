@@ -7,6 +7,7 @@ import {
   deleteNote,
   editNote,
   getCachedVault,
+  invalidateVaultCache,
   isProtectedPath,
   renameDir,
   renameNote,
@@ -37,6 +38,9 @@ export function registerFileRoutes(app) {
   });
 
   app.get('/api/v1/tree', (c) => {
+    if (c.req.query('refresh') === '1') {
+      invalidateVaultCache();
+    }
     const rawLimit = Number(c.req.query('limit') || 10000);
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 10000) : 10000;
     const sort = c.req.query('sort'); // 'mtime' | 'name' | undefined

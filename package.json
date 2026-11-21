@@ -37,6 +37,10 @@
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",
+    "@jupyter-kit/core": "^3.0.2",
+    "@jupyter-kit/katex": "^3.0.2",
+    "@jupyter-kit/react": "^3.0.2",
+    "@jupyter-kit/theme-default": "^3.0.2",
     "@modelcontextprotocol/client": "^2.4.0",
     "@modelcontextprotocol/server": "^2.4.0",
     "@tiptap/pm": "^3.34.0",

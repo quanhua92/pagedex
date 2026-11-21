@@ -4,6 +4,7 @@ import { parseDelimitedText } from '../lib/csv.js';
 import { isTextEditablePath } from '../lib/paths.js';
 import TiptapEditor from '../TiptapEditor.jsx';
 import RawEditor from './RawEditor.jsx';
+import NotebookViewer from './NotebookViewer.jsx';
 
 const WELCOME_PREFIXES = [
   'Welcome to',
@@ -35,6 +36,8 @@ export default function NoteViewer({
   isVideo,
   isHtml,
   isCsv,
+  isNotebook = false,
+  flatFiles = [],
   reloadTick,
   isBinaryDownload,
   viewMode,
@@ -336,6 +339,8 @@ export default function NoteViewer({
             </div>
           )}
         </div>
+      ) : isNotebook && viewMode === 'preview' ? (
+        <NotebookViewer content={content} settings={settings} />
       ) : (viewMode === 'raw' || (viewMode === 'edit' && !isMarkdown)) && isTextEditablePath(activePath) && !readOnly ? (
         <RawEditor
           value={editorValue}

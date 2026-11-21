@@ -47,6 +47,7 @@ export const MIME_TYPES = {
   '.js': 'application/javascript; charset=utf-8',
   '.mjs': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.ipynb': 'application/x-ipynb+json; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8',
   '.tsv': 'text/tab-separated-values; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
