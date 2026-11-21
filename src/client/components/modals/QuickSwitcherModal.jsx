@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 export default function QuickSwitcherModal({
   switcherOpen,
@@ -20,9 +20,30 @@ export default function QuickSwitcherModal({
   pagedFiles,
   loadMorePagedFiles,
   switcherQuery,
-  setSwitcherQuery
+  setSwitcherQuery,
+  commands = []
 }) {
+  const isCommandMode = switcherTab === 'commands' || switcherQuery.trimStart().startsWith('>');
+
+  const filteredCommands = useMemo(() => {
+    if (!isCommandMode) return [];
+    const q = switcherQuery.trimStart().replace(/^>\s*/, '').trim().toLowerCase();
+    return commands.filter(
+      (cmd) =>
+        !q ||
+        cmd.label.toLowerCase().includes(q) ||
+        (cmd.hint && cmd.hint.toLowerCase().includes(q))
+    );
+  }, [isCommandMode, switcherQuery, commands]);
+
   if (!switcherOpen) return null;
+
+  const activeItemsCount = isCommandMode ? filteredCommands.length : switcherItems.length;
+
+  const runCommand = (cmd) => {
+    setSwitcherOpen(false);
+    cmd.run();
+  };
 
   return (
     <div className="switcher-backdrop" onClick={() => setSwitcherOpen(false)}>
@@ -32,29 +53,53 @@ export default function QuickSwitcherModal({
             {[
               ['recent', 'Recent'],
               ['alpha', 'A–Z'],
-              ['tabs', `Open Tabs (${tabCount})`]
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                className={`switcher-tab${switcherTab === id ? ' active' : ''}`}
-                onClick={() => {
-                  setSwitcherTab(id);
-                  setSwitcherIdx(0);
-                  switcherInputRef.current?.focus();
-                }}
-              >
-                {label}
-              </button>
-            ))}
+              ['tabs', `Open Tabs (${tabCount})`],
+              ['commands', 'Commands']
+            ].map(([id, label]) => {
+              const active = id === 'commands' ? isCommandMode : !isCommandMode && switcherTab === id;
+              return (
+                <button
+                  key={id}
+                  className={`switcher-tab${active ? ' active' : ''}`}
+                  onClick={() => {
+                    if (id !== 'commands' && switcherQuery.trimStart().startsWith('>')) {
+                      setSwitcherQuery('');
+                    }
+                    setSwitcherTab(id);
+                    setSwitcherIdx(0);
+                    switcherInputRef.current?.focus();
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-          {totalFiles > fileStats.length && (
+          {!isCommandMode && totalFiles > fileStats.length && (
             <span className="switcher-cap">
               {fileStats.length.toLocaleString()} / {totalFiles.toLocaleString()} indexed
             </span>
           )}
         </div>
         <div className="switcher-list">
-          {switcherItems.length === 0 ? (
+          {isCommandMode ? (
+            filteredCommands.length === 0 ? (
+              <div className="empty-note" style={{ padding: '12px' }}>No matching commands</div>
+            ) : (
+              filteredCommands.map((cmd, idx) => (
+                <button
+                  key={cmd.id}
+                  className={`switcher-item${idx === switcherIdx ? ' selected' : ''}`}
+                  onClick={() => runCommand(cmd)}
+                >
+                  <div className="switcher-row-top">
+                    <span className="switcher-path">{cmd.label}</span>
+                    {cmd.hint && <span className="switcher-time">{cmd.hint}</span>}
+                  </div>
+                </button>
+              ))
+            )
+          ) : switcherItems.length === 0 ? (
             <div className="empty-note" style={{ padding: '12px' }}>No matching notes</div>
           ) : (() => {
             let flatIndex = 0;
@@ -94,7 +139,7 @@ export default function QuickSwitcherModal({
               </React.Fragment>
             ));
           })()}
-          {switcherTab !== 'tabs' && isLargeVault && pagedFiles.hasMore && (
+          {!isCommandMode && switcherTab !== 'tabs' && isLargeVault && pagedFiles.hasMore && (
             <button className="btn" style={{ margin: '8px auto', display: 'block' }} onClick={loadMorePagedFiles}>
               Load more
             </button>
@@ -105,7 +150,7 @@ export default function QuickSwitcherModal({
             ref={switcherInputRef}
             className="switcher-input"
             type="text"
-            placeholder="Find a note..."
+            placeholder="Find a note or type > for commands..."
             value={switcherQuery}
             onChange={(e) => {
               setSwitcherQuery(e.target.value);
@@ -114,16 +159,21 @@ export default function QuickSwitcherModal({
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setSwitcherIdx((i) => Math.min(i + 1, Math.max(0, switcherItems.length - 1)));
+                setSwitcherIdx((i) => Math.min(i + 1, Math.max(0, activeItemsCount - 1)));
               } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
                 setSwitcherIdx((i) => Math.max(i - 1, 0));
-              } else if (e.key === 'Enter' && switcherItems[switcherIdx]) {
-                e.preventDefault();
-                setSwitcherOpen(false);
-                const selected = switcherItems[switcherIdx];
-                if (selected.tab && switchTab) switchTab(selected.tab);
-                else (openInNewTab || openFile)(selected.path);
+              } else if (e.key === 'Enter') {
+                if (isCommandMode && filteredCommands[switcherIdx]) {
+                  e.preventDefault();
+                  runCommand(filteredCommands[switcherIdx]);
+                } else if (!isCommandMode && switcherItems[switcherIdx]) {
+                  e.preventDefault();
+                  setSwitcherOpen(false);
+                  const selected = switcherItems[switcherIdx];
+                  if (selected.tab && switchTab) switchTab(selected.tab);
+                  else (openInNewTab || openFile)(selected.path);
+                }
               }
             }}
           />

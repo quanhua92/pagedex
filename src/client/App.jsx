@@ -560,17 +560,23 @@ export default function App() {
 
   function closeTab(id, e) {
     e?.stopPropagation();
+    const isClosingActive = id === (activeTab?.id || activeTabId);
+    if (isClosingActive && dirty && !window.confirm('You have unsaved changes. Discard and close tab?')) {
+      return;
+    }
     const next = tabs.filter((t) => t.id !== id);
     if (next.length === 0) {
       const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
       setTabs([fresh]);
       setActiveTabId(fresh.id);
       setContent('');
+      setDirty(false);
       location.hash = '';
       return;
     }
     setTabs(next);
-    if (id === (activeTab?.id || activeTabId)) {
+    if (isClosingActive) {
+      setDirty(false);
       const target = next[next.length - 1];
       setActiveTabId(target.id);
       if (target.path) openFile(target.path, false, target.id);
@@ -1119,7 +1125,31 @@ export default function App() {
     return highlightRawFile(content, activePath);
   }, [content, activePath, viewMode]);
 
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [dirty]);
+
   function handleDocClick(e) {
+    const copyBtn = e.target.closest('button.code-copy-btn');
+    if (copyBtn) {
+      e.preventDefault();
+      const code = copyBtn.closest('.code-block-wrap')?.querySelector('pre code')?.textContent ?? '';
+      navigator.clipboard?.writeText(code);
+      copyBtn.textContent = 'Copied';
+      copyBtn.classList.add('copied');
+      clearTimeout(copyBtn._copyTimer);
+      copyBtn._copyTimer = setTimeout(() => {
+        copyBtn.textContent = 'Copy';
+        copyBtn.classList.remove('copied');
+      }, 1500);
+      return;
+    }
     const wiki = e.target.closest('a.wikilink');
     if (wiki) {
       e.preventDefault();
@@ -1421,6 +1451,8 @@ export default function App() {
               currentBacklinks={currentBacklinks}
               currentLinks={currentLinks}
               openFile={openFile}
+              scrollRef={scrollRef}
+              activePath={activePath}
               position={outlinePosition}
               onChangePosition={setOutlinePosition}
               mobileOpen={outlineDrawerOpen}
@@ -1479,6 +1511,87 @@ export default function App() {
         loadMorePagedFiles={loadMorePagedFiles}
         switcherQuery={switcherQuery}
         setSwitcherQuery={setSwitcherQuery}
+        commands={[
+          ...(!readOnly
+            ? [
+                { id: 'new-note', label: 'New note', hint: 'Create a note', run: () => openNewNoteDialog('') },
+                { id: 'new-folder', label: 'New folder', hint: 'Create a folder', run: () => openNewFolderDialog('') }
+              ]
+            : []),
+          {
+            id: 'toggle-theme',
+            label: `Switch to ${settings.theme === 'dark' ? 'light' : 'dark'} theme`,
+            hint: 'Appearance',
+            run: () => setSettings((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
+          },
+          ...(activePath && !readOnly && isTextEditablePath(activePath)
+            ? [
+                {
+                  id: 'toggle-edit',
+                  label: viewMode === 'edit' ? 'Switch to Preview' : 'Switch to Edit',
+                  hint: 'Cmd/Ctrl+E',
+                  run: () => setViewMode(viewMode === 'edit' ? 'preview' : isMarkdown ? 'edit' : 'raw')
+                }
+              ]
+            : []),
+          ...(activePath
+            ? [
+                {
+                  id: 'toggle-raw',
+                  label: viewMode === 'raw' ? 'Switch to Preview' : 'Switch to Raw',
+                  hint: 'Cmd/Ctrl+Shift+E',
+                  run: () => setViewMode(viewMode === 'raw' ? 'preview' : 'raw')
+                },
+                {
+                  id: 'copy-wikilink',
+                  label: 'Copy [[wikilink]]',
+                  hint: activePath,
+                  run: () => {
+                    navigator.clipboard?.writeText(`[[${activePath}]]`);
+                    showToast('Copied wikilink');
+                  }
+                },
+                {
+                  id: 'print',
+                  label: 'Print / Export PDF',
+                  hint: 'Cmd/Ctrl+P',
+                  run: () => window.print()
+                }
+              ]
+            : []),
+          {
+            id: 'refresh-tree',
+            label: 'Refresh files',
+            hint: 'Rescan disk',
+            run: () => fetchTree({ force: true })
+          },
+          ...(!readOnly && gitChanges.length > 0
+            ? [
+                {
+                  id: 'git-commit',
+                  label: `Commit changes (${gitChanges.length})`,
+                  hint: 'Git',
+                  run: () => openCommitDialog()
+                }
+              ]
+            : []),
+          {
+            id: 'open-settings',
+            label: 'Open Settings',
+            hint: 'Preferences',
+            run: () => setSettingsOpen(true)
+          },
+          ...(vaultsInfo.vaults.length > 1
+            ? vaultsInfo.vaults
+                .filter((v) => v.id !== vaultsInfo.activeVault)
+                .map((v) => ({
+                  id: `vault-${v.id}`,
+                  label: `Switch vault: ${v.id}`,
+                  hint: v.readOnly ? 'Read-only' : 'Vault',
+                  run: () => selectVault(v.id)
+                }))
+            : [])
+        ]}
       />
 
       <input

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { MoreVertical } from 'lucide-react';
 
 export default function OutlineSidebar({
@@ -9,6 +9,8 @@ export default function OutlineSidebar({
   currentBacklinks,
   currentLinks = [],
   openFile,
+  scrollRef,
+  activePath,
   position = 'right',
   onChangePosition,
   mobileOpen = false,
@@ -16,6 +18,43 @@ export default function OutlineSidebar({
   onStartResizeOutline
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHeadingId, setActiveHeadingId] = useState('');
+
+  useEffect(() => {
+    const el = scrollRef?.current;
+    if (!el || viewMode !== 'preview' || headings.length === 0) {
+      setActiveHeadingId('');
+      return;
+    }
+
+    let rafId = 0;
+    const updateActive = () => {
+      rafId = 0;
+      const topOffset = el.getBoundingClientRect().top + 80;
+      let current = headings[0]?.id || '';
+      for (const h of headings) {
+        const node = document.getElementById(h.id);
+        if (!node) continue;
+        if (node.getBoundingClientRect().top <= topOffset) {
+          current = h.id;
+        } else {
+          break;
+        }
+      }
+      setActiveHeadingId(current);
+    };
+
+    const onScroll = () => {
+      if (!rafId) rafId = requestAnimationFrame(updateActive);
+    };
+
+    updateActive();
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [scrollRef, viewMode, headings, activePath]);
 
   if (position === 'hidden' && !mobileOpen && window.innerWidth > 960) return null;
 
@@ -97,7 +136,7 @@ export default function OutlineSidebar({
             headings.map((h, i) => (
               <a
                 key={`${h.id}-${i}`}
-                className={`toc-item toc-h${h.level}`}
+                className={`toc-item toc-h${h.level}${activeHeadingId === h.id ? ' active' : ''}`}
                 onClick={() => {
                   document.getElementById(h.id)?.scrollIntoView({ behavior: 'smooth' });
                   onCloseMobile?.();

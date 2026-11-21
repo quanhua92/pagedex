@@ -152,7 +152,8 @@ export function renderMarkdownWithLinks(content, activePath, flatFiles) {
     }
     const highlighted = highlightCode(text, lang);
     const cls = lang ? `hljs language-${escapeHtml(lang.trim())}` : 'hljs';
-    return `<pre><code class="${cls}">${highlighted}</code></pre>`;
+    const label = escapeHtml(cleanLang || 'text');
+    return `<div class="code-block-wrap"><div class="code-block-bar"><span class="code-block-lang">${label}</span><button type="button" class="code-copy-btn">Copy</button></div><pre><code class="${cls}">${highlighted}</code></pre></div>`;
   };
 
   const html = mdParser.parse(transformed, { renderer });
