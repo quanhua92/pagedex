@@ -1,29 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { computeCollapsedDirs, loadSettings, resolveStartupPath } from './lib/settings.js';
-import {
-  baseTitle,
-  isAudioPath,
-  isCsvPath,
-  isDownloadOnlyPath,
-  isHtmlPath,
-  isImagePath,
-  isMarkdownPath,
-  isNotebookPath,
-  isTextEditablePath,
-  isPdfPath,
-  isSvgPath,
-  isVideoPath,
-  resolveRelative
-} from './lib/paths.js';
-import { renderMarkdownWithLinks, highlightRawFile } from './lib/markdown.js';
+import { isMarkdownPath, isTextEditablePath, resolveRelative } from './lib/paths.js';
 import { useEdgeSwipe } from './lib/useEdgeSwipe.js';
 import { useGitOps } from './hooks/useGitOps.js';
 import { useLayoutState } from './hooks/useLayoutState.js';
 import { useQuickSwitcher } from './hooks/useQuickSwitcher.js';
 import { useFileCrud } from './hooks/useFileCrud.js';
+import { usePaneState } from './hooks/usePaneState.js';
 import Sidebar from './components/Sidebar.jsx';
-import TopbarAndTabs, { DesktopTabs } from './components/TopbarAndTabs.jsx';
-import NoteViewer from './components/NoteViewer.jsx';
+import { DesktopTabs } from './components/TopbarAndTabs.jsx';
+import MultiNoteViewer from './components/MultiNoteViewer.jsx';
 import OutlineSidebar from './components/OutlineSidebar.jsx';
 import MobileOverlays from './components/modals/MobileOverlays.jsx';
 import QuickSwitcherModal from './components/modals/QuickSwitcherModal.jsx';
@@ -49,21 +35,122 @@ export default function App() {
   const [settings, setSettings] = useState(loadSettings);
   const [settingsTab, setSettingsTab] = useState('general');
   const initialPath = resolveStartupPath(settings);
-  const [tabs, setTabs] = useState(() => [
-    { id: 'tab-1', path: initialPath, title: baseTitle(initialPath), preview: '' }
-  ]);
-  const [activeTabId, setActiveTabId] = useState('tab-1');
-  const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
-  const activePath = activeTab?.path || '';
   const [tabsOpen, setTabsOpen] = useState(false);
-  const [content, setContent] = useState('');
-  const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'edit' | 'diff' | 'raw'
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const [draftContent, setDraftContent] = useState('');
-  const [dirty, setDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [sidebarTab, setSidebarTab] = useState('files'); // 'files' | 'changes'
   const [filter, setFilter] = useState('');
+  const {
+    toast,
+    showToast,
+    sidebarWidth,
+    outlineWidth,
+    pinned,
+    setPinned,
+    isPinned,
+    togglePin,
+    reorderPinned,
+    startResizeSidebar,
+    startResizeOutline
+  } = useLayoutState();
+  const loadDiffRef = useRef(null);
+  const [splitMode, setSplitMode] = useState('single'); // 'single' | 'right' | 'down'
+  const [activePaneId, setActivePaneId] = useState('primary'); // 'primary' | 'secondary'
+  const [splitRatio, setSplitRatio] = useState(0.5);
+  const primaryPane = usePaneState({
+    initialPath,
+    flatFiles,
+    onOpenCleanup: () => {
+      setDrawerOpen(false);
+      setOutlineDrawerOpen(false);
+    },
+    onDiffRequestedRef: loadDiffRef,
+    onTabsOpenClose: () => setTabsOpen(false),
+    showToast
+  });
+  const secondaryPane = usePaneState({
+    initialPath: '',
+    flatFiles,
+    onOpenCleanup: () => {
+      setDrawerOpen(false);
+      setOutlineDrawerOpen(false);
+    },
+    onDiffRequestedRef: loadDiffRef,
+    onTabsOpenClose: () => setTabsOpen(false),
+    showToast,
+    persistNavigation: false
+  });
+  const activePane = splitMode !== 'single' && activePaneId === 'secondary' ? secondaryPane : primaryPane;
+  const activePaneRef = useRef(activePane);
+  activePaneRef.current = activePane;
+  const panesRef = useRef([primaryPane, secondaryPane]);
+  panesRef.current = [primaryPane, secondaryPane];
+  const {
+    tabs,
+    setTabs,
+    activeTabId,
+    setActiveTabId,
+    activeTab,
+    activePath,
+    content,
+    setContent,
+    draftContent,
+    setDraftContent,
+    dirty,
+    setDirty,
+    saving,
+    viewMode,
+    setViewMode,
+    moreMenuOpen,
+    setMoreMenuOpen,
+    scrollRef,
+    activePathRef,
+    activeTabIdRef,
+    tabsRef,
+    openFile,
+    openInNewTab,
+    createNewTab,
+    closeTab,
+    switchTab,
+    saveActiveNote,
+    renderedHtml,
+    headings,
+    highlightedRawHtml,
+    isImg,
+    isSvg,
+    isMarkdown,
+    isPdf,
+    isAudio,
+    isVideo,
+    isHtml,
+    isCsv,
+    isNotebook,
+    isBinaryDownload
+  } = activePane;
+
+  const handleSplitPane = (direction) => {
+    if (splitMode === 'single') {
+      if (activePath) secondaryPane.openFile(activePath);
+      setSplitMode(direction);
+      setActivePaneId('secondary');
+    } else {
+      setSplitMode(direction);
+    }
+  };
+
+  const handleClosePane = (paneId = activePaneId) => {
+    if (splitMode === 'single') return;
+    const closingPane = paneId === 'primary' ? primaryPane : secondaryPane;
+    if (closingPane.dirty && !window.confirm('Discard unsaved changes in this pane?')) return;
+    if (paneId === 'primary') {
+      if (secondaryPane.activePath) {
+        primaryPane.openFile(secondaryPane.activePath);
+      } else {
+        primaryPane.resetPane();
+      }
+    }
+    secondaryPane.resetPane();
+    setSplitMode('single');
+    setActivePaneId('primary');
+  };
   const {
     diffData,
     setDiffData,
@@ -91,6 +178,7 @@ export default function App() {
     openCommitDialog,
     handleCommitSubmit
   } = useGitOps({ activePath, filter, fetchTree, openFile });
+  loadDiffRef.current = loadDiff;
   const [collapsed, setCollapsed] = useState(() => new Set(settings.autoCollapsed));
   const seededAutoCollapseRef = useRef(false);
   const [live, setLive] = useState(true);
@@ -136,30 +224,10 @@ export default function App() {
     tabs,
     activeTabId
   });
-  const {
-    toast,
-    showToast,
-    sidebarWidth,
-    outlineWidth,
-    pinned,
-    setPinned,
-    isPinned,
-    togglePin,
-    reorderPinned,
-    startResizeSidebar,
-    startResizeOutline
-  } = useLayoutState();
 
   const searchRef = useRef(null);
-  const scrollRef = useRef(null);
-  const activePathRef = useRef(activePath);
-  const activeTabIdRef = useRef(activeTab?.id || activeTabId);
-  const tabsRef = useRef(tabs);
   const switchTabRef = useRef(null);
   const toggleOutlineRef = useRef(null);
-  activePathRef.current = activePath;
-  activeTabIdRef.current = activeTab?.id || activeTabId;
-  tabsRef.current = tabs;
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', settings.theme);
@@ -168,13 +236,15 @@ export default function App() {
 
   useEffect(() => {
     const cycleTab = (delta) => {
-      const list = tabsRef.current;
+      const pane = activePaneRef.current;
+      const list = pane.tabsRef.current;
       if (list.length <= 1) return;
-      const idx = list.findIndex((t) => t.id === activeTabIdRef.current);
+      const idx = list.findIndex((t) => t.id === pane.activeTabIdRef.current);
       const nextIdx = idx === -1 ? 0 : (idx + delta + list.length) % list.length;
-      switchTabRef.current?.(list[nextIdx]);
+      pane.switchTab(list[nextIdx]);
     };
     const onKey = (e) => {
+      const pane = activePaneRef.current;
       const key = e.key.toLowerCase();
       if ((e.metaKey || e.ctrlKey) && (key === 'k' || key === 'o')) {
         e.preventDefault();
@@ -192,19 +262,19 @@ export default function App() {
         return;
       }
       if ((e.metaKey || e.ctrlKey) && key === 'e') {
-        const path = activePathRef.current;
+        const path = pane.activePathRef.current;
         if (!path) return;
         if (e.shiftKey) {
           if (isTextEditablePath(path)) {
             e.preventDefault();
-            setViewMode((m) => (m === 'raw' ? (isMarkdownPath(path) && !readOnly ? 'edit' : 'preview') : 'raw'));
+            pane.setViewMode((m) => (m === 'raw' ? (isMarkdownPath(path) && !readOnly ? 'edit' : 'preview') : 'raw'));
           }
           return;
         }
         if (!readOnly && isTextEditablePath(path)) {
           e.preventDefault();
           const isMd = isMarkdownPath(path);
-          setViewMode((m) => (m === 'edit' || (!isMd && m === 'raw') ? 'preview' : isMd ? 'edit' : 'raw'));
+          pane.setViewMode((m) => (m === 'edit' || (!isMd && m === 'raw') ? 'preview' : isMd ? 'edit' : 'raw'));
         }
         return;
       }
@@ -278,154 +348,7 @@ export default function App() {
     }
   }
 
-  async function openInNewTab(relPath, mode = 'preview') {
-    const existing = tabsRef.current.find((t) => t.path === relPath);
-    if (existing) {
-      switchTab(existing);
-      setViewMode(mode);
-      return;
-    }
-    const id = `tab-${Date.now()}`;
-    activePathRef.current = relPath;
-    activeTabIdRef.current = id;
-    setTabs((prev) => {
-      if (prev.length === 1 && !prev[0].path) {
-        return [{ id, path: relPath, title: baseTitle(relPath), preview: '' }];
-      }
-      return [...prev, { id, path: relPath, title: baseTitle(relPath), preview: '' }];
-    });
-    setActiveTabId(id);
-    await openFile(relPath, false, id);
-    setViewMode(mode);
-  }
-
-  function createNewTab() {
-    const id = `tab-${Date.now()}`;
-    setTabs((prev) => [...prev, { id, path: null, title: 'New tab', preview: '' }]);
-    setActiveTabId(id);
-    setContent('');
-    setTabsOpen(false);
-    setDrawerOpen(false);
-    setFabOpen(false);
-  }
-
-  function closeTab(id, e) {
-    e?.stopPropagation();
-    const isClosingActive = id === (activeTab?.id || activeTabId);
-    if (isClosingActive && dirty && !window.confirm('You have unsaved changes. Discard and close tab?')) {
-      return;
-    }
-    const next = tabs.filter((t) => t.id !== id);
-    if (next.length === 0) {
-      const fresh = { id: `tab-${Date.now()}`, path: null, title: 'New tab', preview: '' };
-      setTabs([fresh]);
-      setActiveTabId(fresh.id);
-      setContent('');
-      setDirty(false);
-      location.hash = '';
-      return;
-    }
-    setTabs(next);
-    if (isClosingActive) {
-      setDirty(false);
-      const target = next[next.length - 1];
-      setActiveTabId(target.id);
-      if (target.path) openFile(target.path, false, target.id);
-      else {
-        setContent('');
-        location.hash = '';
-      }
-    }
-  }
-
-  function switchTab(tab) {
-    activeTabIdRef.current = tab.id;
-    activePathRef.current = tab.path || '';
-    setActiveTabId(tab.id);
-    setTabsOpen(false);
-    if (tab.path) {
-      openFile(tab.path, false, tab.id);
-    } else {
-      setContent('');
-      location.hash = '';
-    }
-  }
   switchTabRef.current = switchTab;
-
-  async function openFile(relPath, preserveScroll = false, targetTabId = activeTab?.id || activeTabId) {
-    if (!relPath) {
-      setContent('');
-      return;
-    }
-    const prevScroll = scrollRef.current?.scrollTop ?? 0;
-
-    let nextPreview = '';
-    const isBinaryMedia =
-      (isImagePath(relPath) && !isSvgPath(relPath)) ||
-      isPdfPath(relPath) ||
-      isAudioPath(relPath) ||
-      isVideoPath(relPath) ||
-      isDownloadOnlyPath(relPath);
-    if (isBinaryMedia) {
-      const checkRes = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`, {
-        method: 'HEAD'
-      });
-      if (!checkRes.ok) {
-        setContent('');
-        setDraftContent('');
-        setDirty(false);
-        setTabs((prev) =>
-          prev.map((t) => (t.id === targetTabId ? { ...t, path: null, title: 'New tab', preview: '' } : t))
-        );
-        return;
-      }
-      setContent('');
-      setDraftContent('');
-      setDirty(false);
-      if (isImagePath(relPath)) nextPreview = '[Image preview]';
-      else if (isPdfPath(relPath)) nextPreview = '[PDF document]';
-      else if (isAudioPath(relPath)) nextPreview = '[Audio]';
-      else if (isVideoPath(relPath)) nextPreview = '[Video]';
-      else nextPreview = '[Binary file — download]';
-    } else {
-      const res = await fetch(`/api/v1/file?path=${encodeURIComponent(relPath)}`);
-      if (!res.ok) {
-        setContent('');
-        setDraftContent('');
-        setDirty(false);
-        setTabs((prev) =>
-          prev.map((t) => (t.id === targetTabId ? { ...t, path: null, title: 'New tab', preview: '' } : t))
-        );
-        return;
-      }
-      const text = await res.text();
-      setContent(text);
-      setDraftContent(text);
-      setDirty(false);
-      nextPreview = text.replace(/^#+\s*/gm, '').slice(0, 260);
-    }
-
-    location.hash = encodeURIComponent(relPath);
-    localStorage.setItem('vault-last-path', relPath);
-
-    setTabs((prev) =>
-      prev.map((t) =>
-        t.id === targetTabId ? { ...t, path: relPath, title: baseTitle(relPath), preview: nextPreview } : t
-      )
-    );
-
-    if (!preserveScroll) {
-      setDrawerOpen(false);
-      requestAnimationFrame(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = 0;
-      });
-    } else {
-      requestAnimationFrame(() => {
-        if (scrollRef.current) scrollRef.current.scrollTop = prevScroll;
-      });
-    }
-    if (viewMode === 'diff') loadDiff(relPath);
-  }
 
   const {
     deleteTarget,
@@ -603,9 +526,11 @@ export default function App() {
       if (msg.type === 'reload') {
         await fetchTree();
         setReloadTick((t) => t + 1);
-        const currentPath = activePathRef.current;
-        if (currentPath) {
-          await openFile(currentPath, true, activeTabIdRef.current);
+        for (const pane of panesRef.current) {
+          const currentPath = pane.activePathRef.current;
+          if (currentPath) {
+            await pane.openFile(currentPath, true, pane.activeTabIdRef.current);
+          }
         }
       }
     };
@@ -622,39 +547,6 @@ export default function App() {
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [canAccessVault, vaultTick]);
-
-  async function saveActiveNote(markdown) {
-    if (!activePath) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/v1/file', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: activePath, content: markdown })
-      });
-      if (res.ok) {
-        setContent(markdown);
-        setDraftContent(markdown);
-        setDirty(false);
-        showToast('Saved');
-      }
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const { renderedHtml, headings } = useMemo(() => {
-    if (!isMarkdownPath(activePath) || viewMode !== 'preview' || isImagePath(activePath) || isDownloadOnlyPath(activePath)) {
-      return { renderedHtml: '', headings: [] };
-    }
-    return renderMarkdownWithLinks(content, activePath, flatFiles);
-  }, [content, activePath, viewMode, flatFiles]);
-
-  const highlightedRawHtml = useMemo(() => {
-    if (!content) return '';
-    if (viewMode !== 'raw' && isMarkdownPath(activePath)) return '';
-    return highlightRawFile(content, activePath);
-  }, [content, activePath, viewMode]);
 
   useEffect(() => {
     if (!activePath || !activePath.includes('/')) return;
@@ -678,15 +570,16 @@ export default function App() {
     return () => cancelAnimationFrame(raf);
   }, [activePath]);
 
+  const anyDirty = primaryPane.dirty || (splitMode !== 'single' && secondaryPane.dirty);
   useEffect(() => {
-    if (!dirty) return;
+    if (!anyDirty) return;
     const onBeforeUnload = (e) => {
       e.preventDefault();
       e.returnValue = '';
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, [dirty]);
+  }, [anyDirty]);
 
   function handleDocClick(e) {
     const copyBtn = e.target.closest('button.code-copy-btn');
@@ -736,16 +629,6 @@ export default function App() {
         : [],
     [backlinks, activePath]
   );
-  const isImg = isImagePath(activePath);
-  const isSvg = isSvgPath(activePath);
-  const isMarkdown = isMarkdownPath(activePath);
-  const isPdf = isPdfPath(activePath);
-  const isAudio = isAudioPath(activePath);
-  const isVideo = isVideoPath(activePath);
-  const isHtml = isHtmlPath(activePath);
-  const isCsv = isCsvPath(activePath);
-  const isNotebook = isNotebookPath(activePath);
-  const isBinaryDownload = isDownloadOnlyPath(activePath);
 
   const outlinePosition = settings.outlinePosition || 'right';
   const setOutlinePosition = (pos) => setSettings((s) => ({ ...s, outlinePosition: pos }));
@@ -869,86 +752,59 @@ export default function App() {
         />
 
         <main className="main">
-          <DesktopTabs
-            tabs={tabs}
-            activeTabId={activeTabId}
-            switchTab={switchTab}
-            closeTab={closeTab}
-            createNewTab={createNewTab}
-          />
+          {splitMode === 'single' && (
+            <DesktopTabs
+              tabs={tabs}
+              activeTabId={activeTabId}
+              switchTab={switchTab}
+              closeTab={closeTab}
+              createNewTab={createNewTab}
+            />
+          )}
 
           <div className={`workspace-body outline-${outlinePosition}`}>
-            <div className="note-pane">
-              <TopbarAndTabs
-                setDrawerOpen={setDrawerOpen}
-                activePath={activePath}
-                moreMenuOpen={moreMenuOpen}
-                setMoreMenuOpen={setMoreMenuOpen}
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                loadDiff={loadDiff}
-                setDeleteError={setDeleteError}
-                setDeleteTarget={setDeleteTarget}
-                setRenameError={setRenameError}
-                setRenameTarget={setRenameTarget}
-                setMoveError={setMoveError}
-                setMoveTarget={setMoveTarget}
-                openInNewTab={openInNewTab}
-                isPinned={isPinned}
-                togglePin={togglePin}
-                gitChanges={gitChanges}
-                requestDiscard={requestDiscard}
-                showToast={showToast}
-                outlinePosition={outlinePosition}
-                outlineDrawerOpen={outlineDrawerOpen}
-                sidebarCollapsed={sidebarCollapsed}
-                onToggleSidebar={handleToggleSidebar}
-                onToggleOutline={handleToggleOutline}
-                onOpenOutline={handleOpenOutline}
-                readOnly={readOnly}
-              />
-
-              <NoteViewer
-                scrollRef={scrollRef}
-                activePath={activePath}
-                vaultName={vaultsInfo.vaults.length > 1 ? vaultsInfo.activeVault : vaultRootName || 'PageDex'}
-                openNewNoteDialog={openNewNoteDialog}
-                openFile={openFile}
-                openSwitcher={openSwitcher}
-                setDrawerOpen={setDrawerOpen}
-                setSettingsOpen={setSettingsOpen}
-                isImg={isImg}
-                isSvg={isSvg}
-                isMarkdown={isMarkdown}
-                isPdf={isPdf}
-                isAudio={isAudio}
-                isVideo={isVideo}
-                isHtml={isHtml}
-                isCsv={isCsv}
-                isNotebook={isNotebook}
-                flatFiles={flatFiles}
-                reloadTick={reloadTick}
-                isBinaryDownload={isBinaryDownload}
-                viewMode={viewMode}
-                setViewMode={setViewMode}
-                settings={settings}
-                diffData={diffData}
-                requestDiscard={requestDiscard}
-                content={content}
-                draftContent={draftContent}
-                saving={saving}
-                dirty={dirty}
-                setDraftContent={setDraftContent}
-                setDirty={setDirty}
-                saveActiveNote={saveActiveNote}
-                highlightedRawHtml={highlightedRawHtml}
-                handleDocClick={handleDocClick}
-                renderedHtml={renderedHtml}
-                pendingJumpQuery={pendingJumpQuery}
-                onClearJumpQuery={() => setPendingJumpQuery('')}
-                readOnly={readOnly}
-              />
-            </div>
+            <MultiNoteViewer
+              splitMode={splitMode}
+              primaryPane={primaryPane}
+              secondaryPane={secondaryPane}
+              activePaneId={activePaneId}
+              onActivatePane={setActivePaneId}
+              splitRatio={splitRatio}
+              onSplitRatioChange={setSplitRatio}
+              onSplitPane={handleSplitPane}
+              onClosePane={handleClosePane}
+              vaultName={vaultsInfo.vaults.length > 1 ? vaultsInfo.activeVault : vaultRootName || 'PageDex'}
+              settings={settings}
+              flatFiles={flatFiles}
+              reloadTick={reloadTick}
+              readOnly={readOnly}
+              setDrawerOpen={setDrawerOpen}
+              openNewNoteDialog={openNewNoteDialog}
+              openSwitcher={openSwitcher}
+              setSettingsOpen={setSettingsOpen}
+              loadDiff={loadDiff}
+              diffData={diffData}
+              requestDiscard={requestDiscard}
+              setDeleteError={setDeleteError}
+              setDeleteTarget={setDeleteTarget}
+              setRenameError={setRenameError}
+              setRenameTarget={setRenameTarget}
+              setMoveError={setMoveError}
+              setMoveTarget={setMoveTarget}
+              isPinned={isPinned}
+              togglePin={togglePin}
+              gitChanges={gitChanges}
+              showToast={showToast}
+              handleDocClick={handleDocClick}
+              pendingJumpQuery={pendingJumpQuery}
+              onClearJumpQuery={() => setPendingJumpQuery('')}
+              outlinePosition={outlinePosition}
+              outlineDrawerOpen={outlineDrawerOpen}
+              sidebarCollapsed={sidebarCollapsed}
+              onToggleSidebar={handleToggleSidebar}
+              onToggleOutline={handleToggleOutline}
+              onOpenOutline={handleOpenOutline}
+            />
 
             <OutlineSidebar
               headings={headings}
@@ -1064,6 +920,28 @@ export default function App() {
                   label: 'Print / Export PDF',
                   hint: 'Cmd/Ctrl+P',
                   run: () => window.print()
+                }
+              ]
+            : []),
+          {
+            id: 'split-right',
+            label: 'Split right',
+            hint: 'Side by side',
+            run: () => handleSplitPane('right')
+          },
+          {
+            id: 'split-down',
+            label: 'Split down',
+            hint: 'Stacked',
+            run: () => handleSplitPane('down')
+          },
+          ...(splitMode !== 'single'
+            ? [
+                {
+                  id: 'close-pane',
+                  label: 'Close active pane',
+                  hint: 'Return to single pane',
+                  run: () => handleClosePane(activePaneId)
                 }
               ]
             : []),

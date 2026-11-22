@@ -51,7 +51,44 @@ html, body, #root {
 .workspace-body.outline-right, .workspace-body.outline-hidden { flex-direction: row; }
 .workspace-body.outline-bottom { flex-direction: column; }
 .note-pane { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.workspace-body.outline-bottom .note-pane { flex: 7 1 0%; }
+.workspace-body.outline-bottom .note-pane,
+.workspace-body.outline-bottom .multi-note-viewer { flex: 7 1 0%; }
+.multi-note-viewer {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.multi-note-viewer.split-right { flex-direction: row; }
+.multi-note-viewer.split-down { flex-direction: column; }
+.pane-slot {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.note-pane.is-split { border-top: 2px solid transparent; }
+.note-pane.is-split.active { border-top-color: var(--accent); }
+.split-resizer {
+  flex-shrink: 0;
+  background: var(--border);
+  transition: background 0.15s ease;
+  touch-action: none;
+  z-index: 2;
+}
+.multi-note-viewer.split-right > .split-resizer { width: 4px; cursor: col-resize; }
+.multi-note-viewer.split-down > .split-resizer { height: 4px; cursor: row-resize; }
+.split-resizer:hover { background: var(--accent); }
+@media (max-width: 768px) {
+  .multi-note-viewer.split-right { flex-direction: column; }
+  .multi-note-viewer.split-right > .split-resizer { width: 100%; height: 4px; cursor: row-resize; }
+}
+@media print {
+  .multi-note-viewer, .pane-slot { overflow: visible !important; height: auto !important; }
+  .split-resizer { display: none !important; }
+}
 .rightbar { border-right: 0; border-left: 1px solid var(--border); padding: 0; width: var(--outline-w, 240px); flex-shrink: 0; overflow: hidden; }
 .workspace-body.outline-bottom .rightbar {
   flex: 3 1 0%; width: 100%; max-height: none; min-height: 0;
@@ -641,6 +678,7 @@ html, body, #root {
   .menu-btn svg { width: 19px; height: 19px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .icon-btn { width: 34px; height: 34px; }
   .desktop-tabs { display: none; }
+  .more-item-split-right { display: none; }
   .fab-wrap { display: none; }
   .sheet-backdrop, .bottom-sheet { display: block; }
   .sidebar {

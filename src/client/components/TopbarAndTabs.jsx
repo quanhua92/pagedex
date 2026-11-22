@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import {
+  Columns2,
   Copy,
   Download,
   ExternalLink,
@@ -17,7 +18,9 @@ import {
   PinOff,
   Printer,
   RotateCcw,
-  Trash2
+  Rows2,
+  Trash2,
+  X
 } from 'lucide-react';
 import { buildMoveTarget, buildRenameTarget, isMarkdownPath, isTextEditablePath } from '../lib/paths.js';
 
@@ -79,7 +82,11 @@ export default function TopbarAndTabs({
   onToggleSidebar,
   onToggleOutline,
   onOpenOutline,
-  readOnly = false
+  readOnly = false,
+  isSplit = false,
+  splitMode = 'single',
+  onSplitPane,
+  onClosePane
 }) {
   const isOutlineActive = outlineDrawerOpen || outlinePosition !== 'hidden';
   const hasGitChanges = Boolean(activePath && gitChanges.some((c) => c.path === activePath));
@@ -201,6 +208,42 @@ export default function TopbarAndTabs({
                 <MenuIcon icon={ListTree} />
                 <span>Outline</span>
               </button>
+              {onSplitPane && (
+                <>
+                  <button
+                    className={`more-item more-item-divider more-item-split-right ${splitMode === 'right' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMoreMenuOpen(false);
+                      onSplitPane('right');
+                    }}
+                  >
+                    <MenuIcon icon={Columns2} />
+                    <span>Split right</span>
+                  </button>
+                  <button
+                    className={`more-item ${splitMode === 'down' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMoreMenuOpen(false);
+                      onSplitPane('down');
+                    }}
+                  >
+                    <MenuIcon icon={Rows2} />
+                    <span>Split down</span>
+                  </button>
+                  {isSplit && onClosePane && (
+                    <button
+                      className="more-item"
+                      onClick={() => {
+                        setMoreMenuOpen(false);
+                        onClosePane();
+                      }}
+                    >
+                      <MenuIcon icon={X} />
+                      <span>Close pane</span>
+                    </button>
+                  )}
+                </>
+              )}
               {activePath && (
                 <>
                   {openInNewTab && (

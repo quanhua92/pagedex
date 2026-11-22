@@ -56,8 +56,18 @@ export async function createPlaywrightVault(seedFiles = {}, extraEnv = {}) {
     stdio: 'pipe'
   });
 
-  await waitForHealth(baseUrl);
-  const browser = await chromium.launch({ headless: true });
+  let browser;
+  try {
+    await waitForHealth(baseUrl);
+    browser = await chromium.launch({ headless: true });
+  } catch (err) {
+    proc.kill('SIGTERM');
+    fs.rmSync(vaultDir, { recursive: true, force: true });
+    fs.rmSync(indexPath, { force: true });
+    fs.rmSync(`${indexPath}-wal`, { force: true });
+    fs.rmSync(`${indexPath}-shm`, { force: true });
+    throw err;
+  }
 
   async function openAppPage(route = '/') {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
