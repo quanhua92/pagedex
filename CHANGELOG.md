@@ -2,6 +2,30 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.18] - 2026-11-22
+
+### Features
+
+- **client:** add MultiNoteViewer split-pane layout and E2E tests (64e9a91)
+- **ui:** add auto-reveal sidebar, image lightbox, slash commands, and search jump (f86788a)
+- **editor:** add WYSIWYG inline images, paste/drop upload, and ![[image]] embeds (7f1b383)
+- **ui:** add code copy buttons, command palette, scroll-spy, and dirty guard (cb9d3b1)
+- **ui:** add auto-expand folder depth setting (86e9557)
+- **ui:** compact sidebar topbar menu and live-dot hover tooltip (0866d2a)
+
+### Tests
+
+- **playwright:** open sidebar options menu for sign out and theme toggle (d5edca2)
+
+### Documentation
+
+- document lightbox, slash commands, search jump, and sidebar auto-reveal (125495f)
+- sync docs and .agents guides with recent features (3a00c1e)
+
+### Other Changes
+
+- **client:** extract Git, layout, switcher, and file CRUD hooks from App.jsx (668ecc4)
+
 ## [0.1.17] - 2026-11-21
 
 ### Features
