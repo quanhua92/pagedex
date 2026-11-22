@@ -5,9 +5,9 @@
 1. **MIME type (`src/server/paths.js`):** Add the extension to `MIME_TYPES` (and `IMAGE_MIME` if it is a raster/vector image).
 2. **Search indexing (`src/server/search-index.js`):** If the format is binary, ensure `BINARY_EXT_RE` excludes it from FTS5 text indexing.
 3. **Client predicate (`src/client/lib/paths.js`):** Add an `is<Type>Path(p)` helper and remove the extension from `isDownloadOnlyPath(p)` if it was previously download-only.
-4. **Loading behavior (`src/client/App.jsx`):**
-   - If the viewer uses `<iframe src>`, `<audio>`, or `<video>`, include the predicate in `isBinaryMedia` inside `openFile()` so `App.jsx` sends `HEAD` instead of `res.text()`.
-   - Pass the boolean flag to `NoteViewer`.
+4. **Loading behavior (`src/client/hooks/usePaneState.js` & `src/client/components/NotePane.jsx`):**
+   - If the viewer uses `<iframe src>`, `<audio>`, or `<video>`, include the predicate in `isBinaryMedia` inside `openFile()` in `usePaneState.js` so it sends `HEAD` instead of `res.text()`.
+   - Return the boolean flag from `usePaneState` and pass it from `NotePane.jsx` to `NoteViewer.jsx`.
 5. **Renderer (`src/client/components/NoteViewer.jsx` & `src/client/styles.css`):** Add the render branch and layout styles.
 6. **Docs & Tests:** Update `docs/supported-files.md` and add coverage in `test/api-mcp.test.js`.
 

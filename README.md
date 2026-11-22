@@ -60,7 +60,7 @@ npx pagedex ~/vault --host 0.0.0.0 --port 4321
 ```
 
 One server exposes everything on the same port:
-- **`/`** — React + Tiptap web UI (desktop tabs, pinned folders/notes, outline & backlinks, mobile edge-swipe drawers)
+- **`/`** — React + Tiptap web UI (desktop tabs, split-pane viewer via `⋮` → **Split right** / **Split down**, pinned folders/notes, outline & backlinks, mobile edge-swipe drawers)
 - **`/api/v1/*`** — REST API for reading, editing, searching, uploading, and Git diff/commit
 - **`/mcp`** — Multi-era MCP endpoint (`2026-07-28`, `2025-11-25` Streamable HTTP, `2024-11-05` HTTP+SSE)
 

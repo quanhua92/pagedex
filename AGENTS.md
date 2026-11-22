@@ -43,7 +43,8 @@ pagedex/
 │       │   ├── paths.js            # File-type predicates (markdown, image, pdf, audio/video, html, csv)
 │       │   ├── csv.js              # Quoted CSV/TSV parser
 │       │   └── markdown.js
-│       ├── components/             # TopbarAndTabs, NoteViewer, RawEditor, Sidebar, OutlineSidebar, modals
+│       ├── hooks/                  # usePaneState, useGitOps, useLayoutState, useQuickSwitcher, useFileCrud
+│       ├── components/             # MultiNoteViewer, NotePane, TopbarAndTabs, NoteViewer, RawEditor, Sidebar, OutlineSidebar, modals
 │       └── public/
 │           └── sw.js               # PWA service worker (bypasses /api/*, /mcp, SSE)
 ├── test/

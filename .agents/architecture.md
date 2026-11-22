@@ -23,8 +23,8 @@
 ## Client File-Type Routing (`src/client/`)
 
 - `src/client/lib/paths.js` defines predicates: `isMarkdownPath`, `isImagePath`, `isSvgPath`, `isPdfPath`, `isAudioPath`, `isVideoPath`, `isHtmlPath`, `isCsvPath`, `isNotebookPath`, `isDownloadOnlyPath`.
-- `src/client/App.jsx` (`openFile`) skips `res.text()` for non-SVG images, PDFs, audio, video, and download-only binaries (using `HEAD` instead).
-- `src/client/components/NoteViewer.jsx` renders per-type views (including `NotebookViewer.jsx` via `@jupyter-kit/react` for `.ipynb`); `src/client/components/TopbarAndTabs.jsx` exposes `Download` above `Preview` in the top-right options menu.
+- `src/client/hooks/usePaneState.js` (`openFile`) manages per-pane tabs/buffers and skips `res.text()` for non-SVG images, PDFs, audio, video, and download-only binaries (using `HEAD` instead).
+- `src/client/components/MultiNoteViewer.jsx` + `NotePane.jsx` coordinate single-pane (`'single'`) and split-pane (`'right' | 'down'`) layouts with active-pane tracking; `src/client/components/NoteViewer.jsx` renders per-type views (including `NotebookViewer.jsx` via `@jupyter-kit/react` for `.ipynb`); `src/client/components/TopbarAndTabs.jsx` exposes `Download`, view modes, and split-pane controls in the top-right options menu.
 
 ## External Search Index
 

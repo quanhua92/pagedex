@@ -55,6 +55,7 @@ Override the cache location with:
   - **Diff** — line-by-line Git diff with per-line, per-hunk, and per-file discard
   - **Download** — downloads any open file via `/api/v1/file?path=...&download=1`
   - **Print** — triggers `window.print()` with an A4 multi-page stylesheet (hides UI chrome and renders Mermaid in light theme; uncheck **Headers and footers** in the browser print dialog to hide the page title/URL)
+  - **Split right / Split down / Close pane** — opens a second independent pane (`MultiNoteViewer`) with per-pane tabs, independent view modes, a draggable divider, and active-pane routing for the sidebar, outline, Command Palette, and shortcuts (on mobile `<= 768px`, **Split right** is hidden and **Split down** stacks panes vertically)
 - **Wikilinks, Links & Backlinks:** `[[...]]` links from Markdown notes resolve to **any** file type (`.md`, `.py`, `.ipynb`, media, etc.), and the right panel tracks the active heading as you scroll alongside outgoing **Links** and incoming **Backlinks**.
 - **Command Palette (`Cmd/Ctrl+K`):** Search files/tabs (with jump-to-match highlighting on open) or switch to **Commands** (or type `>`) for quick actions (`New note`, `Toggle theme`, `Commit changes`, `Switch vault`, etc.).
 - **Sidebar & Settings:** Auto-reveals the active file’s parent folders, supports folder deletion (with non-empty folder warning), manual refresh (`?refresh=1`), **Auto-expand folder levels** (default `2`), **Pasted / dropped image folder** (`same`, `assets/`, or vault root `assets/`), and auto-collapsed/hidden folder lists.
