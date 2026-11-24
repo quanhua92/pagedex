@@ -2,6 +2,16 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.20] - 2026-11-24
+
+### Features
+
+- **api:** include build version, commit, and timestamps in /api/v1/health (298609f)
+
+### Bug Fixes
+
+- **git:** scope git status and commit paths to nested vault root (def49c7)
+
 ## [0.1.19] - 2026-11-24
 
 ### Bug Fixes

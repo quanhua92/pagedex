@@ -1,6 +1,6 @@
 {
   "name": "pagedex",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "description": "Local-first Markdown knowledge viewer, editor, Git bridge, and MCP v2 server for any directory.",
   "license": "MIT",
   "repository": {
