@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 
 const CLI_PATH = path.resolve(import.meta.dirname, '../bin/pagedex.js');
 
@@ -215,4 +215,64 @@ test('PAGEDEX_ROOT_CONFIG supports multi-vault, allowGlobalAuth, per-vault token
     await new Promise((r) => setTimeout(r, 150));
   }
   assert.ok(reloaded, 'Expected vaults.json reload to expose new "notes" vault');
+});
+
+test('Git changes and commit scope paths relative to nested subdirectory vault', async (t) => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pagedex-subgit-'));
+  const vault2027 = path.join(repoRoot, '2027', 'zelda');
+  const siblingDir = path.join(repoRoot, 'other');
+  fs.mkdirSync(vault2027, { recursive: true });
+  fs.mkdirSync(siblingDir, { recursive: true });
+
+  execFileSync('git', ['init'], { cwd: repoRoot });
+  execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: repoRoot });
+  execFileSync('git', ['config', 'user.name', 'Test'], { cwd: repoRoot });
+
+  fs.writeFileSync(path.join(repoRoot, 'README.md'), '# Repo\n');
+  execFileSync('git', ['add', '.'], { cwd: repoRoot });
+  execFileSync('git', ['commit', '-m', 'init'], { cwd: repoRoot });
+
+  const targetFile = path.join(vault2027, '01-the-master-sword-trials.md');
+  const siblingFile = path.join(siblingDir, 'unrelated.md');
+  fs.writeFileSync(targetFile, '# Trials\n');
+  fs.writeFileSync(siblingFile, '# Sibling\n');
+
+  const proc = spawn('node', [CLI_PATH, path.join(repoRoot, '2027'), '-p', '0', '--mcp', 'off'], {
+    env: { ...process.env, PAGEDEX_INDEX_PATH: `${repoRoot}.db` },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  t.after(() => {
+    proc.kill('SIGTERM');
+    fs.rmSync(repoRoot, { recursive: true, force: true });
+    fs.rmSync(`${repoRoot}.db`, { force: true });
+  });
+
+  const port = await waitForListeningPort(proc);
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  const changesRes = await fetch(`${baseUrl}/api/v1/changes`);
+  assert.equal(changesRes.status, 200);
+  const changesData = await changesRes.json();
+  assert.equal(changesData.isGit, true);
+  assert.deepEqual(
+    changesData.changes.map((c) => c.path),
+    ['zelda/01-the-master-sword-trials.md']
+  );
+  assert.ok(changesData.changes[0].mtimeMs > 0);
+
+  const commitRes = await fetch(`${baseUrl}/api/v1/git/commit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: 'Add trial note',
+      files: ['zelda/01-the-master-sword-trials.md']
+    })
+  });
+  assert.equal(commitRes.status, 200);
+  const commitData = await commitRes.json();
+  assert.equal(commitData.ok, true);
+
+  const postStatus = execFileSync('git', ['status', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' });
+  assert.match(postStatus, /other\//);
+  assert.doesNotMatch(postStatus, /01-the-master-sword-trials\.md/);
 });

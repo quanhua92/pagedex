@@ -5,9 +5,15 @@ import { getVaultRoot, isImagePath, isProtectedPath, resolveSafe } from './paths
 import { removeVaultCacheFile, updateVaultCacheFile } from './vault-cache.js';
 
 export function getGitChanges() {
+  const vaultRoot = getVaultRoot();
   try {
-    const out = execFileSync('git', ['status', '--porcelain', '-uall'], {
-      cwd: getVaultRoot(),
+    const prefix = execFileSync('git', ['rev-parse', '--show-prefix'], {
+      cwd: vaultRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+    const out = execFileSync('git', ['status', '--porcelain', '-uall', '--', '.'], {
+      cwd: vaultRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore']
     });
@@ -21,11 +27,14 @@ export function getGitChanges() {
         if (filePath.startsWith('"') && filePath.endsWith('"')) {
           filePath = filePath.slice(1, -1);
         }
+        if (prefix && filePath.startsWith(prefix)) {
+          filePath = filePath.slice(prefix.length);
+        }
         const status = rawCode === '??' ? 'U' : rawCode[0];
         let mtimeMs = 0;
         if (status !== 'D') {
           try {
-            mtimeMs = fs.statSync(path.join(getVaultRoot(), filePath)).mtimeMs;
+            mtimeMs = fs.statSync(path.join(vaultRoot, filePath)).mtimeMs;
           } catch {
             mtimeMs = 0;
           }
@@ -42,19 +51,20 @@ export function getGitChanges() {
 export function gitCommitAndPush({ message, files = [], push = false }) {
   const msg = String(message || '').trim();
   if (!msg) return { error: 'Commit message is required' };
+  const vaultRoot = getVaultRoot();
   try {
     const safeFiles = Array.isArray(files)
       ? files.filter((f) => typeof f === 'string' && f && !isProtectedPath(f) && resolveSafe(f))
       : [];
     if (safeFiles.length > 0) {
-      execFileSync('git', ['add', '--', ...safeFiles], { cwd: getVaultRoot(), encoding: 'utf8' });
+      execFileSync('git', ['add', '--', ...safeFiles], { cwd: vaultRoot, encoding: 'utf8' });
     } else {
-      execFileSync('git', ['add', '-A'], { cwd: getVaultRoot(), encoding: 'utf8' });
+      execFileSync('git', ['add', '-A', '--', '.'], { cwd: vaultRoot, encoding: 'utf8' });
     }
-    const commitOut = execFileSync('git', ['commit', '-m', msg], { cwd: getVaultRoot(), encoding: 'utf8' });
+    const commitOut = execFileSync('git', ['commit', '-m', msg], { cwd: vaultRoot, encoding: 'utf8' });
     let pushOut = '';
     if (push) {
-      pushOut = execFileSync('git', ['push'], { cwd: getVaultRoot(), encoding: 'utf8' });
+      pushOut = execFileSync('git', ['push'], { cwd: vaultRoot, encoding: 'utf8' });
     }
     return { ok: true, output: [commitOut, pushOut].filter(Boolean).join('\n').trim() };
   } catch (err) {
