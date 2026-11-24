@@ -2,6 +2,17 @@
 
 All notable changes to `pagedex` will be documented in this file.
 
+## [0.1.19] - 2026-11-24
+
+### Bug Fixes
+
+- **client:** replace deprecated apple-mobile-web-app-capable meta tag (a21a2a6)
+- **client:** restore baseTitle import and reset split panes on vault switch (e452a7b)
+
+### Documentation
+
+- document MultiNoteViewer split-pane layout (7dfeee4)
+
 ## [0.1.18] - 2026-11-22
 
 ### Features
