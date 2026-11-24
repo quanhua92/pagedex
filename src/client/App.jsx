@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { computeCollapsedDirs, loadSettings, resolveStartupPath } from './lib/settings.js';
-import { isMarkdownPath, isTextEditablePath, resolveRelative } from './lib/paths.js';
+import { baseTitle, isMarkdownPath, isTextEditablePath, resolveRelative } from './lib/paths.js';
 import { useEdgeSwipe } from './lib/useEdgeSwipe.js';
 import { useGitOps } from './hooks/useGitOps.js';
 import { useLayoutState } from './hooks/useLayoutState.js';
@@ -467,13 +467,16 @@ export default function App() {
     });
     const nextPath = resolveStartupPath(settings);
     const freshId = `tab-${Date.now()}`;
-    setTabs([{ id: freshId, path: nextPath, title: baseTitle(nextPath), preview: '' }]);
-    setActiveTabId(freshId);
-    activeTabIdRef.current = freshId;
-    activePathRef.current = nextPath || '';
-    setContent('');
-    setDraftContent('');
-    setDirty(false);
+    primaryPane.setTabs([{ id: freshId, path: nextPath, title: baseTitle(nextPath), preview: '' }]);
+    primaryPane.setActiveTabId(freshId);
+    primaryPane.activeTabIdRef.current = freshId;
+    primaryPane.activePathRef.current = nextPath || '';
+    primaryPane.setContent('');
+    primaryPane.setDraftContent('');
+    primaryPane.setDirty(false);
+    secondaryPane.resetPane();
+    setSplitMode('single');
+    setActivePaneId('primary');
     setFilter('');
     setVaultsInfo((prev) => ({ ...prev, activeVault: vaultId }));
     if (res.status === 401) {
