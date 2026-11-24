@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import {
   MIME_TYPES,
   getVaultRoot,
@@ -27,6 +28,35 @@ import {
 
 import { getActiveVault, isVaultReadOnly } from '../vault-manager.js';
 
+const PACKAGE_ROOT = path.resolve(import.meta.dirname, '../../..');
+const SERVER_INFO = (() => {
+  let version = null;
+  let commit = null;
+  let builtAt = null;
+  try {
+    const info = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'dist/build-info.json'), 'utf8'));
+    version = info.version || null;
+    commit = info.commit || null;
+    builtAt = info.builtAt || null;
+  } catch {}
+  if (!version) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(path.join(PACKAGE_ROOT, 'package.json'), 'utf8'));
+      version = pkg.version || null;
+    } catch {}
+  }
+  if (!commit) {
+    try {
+      commit = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+        cwd: PACKAGE_ROOT,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore']
+      }).trim() || null;
+    } catch {}
+  }
+  return { version, commit, builtAt, startedAt: new Date().toISOString() };
+})();
+
 export function registerFileRoutes(app) {
   app.get('/api/v1/health', (c) => {
     const vault = getActiveVault();
@@ -34,7 +64,8 @@ export function registerFileRoutes(app) {
       ok: true,
       vault: vault.id,
       root: getVaultRoot(),
-      readOnly: isVaultReadOnly(vault)
+      readOnly: isVaultReadOnly(vault),
+      ...SERVER_INFO
     });
   });
 

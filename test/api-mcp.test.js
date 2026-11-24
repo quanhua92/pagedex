@@ -89,6 +89,9 @@ test('REST health, tree, backlinks, and search', async () => {
   const health = await (await fetch(`${BASE}/api/v1/health`)).json();
   assert.equal(health.ok, true);
   assert.equal(health.root, tmpVault);
+  assert.equal(typeof health.version, 'string');
+  assert.ok('commit' in health);
+  assert.equal(typeof health.startedAt, 'string');
 
   const tree = await (await fetch(`${BASE}/api/v1/tree?limit=10000`)).json();
   assert.ok(tree.flatFiles.includes('README.md'));
